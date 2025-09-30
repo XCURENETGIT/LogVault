@@ -1,0 +1,9 @@
+
+---------------------------------------------------------------------------------------------------------------------------------------------
+Application : ${spring.application.name}
+Description : 📦 File Ingestion and Metadata Persistence 1. Storing Uploaded Files 2. Extracting and Saving Metadata 3. Optional Features
+Version     : ${server.version}.${release.version}
+Port        : ${server.port}
+Log Level   : ${logging.level.root}
+Log History : ${logging.logback.rollingpolicy.max-history} day
+---------------------------------------------------------------------------------------------------------------------------------------------

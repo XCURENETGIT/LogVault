@@ -1,0 +1,14 @@
+{
+	"properties": [
+		{
+			"name": "server.version",
+			"type": "java.lang.String",
+			"description": "banner for server.version."
+		},
+		{
+			"name": "release.version",
+			"type": "java.lang.String",
+			"description": "banner for release.version."
+		}
+	]
+}

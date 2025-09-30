@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "../../dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xcurenet.logvault.loader.mapper.InfoLoaderMapper">
+
+	<!-- 사용자 정보 -->
+	<select id="getUserInfo" resultType="UserInfo">
+		SELECT  A.USER_ID AS userId,
+				A.SABUN AS sabun,
+				A.USER_NM AS userNm,
+				A.DEPTCD AS deptCd,
+				B.DEPTNM AS deptNm,
+				A.JIKGUBCD AS jikgubCd,
+				C.JIKGUBNM AS jikgubNm
+		FROM	UI_USERS A
+				LEFT JOIN UI_DEPT B ON (A.DEPTCD = B.DEPTCD)
+				LEFT JOIN UI_JIKGUB C  ON (A.JIKGUBCD = C.JIKGUBCD)
+		ORDER	BY A.USER_ID
+	</select>
+
+	<select id="getUserIp" resultType="IPInfo">
+		SELECT  USER_ID AS userId, USER_IP AS ip
+		FROM 	UI_USER_IP A
+		ORDER	BY USER_ID
+	</select>
+
+
+</mapper>

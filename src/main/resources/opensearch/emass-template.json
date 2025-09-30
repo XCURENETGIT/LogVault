@@ -1,0 +1,284 @@
+{
+	"index_patterns": [
+		"emass-*"
+	],
+	"priority": 9999999,
+	"template": {
+		"settings": {
+			"max_result_window": 50000,
+			"index": {
+				"number_of_shards": 1,
+				"number_of_replicas": 0,
+				"opendistro.index_state_management.policy_id": "emass_policy",
+				"analysis": {
+					"tokenizer": {
+						"edge_ngram_tokenizer": {
+							"type": "edge_ngram",
+							"min_gram": 2,
+							"max_gram": 10,
+							"token_chars": [
+								"letter",
+								"digit",
+								"whitespace"
+							]
+						}
+					},
+					"analyzer": {
+						"index_analyzer": {
+							"tokenizer": "edge_ngram_tokenizer",
+							"filter": [
+								"lowercase"
+							]
+						},
+						"search_analyzer": {
+							"tokenizer": "standard",
+							"filter": [
+								"lowercase"
+							]
+						}
+					}
+				}
+			}
+		},
+		"mappings": {
+			"properties": {
+				"@timestamp": {
+					"type": "date",
+					"format": "epoch_millis"
+				},
+				"msgid": {
+					"type": "keyword"
+				},
+				"ctime": {
+					"type": "date",
+					"format": "yyyyMMddHHmmss"
+				},
+				"ltime": {
+					"type": "date",
+					"format": "yyyyMMddHHmmss"
+				},
+				"day": {
+					"properties": {
+						"week": {
+							"type": "integer"
+						},
+						"work": {
+							"type": "keyword"
+						}
+					}
+				},
+				"service": {
+					"properties": {
+						"svc": {
+							"type": "keyword"
+						},
+						"svc1": {
+							"type": "keyword"
+						},
+						"svc2": {
+							"type": "keyword"
+						},
+						"svc3": {
+							"type": "keyword"
+						},
+						"svc4": {
+							"type": "keyword"
+						},
+						"svc12": {
+							"type": "keyword"
+						}
+					}
+				},
+				"network": {
+					"properties": {
+						"protocol": {
+							"type": "keyword"
+						},
+						"src_port": {
+							"type": "integer"
+						},
+						"src_ip": {
+							"type": "ip"
+						},
+						"src_country": {
+							"type": "keyword"
+						},
+						"src_location": {
+							"type": "geo_point"
+						},
+						"dst_port": {
+							"type": "integer"
+						},
+						"dst_ip": {
+							"type": "ip"
+						},
+						"dst_country": {
+							"type": "keyword"
+						},
+						"dst_location": {
+							"type": "geo_point"
+						}
+					}
+				},
+				"http": {
+					"properties": {
+						"url": {
+							"type": "keyword"
+						},
+						"user_agent": {
+							"properties": {
+								"raw": {
+									"type": "keyword"
+								},
+								"device": {
+									"type": "keyword"
+								},
+								"os": {
+									"type": "keyword"
+								},
+								"os_version": {
+									"type": "keyword"
+								},
+								"client": {
+									"type": "keyword"
+								},
+								"client_version": {
+									"type": "keyword"
+								}
+							}
+						}
+					}
+				},
+				"user": {
+					"properties": {
+						"ip": {
+							"type": "ip"
+						},
+						"id": {
+							"type": "keyword"
+						},
+						"name": {
+							"type": "keyword"
+						},
+						"is_ceo": {
+							"type": "boolean"
+						},
+						"dept_code": {
+							"type": "keyword"
+						},
+						"dept_name": {
+							"type": "keyword"
+						},
+						"jikgub_code": {
+							"type": "keyword"
+						},
+						"jikgub_name": {
+							"type": "keyword"
+						}
+					}
+				},
+				"size": {
+					"type": "long"
+				},
+				"body": {
+					"properties": {
+						"size": {
+							"type": "long"
+						},
+						"language": {
+							"type": "keyword"
+						},
+						"text": {
+							"type": "text",
+							"analyzer": "index_analyzer",
+							"search_analyzer": "search_analyzer"
+						}
+					}
+				},
+				"attach_total_size": {
+					"type": "long"
+				},
+				"attach_count": {
+					"type": "integer"
+				},
+				"attach": {
+					"type": "nested",
+					"properties": {
+						"id": {
+							"type": "keyword"
+						},
+						"name": {
+							"type": "text",
+							"analyzer": "index_analyzer",
+							"search_analyzer": "search_analyzer"
+						},
+						"has_name": {
+							"type": "boolean"
+						},
+						"hash": {
+							"type": "keyword",
+							"index": false
+						},
+						"size": {
+							"type": "long"
+						},
+						"base64": {
+							"type": "keyword",
+							"index": false
+						},
+						"text": {
+							"type": "text",
+							"analyzer": "index_analyzer",
+							"search_analyzer": "search_analyzer"
+						}
+					}
+				},
+				"privacy_total": {
+					"type": "integer"
+				},
+				"privacy_info": {
+					"type": "nested",
+					"properties": {
+						"id": {
+							"type": "keyword"
+						},
+						"type": {
+							"type": "keyword"
+						},
+						"attach_name": {
+							"type": "keyword"
+						},
+						"keywords": {
+							"type": "keyword"
+						},
+						"count": {
+							"type": "integer"
+						}
+					}
+				},
+				"keyword_info": {
+					"properties": {
+						"exist": {
+							"type": "boolean"
+						},
+						"keywords": {
+							"type": "keyword"
+						},
+						"attach": {
+							"type": "keyword"
+						},
+						"attach_name": {
+							"type": "keyword"
+						},
+						"body": {
+							"type": "keyword"
+						}
+					}
+				}
+			}
+		},
+		"aliases": {
+			"emass": {}
+		}
+	}
+}

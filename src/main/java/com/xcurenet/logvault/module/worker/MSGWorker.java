@@ -40,6 +40,8 @@ public class MSGWorker extends AbstractLogVaultWorker {
 		setHttp(msg, doc);
 		setBody(msg, doc);
 		setAttach(msg, doc);
+
+		data.setEmassDoc(doc);
 	}
 
 	@Override
@@ -98,6 +100,7 @@ public class MSGWorker extends AbstractLogVaultWorker {
 	private void setAttach(MSGData msg, EmassDoc doc) {
 		if (msg.getAppFile() == null || msg.getAppFile().isEmpty()) return;
 
+		long attachTotalSize = 0;
 		List<EmassDoc.Attach> attaches = new ArrayList<>();
 		for (int i = 0; i < msg.getAppFile().size(); i++) {
 			String appFile = msg.getAppFile().get(i);
@@ -109,11 +112,15 @@ public class MSGWorker extends AbstractLogVaultWorker {
 			attach.setName(name);
 			if (appFilePath != null) {
 				File file = new File(appFilePath);
-				if (file.exists()) attach.setSize(file.length());
+				if (file.exists()) {
+					attachTotalSize += file.length();
+					attach.setSize(file.length());
+				}
 			}
 			attaches.add(attach);
 		}
 		if (!attaches.isEmpty()) doc.setAttach(attaches);
+		doc.setAttachTotalSize(attachTotalSize);
 	}
 
 	private static String getAttachName(MSGData msg, String name, int i) {

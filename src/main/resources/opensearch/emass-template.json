@@ -219,6 +219,9 @@
 							"type": "keyword",
 							"index": false
 						},
+						"exist": {
+							"type": "boolean"
+						},
 						"size": {
 							"type": "long"
 						},

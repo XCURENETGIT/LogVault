@@ -71,7 +71,7 @@ public class Config {
 	@Value("${scan.dir.wmail:/users/las/msg/info/wmail}")
 	private String dirWmail;
 
-	@Value("${worker.size.wmail:10}")
+	@Value("${worker.size.wmail:1}")
 	private int workerSizeWmail;
 
 	@Value("${edc.body.language.detect.size:2000}")

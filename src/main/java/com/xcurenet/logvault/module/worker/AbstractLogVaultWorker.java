@@ -174,9 +174,10 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 			if (file.exists()) {
 				try {
 					long startTime = System.currentTimeMillis();
-					String dest = conf.getDestPath(msg.getCtime(), msg.getMsgid());
+					String destPath = conf.getDestPath(msg.getCtime(), msg.getMsgid());
+					String dest = CommonUtil.makeFilepath(destPath, file.getName());
 					fileSystem.write(path, dest, file.getName());
-					log.info("[ATT_SEND] {} | {} ({}) | {} | {}", msg.getMsgid(), path, CommonUtil.convertFileSize(file.length()), file.getPath(), DateUtils.duration(startTime));
+					log.info("[ATT_SEND] {} | {} ({}) | {} | {}", msg.getMsgid(), path, CommonUtil.convertFileSize(file.length()), dest, DateUtils.duration(startTime));
 				} catch (Exception e) {
 					throw new FileSendException(e);
 				}

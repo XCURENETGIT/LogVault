@@ -46,7 +46,7 @@ public class EmassDoc {
 	private Body body;
 
 	@Field("attach_total_size")
-	private int attachTotalSize;
+	private long attachTotalSize;
 
 	@Field("attach_count")
 	private int attachCount;
@@ -164,8 +164,12 @@ public class EmassDoc {
 		private boolean hasName;
 		@Field("hash")
 		private String hash;
+		@Field("exist")
+		private boolean exist;
 		@Field("size")
 		private Long size;
+		@Field("base64")
+		private String base64;
 		@Field("text")
 		private String text;
 	}

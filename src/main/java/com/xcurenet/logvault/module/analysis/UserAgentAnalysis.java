@@ -27,11 +27,11 @@ public class UserAgentAnalysis {
 		if (client != null) {
 			EmassDoc.Agent agent = new EmassDoc.Agent();
 			agent.setRaw(raw);
-			agent.setDevice(client.device.family);
-			agent.setOs(client.os.family);
-			agent.setOsVersion(client.os.major);
-			agent.setClient(client.userAgent.family);
-			agent.setClientVersion(String.join(".", client.userAgent.major != null ? client.userAgent.major : "0", client.userAgent.minor != null ? client.userAgent.minor : "0", client.userAgent.patch != null ? client.userAgent.patch : "0"));
+			agent.setDevice(client.device != null ? client.device.family : null);
+			agent.setOs(client.os != null ? client.os.family : null);
+			agent.setOsVersion(client.os != null ? client.os.major : null);
+			agent.setClient(client.userAgent != null ? client.userAgent.family : null);
+			agent.setClientVersion(String.join(".", client.userAgent != null ? client.userAgent.major : "0", client.userAgent != null ? client.userAgent.minor : "0"));
 			scanData.getEmassDoc().getHttp().setAgent(agent);
 		}
 	}

@@ -21,7 +21,7 @@ public class BodyLanguage {
 		if (body != null && body.getText() != null) {
 			int maxLen = Math.min(conf.getBodyLanguageDetectSize(), body.getText().length());
 			body.setLanguage(langDetectUtil.detectLanguage(body.getText().substring(0, maxLen)));
-			log.info("[BODY_LANG] {} | {}", doc.getMsgid(), body.getLanguage());
+			log.debug("[BODY_LANG] {} | {}", doc.getMsgid(), body.getLanguage());
 		}
 	}
 }

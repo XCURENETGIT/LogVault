@@ -42,6 +42,6 @@ public class LogService {
 	private String getUserAgent(final EmassDoc.Http http) {
 		if (http == null || http.getAgent() == null) return null;
 		if (http.getAgent().getClient() == null) return null;
-		return http.getAgent().getClient() + " | " + http.getAgent().getClientVersion();
+		return http.getAgent().getClient() + " (" + http.getAgent().getClientVersion() + ")";
 	}
 }

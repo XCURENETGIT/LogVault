@@ -1,5 +1,6 @@
 package com.xcurenet.logvault.conf;
 
+import lombok.extern.log4j.Log4j2;
 import org.jasypt.encryption.StringEncryptor;
 import org.jasypt.encryption.pbe.PooledPBEStringEncryptor;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
@@ -7,6 +8,7 @@ import org.jasypt.encryption.pbe.config.SimpleStringPBEConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+@Log4j2
 @Configuration
 public class JasyptConfig {
 
@@ -36,7 +38,8 @@ public class JasyptConfig {
 		jasypt.setAlgorithm("PBEWithMD5AndDES");
 		String encryptedText = jasypt.encrypt(password);
 		String decryptedText = jasypt.decrypt(encryptedText);
-		System.out.println("encryptedText = " + encryptedText);
-		System.out.println("decryptedText = " + decryptedText);
+
+		log.info("encryptedText > {}", encryptedText);
+		log.info("decryptedText > {}", decryptedText);
 	}
 }

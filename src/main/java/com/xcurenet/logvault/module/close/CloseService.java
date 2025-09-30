@@ -13,6 +13,6 @@ public class CloseService {
 	protected final Config conf;
 
 	public void close(final ScanData data) {
-
+		// TODO document why this method is empty
 	}
 }

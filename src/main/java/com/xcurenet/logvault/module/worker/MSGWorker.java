@@ -44,11 +44,12 @@ public class MSGWorker extends AbstractLogVaultWorker {
 
 	@Override
 	protected void insaMapping(final ScanData data) {
+		// TODO document why this method is empty
 	}
 
 	@Override
 	protected void index(ScanData data) throws IndexerException {
-
+		// TODO document why this method is empty
 	}
 
 	private void setService(MSGData msg, EmassDoc doc) {

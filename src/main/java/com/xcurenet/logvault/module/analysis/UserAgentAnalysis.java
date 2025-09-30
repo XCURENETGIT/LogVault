@@ -3,7 +3,6 @@ package com.xcurenet.logvault.module.analysis;
 import com.xcurenet.common.msg.MSGData;
 import com.xcurenet.common.utils.FileUtil;
 import com.xcurenet.common.utils.HttpHeaderUtil;
-import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +16,6 @@ import java.io.File;
 @Service
 @RequiredArgsConstructor
 public class UserAgentAnalysis {
-	private final Config conf;
 
 	public void detect(final ScanData scanData) {
 		MSGData msg = scanData.getMsgData();

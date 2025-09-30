@@ -1,12 +1,12 @@
 package com.xcurenet.logvault.conf;
 
-import org.springframework.context.annotation.Configuration;
-
 import java.util.HashMap;
 import java.util.Map;
 
-@Configuration
 public class DefaultConfig {
+	private DefaultConfig() {
+		throw new IllegalStateException("Utility class");
+	}
 
 	public static Map<String, Object> getDefaultConfig() {
 		Map<String, Object> config = new HashMap<>();

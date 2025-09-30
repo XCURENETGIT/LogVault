@@ -13,6 +13,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.net.ssl.SSLContext;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 
 @Configuration
 public class OpenSearchConfig {
@@ -27,7 +30,7 @@ public class OpenSearchConfig {
 	private String password;
 
 	@Bean
-	public RestHighLevelClient restHighLevelClient() throws Exception {
+	public RestHighLevelClient restHighLevelClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
 		final BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 		credentialsProvider.setCredentials(new AuthScope(null, -1), new UsernamePasswordCredentials(userName, password));
 

@@ -1,20 +1,21 @@
 package com.xcurenet.logvault.loader.type;
 
 import lombok.Data;
-import org.springframework.data.elasticsearch.annotations.Field;
+import lombok.ToString;
+import org.apache.ibatis.type.Alias;
+
+import java.io.Serializable;
 
 @Data
-public class WorkDayInfo {
+@Alias("WorkDayInfo")
+@ToString
+public class WorkDayInfo implements Serializable {
 
-	@Field("COCD")
 	private String coCd;
 
-	@Field("BUSICD")
 	private String busiCd;
 
-	@Field("WDAY")
 	private String wDay;
 
-	@Field("WHOUR")
 	private String wHour;
 }

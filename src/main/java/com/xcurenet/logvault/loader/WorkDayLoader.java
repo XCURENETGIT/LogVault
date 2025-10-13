@@ -1,7 +1,7 @@
 package com.xcurenet.logvault.loader;
 
 import com.xcurenet.common.utils.CommonUtil;
-import com.xcurenet.logvault.database.DBCommon;
+import com.xcurenet.logvault.loader.mapper.InfoLoaderMapper;
 import com.xcurenet.logvault.loader.type.WorkDayInfo;
 import com.xcurenet.logvault.module.util.WorkDayData;
 import lombok.Getter;
@@ -16,13 +16,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class WorkDayLoader {
 
-	private final DBCommon dbCommon;
+	private final InfoLoaderMapper mapper;
 
 	@Getter
 	private final WorkDayData workday;
 
 	public void load() {
-		List<WorkDayInfo> datas = dbCommon.getInfoToCollection("INFO_WORKDAY", WorkDayInfo.class);
+		List<WorkDayInfo> datas = mapper.getWorkDay();
 		log.info("[INFO_LOAD] WorkDay Size: {}", datas.size());
 		workday.clear();
 		for (WorkDayInfo item : datas) {

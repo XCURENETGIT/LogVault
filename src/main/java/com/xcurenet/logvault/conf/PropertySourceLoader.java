@@ -4,54 +4,64 @@ import org.apache.commons.logging.Log;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.boot.logging.DeferredLogFactory;
+import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.PropertySource;
 
+import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PropertySourceLoader implements EnvironmentPostProcessor {
-	private static final String APPLICATION_NAME = "LogVault";
-	private static final String CONNECTION_URL = "mongodb://emassailt:27018?replicaSet=shard1rs";
-
+public class PropertySourceLoader implements EnvironmentPostProcessor, Ordered {
 	private final Log log;
+	private static final String QUERY = "SELECT CONF_ID, VAL FROM UI_CONF";
 
 	public PropertySourceLoader(DeferredLogFactory logFactory) {
 		this.log = logFactory.getLog(PropertySourceLoader.class);
 	}
 
 	@Override
-	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+	public void postProcessEnvironment(ConfigurableEnvironment env, SpringApplication application) {
+		String url = env.getProperty("spring.datasource.url");
+		String user = JasyptConfig.decrypt(env.getProperty("spring.datasource.username"));
+		String pass = JasyptConfig.decrypt(env.getProperty("spring.datasource.password"));
+		String driver = env.getProperty("spring.datasource.driver-class-name", "org.mariadb.jdbc.Driver");
+		String appName = env.getProperty("spring.application.name", "LogVault");
 
-		Map<String, Object> props = new HashMap<>();
-		Map<String, Object> config = DefaultConfig.getDefaultConfig();
-		for (Map.Entry<String, Object> entry : config.entrySet()) {
-			props.putIfAbsent(entry.getKey(), entry.getValue());
+		Map<String, Object> defaults = DefaultConfig.getDefaultConfig();
+		Map<String, Object> props = new HashMap<>(defaults);
+		if (url != null && user != null) {
+			try {
+				Class.forName(driver); // 일부 환경에서 필요
+				try (Connection conn = DriverManager.getConnection(url, user, pass);
+					 PreparedStatement ps = conn.prepareStatement(QUERY)) {
+					ps.setString(1, appName);
+					try (ResultSet rs = ps.executeQuery()) {
+						while (rs.next()) {
+							String key = rs.getString("CONF_ID");
+							String val = rs.getString("VAL");
+							props.put(key, val);
+						}
+					}
+				}
+				log.info("[LOAD_CONF] Loaded properties for app=" + appName + " from MariaDB.");
+			} catch (Exception e) {
+				String msg = "[LOAD_CONF] Failed to load properties from MariaDB: " + e.getMessage();
+				log.warn(msg + " — using defaults only.");
+			}
+		} else {
+			log.warn("[LOAD_CONF] spring.datasource.url/username not set — using defaults only.");
 		}
-		props.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> log.debug("✅ " + entry.getKey() + " " + entry.getValue()));
-		PropertySource<Map<String, Object>> mongoSource = new MapPropertySource("mongoConfig", props);
-		environment.getPropertySources().addFirst(mongoSource);
 
-//		try (MongoClient mongoClient = MongoClients.create(CONNECTION_URL)) {
-//			MongoDatabase database = mongoClient.getDatabase("venus");
-//			MongoCollection<Document> collection = database.getCollection("APP_CONF");
-//			Map<String, Object> props = new HashMap<>();
-//			for (Document doc : collection.find(Filters.eq("app", APPLICATION_NAME))) {
-//				props.put(doc.getString("key"), doc.get("value"));
-//			}
-//
-//			Map<String, Object> config = DefaultConfig.getDefaultConfig();
-//			for (Map.Entry<String, Object> entry : config.entrySet()) {
-//				props.putIfAbsent(entry.getKey(), entry.getValue());
-//			}
-//			props.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> log.debug("✅ " + entry.getKey() + " " + entry.getValue()));
-//			PropertySource<Map<String, Object>> mongoSource = new MapPropertySource("mongoConfig", props);
-//			environment.getPropertySources().addFirst(mongoSource);
-		log.info("Complete Configration Loading.");
-//		} catch (Exception e) {
-//			throw new RuntimeException("MongoDB 설정 로딩 실패", e);
-//		}
+		props.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(en -> log.debug("✅ " + en.getKey() + " = " + en.getValue()));
+		PropertySource<Map<String, Object>> dbSource = new MapPropertySource("dbConfig", props);
+		env.getPropertySources().addFirst(dbSource);
+		log.info("[LOAD_CONF] Complete Configuration Loading (DB + defaults).");
+	}
+
+	@Override
+	public int getOrder() {
+		return Ordered.LOWEST_PRECEDENCE;
 	}
 }
-

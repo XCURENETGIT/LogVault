@@ -2,7 +2,6 @@ package com.xcurenet.logvault.loader;
 
 import com.xcurenet.common.types.IP;
 import com.xcurenet.common.utils.CommonUtil;
-import com.xcurenet.logvault.database.DBCommon;
 import com.xcurenet.logvault.loader.mapper.InfoLoaderMapper;
 import com.xcurenet.logvault.loader.type.IPInfo;
 import com.xcurenet.logvault.loader.type.UserInfo;
@@ -19,8 +18,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserLoader {
 	private final InfoLoaderMapper mapper;
-
-	private final DBCommon dbCommon;
 
 	@Getter
 	private final UserInsaInfoData data;

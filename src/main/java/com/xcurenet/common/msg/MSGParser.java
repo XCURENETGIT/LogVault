@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 @Log4j2
 public class MSGParser {
 	private static final Pattern ARRAY_KEY = Pattern.compile("(\\w+)\\[(\\d+)]");
-	private static final char[] ERROR_CHAR = new char[]{'{', '}', ':', '"'};
+	public static final char[] ERROR_CHAR = new char[]{'{', '}', ':', '"'};
 
 	public static MSGData parse(final String filePath) throws ProcessDataException {
 		File file = new File(filePath);

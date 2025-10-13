@@ -232,3 +232,6 @@ WantedBy=multi-user.target
 - Maven Artifact: `com.xcurenet:LogValut:0.0.1` _(오타 주의: artifactId가 **LogValut**)_
 - 서버 배너: `src/main/resources/banner.txt`
 
+
+
+

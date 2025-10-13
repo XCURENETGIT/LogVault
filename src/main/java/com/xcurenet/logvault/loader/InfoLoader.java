@@ -15,7 +15,7 @@ public class InfoLoader {
 	private final UserLoader userLoader;
 	private final HoliDayLoader holiDayLoader;
 	private final WorkDayLoader workDayLoader;
-	private final NoLogUrlLoader noLogUrlLoader;
+	private final KeywordLoader keywordLoader;
 
 	@PostConstruct
 	public void init() {
@@ -31,19 +31,19 @@ public class InfoLoader {
 			userLoader.load();
 		}
 
-		log.debug("[INFO_LOAD] holiday START");
+		log.debug("[INFO_LOAD] HoliDay START");
 		synchronized (this) {
 			holiDayLoader.load();
 		}
 
-		log.debug("[INFO_LOAD] workDay START");
+		log.debug("[INFO_LOAD] WorkDay START");
 		synchronized (this) {
 			workDayLoader.load();
 		}
 
-		log.debug("[INFO_LOAD] FILTER URL START");
+		log.debug("[INFO_LOAD] Keyword START");
 		synchronized (this) {
-			noLogUrlLoader.load();
+			keywordLoader.load();
 		}
 
 		log.info("[INFO_LOAD] END | {}\n", DateUtils.duration(startTime));

@@ -8,20 +8,18 @@ import com.xcurenet.common.utils.CommonUtil;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.LogVaultApplication;
 import com.xcurenet.logvault.conf.Config;
-import com.xcurenet.logvault.database.DBCommon;
 import com.xcurenet.logvault.exception.*;
 import com.xcurenet.logvault.fs.FileProcessor;
-import com.xcurenet.logvault.loader.UserInsaInfoData;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.module.analysis.AnalysisService;
 import com.xcurenet.logvault.module.clear.ClearService;
-import com.xcurenet.logvault.module.close.CloseService;
+import com.xcurenet.logvault.module.filter.FilterService;
 import com.xcurenet.logvault.module.log.LogService;
 import com.xcurenet.logvault.module.statics.ThroughputMetrics;
 import com.xcurenet.logvault.module.util.InsaManager;
-import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
+import org.opensearch.data.client.orhlc.OpenSearchRestTemplate;
 import org.springframework.context.ApplicationContext;
 
 import java.io.File;
@@ -38,33 +36,30 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 	private final AtomicBoolean inprogress = new AtomicBoolean(false);
 
 	protected final Config conf;
-	protected final UserInsaInfoData userInsaInfo;
 	protected final InsaManager insaManager;
-	protected final DBCommon dbCommon;
 	protected final FileProcessor fileSystem;
 	protected final AnalysisService analysisService;
 	protected final ClearService clearService;
-	protected final LogService debugLog;
-	protected final CloseService closeService;
+	protected final LogService logService;
 	protected final GeoLocation geoLocation;
-	protected final ThroughputMetrics metrics;
+	protected final OpenSearchRestTemplate template;
+	protected final FilterService filterService;
 
-	private static final String EMASS = "emass";
+	protected final ThroughputMetrics metrics;
 
 	protected AbstractLogVaultWorker(final ApplicationContext context, final PriorityBlockingQueue<ScanData> queue, final AtomicBoolean run) {
 		this.queue = queue;
 		this.run = run;
 		this.conf = context.getBean(Config.class);
-		this.userInsaInfo = context.getBean(UserInsaInfoData.class);
 		this.insaManager = context.getBean(InsaManager.class);
-		this.dbCommon = context.getBean(DBCommon.class);
 		this.fileSystem = context.getBean(FileProcessor.class);
 		this.analysisService = context.getBean(AnalysisService.class);
-		this.debugLog = context.getBean(LogService.class);
+		this.logService = context.getBean(LogService.class);
 		this.clearService = context.getBean(ClearService.class);
-		this.closeService = context.getBean(CloseService.class);
 		this.metrics = context.getBean(ThroughputMetrics.class);
 		this.geoLocation = context.getBean(GeoLocation.class);
+		this.filterService = context.getBean(FilterService.class);
+		this.template = context.getBean(OpenSearchRestTemplate.class);
 	}
 
 	@Override
@@ -81,32 +76,32 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 				data.setStart(System.currentTimeMillis());
 				process(data);                 // INFO 파일 파싱
 				checkAttachments(data);        // 첨부파일 체크  (각 Worker 에서 파일 대기에 대한 기준을 재 정립, 첨부가 없으면 대기)
-
 				parse(data);                   // 서비스별 추가 내용 파싱 (Error 발생 시 처음부터 재 처리)
 				insaMapping(data);             // 인사 정보 연동 (Error 발생 시 처음부터 재 처리)
 
-				analysisService.analyse(data); // 분석 기능     (Error 발생 시 무시)
+				boolean rs = filterService.filter(data); // 필터 처리     (Error 발생 시 처음부터 재 처리)
+				if (!rs) { // 필터링 되는 파일의 경우 아래 내용은 처리하지 않음.
+					analysisService.analyse(data); // 분석 기능     (Error 발생 시 무시)
 
-				boolean success = false;
-				int retryCnt = 1;
-				while (retryCnt <= 3) {
-					try {
-						transToAttach(data);    // 첨부파일 전송  (Error 발생 시 해당 로직 3회 재처리 후 지속 에러 발생 시 처음부터 재 처리)
-						transToBody(data);      // 본문 전송     (Error 발생 시 해당 로직 3회 재처리 후 지속 에러 발생 시 처음부터 재 처리)
-						index(data);            // Elastic 색인 (Error 발생 시 해당 로직 3회 재처리 후 지속 에러 발생 시 처음부터 재 처리)
-						success = true;
-						break;
-					} catch (final FileSendException | IndexerException e) {
-						log.warn("{} > {}\n", data.getFilePath(), e.getMessage());
-						log.error("", e);
-						retryCnt++;
-						CommonUtil.sleep(2000);
+					boolean success = false;
+					int retryCnt = 1;
+					while (retryCnt <= 3) {
+						try {
+							transToBody(data);      // 본문 전송     (Error 발생 시 해당 로직 3회 재처리 후 지속 에러 발생 시 처음부터 재 처리)
+							transToAttach(data);    // 첨부파일 전송  (Error 발생 시 해당 로직 3회 재처리 후 지속 에러 발생 시 처음부터 재 처리)
+							index(data);            // Elastic 색인 (Error 발생 시 해당 로직 3회 재처리 후 지속 에러 발생 시 처음부터 재 처리)
+							success = true;
+							break;
+						} catch (final FileSendException | IndexerException e) {
+							log.error("[ERROR] {} | {}", data.getMsgData().getMsgid(), e.getMessage(), e);
+							retryCnt++;
+							CommonUtil.sleep(2000);
+						}
 					}
+					if (!success) return;                // 오류 상황 시 원본 데이터 삭제 금지. (재 처리시 필요함.)
 				}
-				if (!success) return;                // 오류 상황 시 원본 데이터 삭제 금지. (재 처리시 필요함.)
-
 				clearService.clear(data);            // 처리 후 파일 삭제 (Error 발생 시 continue)
-				debugLog.log(data);                  // 완료 로그
+				logService.log(data);                  // 완료 로그
 
 				metrics.increment();
 				LogVaultApplication.getMinuteBy1Count().incrementAndGet();  // 1분 통계 증가
@@ -145,6 +140,9 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 		for (String appFile : msg.getAppFile()) {
 			msg.getAppFilePath().add(conf.getPath(appFile));
 		}
+		for (String pcFile : msg.getPcFile()) {
+			msg.getPcFilePath().add(conf.getPath(pcFile));
+		}
 		data.setMsgData(msg);
 
 		log.info("[MG_START] {} | {} | {}", msg.getMsgid(), msg.getInfoFilePath(), DateUtils.duration(startTime));
@@ -174,8 +172,7 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 			if (file.exists()) {
 				try {
 					long startTime = System.currentTimeMillis();
-					String destPath = conf.getDestPath(msg.getCtime(), msg.getMsgid());
-					String dest = CommonUtil.makeFilepath(destPath, file.getName());
+					String dest = conf.getDestPath(msg.getCtime(), msg.getMsgid(), file.getName());
 					fileSystem.write(path, dest, file.getName());
 					log.info("[ATT_SEND] {} | {} ({}) | {} | {}", msg.getMsgid(), path, CommonUtil.convertFileSize(file.length()), dest, DateUtils.duration(startTime));
 				} catch (Exception e) {
@@ -186,7 +183,21 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 	}
 
 	protected void transToBody(ScanData data) throws FileSendException {
-		EmassDoc msg = data.getEmassDoc();
+		try {
+			MSGData msg = data.getMsgData();
+			if (msg.getMsgFilePath() == null) return;
+
+			File file = new File(msg.getMsgFilePath());
+			if (!file.exists()) return;
+
+			long startTime = System.currentTimeMillis();
+			String dest = conf.getDestPath(msg.getCtime(), msg.getMsgid(), file.getName());
+			fileSystem.write(msg.getMsgFilePath(), dest, file.getName());
+
+			log.info("[BDY_SEND] {} | {} ({}) | {} | {}", msg.getMsgid(), msg.getMsgFilePath(), CommonUtil.convertFileSize(file.length()), dest, DateUtils.duration(startTime));
+		} catch (Exception e) {
+			throw new FileSendException(e);
+		}
 	}
 
 	protected abstract void index(ScanData data) throws IndexerException;

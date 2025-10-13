@@ -16,6 +16,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,6 +27,7 @@ public class DateUtils {
 		throw new IllegalStateException("Utility class");
 	}
 
+	public static final java.time.format.DateTimeFormatter RESPONSE_DATETIME = java.time.format.DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH);
 	public static final DateTimeFormatter YYYYMMDDHHMMSS = DateTimeFormat.forPattern("yyyyMMddHHmmss");
 	public static final DateTimeFormatter DATETIME_CTIME = DateTimeFormat.forPattern("yyyy/MM/dd HH:mm:ss");
 
@@ -107,8 +109,8 @@ public class DateUtils {
 	public static String duration(long startTimeMillis) {
 		long durationMillis = System.currentTimeMillis() - startTimeMillis;
 		Duration d = Duration.ofMillis(durationMillis);
-		long seconds = d.toSecondsPart();  // Java 9+
-		int millis = d.toMillisPart();     // Java 9+
+		long seconds = d.toSecondsPart();
+		int millis = d.toMillisPart();
 		return String.format("%d.%03ds", seconds, millis);
 	}
 
@@ -145,6 +147,6 @@ public class DateUtils {
 	 * long timestamp(System.currentTimeMillis()) → "yyyyMMddHHmmss" 문자열 변환
 	 */
 	public static String formatToYYYYMMDDHHMMSS(long millis) {
-	    return new DateTime(millis).toString(YYYYMMDDHHMMSS);
+		return new DateTime(millis).toString(YYYYMMDDHHMMSS);
 	}
 }

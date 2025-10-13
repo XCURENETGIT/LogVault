@@ -15,13 +15,14 @@ public class LogService {
 		try {
 			boolean isBody = (msg.getBody() != null && msg.getBody().getSize() > 0);
 			int attachCnt = msg.getAttachCount();
+			int attachExistCnt = msg.getAttachExistCount();
 			String bodySize = msg.getBody() != null ? CommonUtil.convertFileSize(msg.getBody().getSize()) : "0";
 			String attSize = CommonUtil.convertFileSize(msg.getAttachTotalSize());
 
 			EmassDoc.User user = msg.getUser();
-			String deptNm = user != null ? user.getDeptName() : "";
-			String userId = user != null ? user.getId() : "";
-			String userName = user != null ? user.getName() : "";
+			String deptName = user.getDeptName() != null ? user.getDeptName() : "unknown dept";
+			String userId = user.getId() != null ? user.getId() : "unknown userId";
+			String userName = (user.getName() != null ? user.getName() : "unknown userName") + " " + user.getJikgubName();
 
 			EmassDoc.Network net = msg.getNetwork();
 			String sIp = net != null ? net.getSrcIp() : "";
@@ -32,7 +33,7 @@ public class LogService {
 			EmassDoc.Http http = msg.getHttp();
 			String url = http != null ? http.getUrl() : "";
 			String agent = getUserAgent(http);
-			log.info("[MSG_DONE] {} | {} | BODY:{} ({}) | AT_CNT:{} ({}) | {} | {} | {} | {}:{} > {}:{} | {} | {} | {} | {}\n", msg.getMsgid(), msg.getService().getSvc(), isBody, bodySize, attachCnt, attSize, deptNm, userId, userName, sIp, sPort, dIp, dPort, data.getFileName(), url, agent, DateUtils.duration(data.getStart()));
+			log.info("[MSG_DONE] {} | {} | BODY:{} ({}) | AT_CNT:{} | EXIST_CNT:{} ({}) | {} | {} | {} | {}:{} > {}:{} | {} | {} | {}\n", msg.getMsgid(), msg.getService().getSvc(), isBody, bodySize, attachCnt, attachExistCnt, attSize, deptName, userId, userName, sIp, sPort, dIp, dPort, url, agent, DateUtils.duration(data.getStart()));
 		} catch (Exception e) {
 			log.warn("[DEBUG_LOG] {} | {}", msg.getMsgid(), e.getMessage());
 			log.error("", e);
@@ -41,7 +42,6 @@ public class LogService {
 
 	private String getUserAgent(final EmassDoc.Http http) {
 		if (http == null || http.getAgent() == null) return null;
-		if (http.getAgent().getClient() == null) return null;
-		return http.getAgent().getClient() + " (" + http.getAgent().getClientVersion() + ")";
+		return http.getAgent().getOs() + " " + http.getAgent().getClient();
 	}
 }

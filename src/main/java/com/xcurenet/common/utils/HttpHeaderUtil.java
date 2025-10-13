@@ -37,6 +37,7 @@ public class HttpHeaderUtil {
 			header = new HttpHeader();
 			header.setRequestHeader(request);
 			header.setResponseHeader(response);
+			header.setAgentString(request.getHeaders().get("user-agent"));
 			header.setClient(parse(request.getHeaders().get("user-agent")));
 
 			logHeader("Request", request.getMethod(), request.getUrl(), request.getProtocol(), request.getHeaders());
@@ -116,6 +117,7 @@ public class HttpHeaderUtil {
 	@Data
 	public static class HttpHeader {
 		private Client client;
+		private String agentString;
 		private HttpRequestHeader requestHeader;
 		private HttpResponseHeader responseHeader;
 

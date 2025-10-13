@@ -1,7 +1,10 @@
 package com.xcurenet.logvault.fs;
 
+import com.xcurenet.common.Constants;
 import com.xcurenet.common.utils.CommonUtil;
 import com.xcurenet.common.utils.DateUtils;
+import com.xcurenet.logvault.conf.Config;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +15,9 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 @Log4j2
 @Service("localFileSystem")
+@RequiredArgsConstructor
 public class LocalFileSystem implements FileSystemService {
+	protected final Config conf;
 
 	@Override
 	public void init() {
@@ -61,7 +66,11 @@ public class LocalFileSystem implements FileSystemService {
 		Files.createDirectories(dstFile.getParentFile().toPath());
 
 		try (FileInputStream fis = new FileInputStream(srcFile); FileOutputStream fos = new FileOutputStream(dstFile)) {
-			fis.transferTo(fos);
+			if (conf.isEncryptEnable()) {
+				CommonUtil.copy(fis, false, Constants.SHA256, conf.getEncyptCipher(), conf.getEncryptKey(), srcFile.length(), fos, null);
+			} else {
+				fis.transferTo(fos);
+			}
 			log.debug("[AT_WRITE] | {} {} | {} | {} | {}", fileName, src, dst, CommonUtil.convertFileSize(srcFile.length()), DateUtils.duration(startTime));
 		}
 	}
@@ -74,10 +83,14 @@ public class LocalFileSystem implements FileSystemService {
 	}
 
 	@Override
-	public void write(final String path, final InputStream is, final String fileName) throws IOException {
+	public void write(final String path, final InputStream is, final String fileName) throws Exception {
 		long startTime = System.currentTimeMillis();
 		try (FileOutputStream fos = new FileOutputStream(path)) {
-			is.transferTo(fos);
+			if (conf.isEncryptEnable()) {
+				CommonUtil.copy(is, false, Constants.SHA256, conf.getEncyptCipher(), conf.getEncryptKey(), is.available(), fos, null);
+			} else {
+				is.transferTo(fos);
+			}
 			log.debug("[AT_WRITE] {} | {} | {}", fileName, path, DateUtils.duration(startTime));
 		}
 	}

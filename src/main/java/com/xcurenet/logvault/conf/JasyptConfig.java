@@ -12,32 +12,44 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class JasyptConfig {
 
+	private static final String ENCRYPTKEY = "xcurenet1!";
+	private static final String ALGORITHM = "PBEWithMD5AndDES";
+
 	@Bean(name = "jasyptStringEncryptor")
 	public StringEncryptor stringEncryptor() {
-		String key = "xcure_ld1";
 		PooledPBEStringEncryptor encryptor = new PooledPBEStringEncryptor();
 		SimpleStringPBEConfig config = new SimpleStringPBEConfig();
-		config.setPassword(key); // 암호화할 때 사용하는 키
-		config.setAlgorithm("PBEWithMD5AndDES"); // 암호화 알고리즘
-		config.setKeyObtentionIterations("1000"); // 반복할 해싱 회수
-		config.setPoolSize("1"); // 인스턴스 pool
+		config.setPassword(ENCRYPTKEY);
+		config.setAlgorithm(ALGORITHM);
+		config.setKeyObtentionIterations("1000");
+		config.setPoolSize("1");
 		config.setProviderName("SunJCE");
-		config.setSaltGeneratorClassName("org.jasypt.salt.RandomSaltGenerator"); // salt 생성 클래스
-		config.setStringOutputType("base64"); // 인코딩 방식
+		config.setSaltGeneratorClassName("org.jasypt.salt.RandomSaltGenerator");
+		config.setStringOutputType("base64");
 		encryptor.setConfig(config);
 		return encryptor;
 	}
+
+	public static String decrypt(final String text) {
+		if (text != null && text.startsWith("ENC(") && text.endsWith(")")) {
+			String cipher = text.substring(4, text.length() - 1);
+			return new JasyptConfig().stringEncryptor().decrypt(cipher);
+		}
+		return text;
+	}
+
 
 	/**
 	 * jasypt encrypt
 	 */
 	public static void main(String[] args) {
-		String password = "";
-		StandardPBEStringEncryptor jasypt = new StandardPBEStringEncryptor();
-		jasypt.setPassword("xcurenet_emass");
-		jasypt.setAlgorithm("PBEWithMD5AndDES");
-		String encryptedText = jasypt.encrypt(password);
-		String decryptedText = jasypt.decrypt(encryptedText);
+		String password = "NewPassword1e3!";
+
+		JasyptConfig jasyptConfig = new JasyptConfig();
+		StringEncryptor stringEncryptor = jasyptConfig.stringEncryptor();
+
+		String encryptedText = stringEncryptor.encrypt(password);
+		String decryptedText = stringEncryptor.decrypt(encryptedText);
 
 		log.info("encryptedText > {}", encryptedText);
 		log.info("decryptedText > {}", decryptedText);

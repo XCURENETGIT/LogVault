@@ -6,12 +6,12 @@
 	<!-- 사용자 정보 -->
 	<select id="getUserInfo" resultType="UserInfo">
 		SELECT  A.USER_ID AS userId,
-				A.SABUN AS sabun,
-				A.USER_NM AS userNm,
+				A.USER_NM AS name,
 				A.DEPTCD AS deptCd,
 				B.DEPTNM AS deptNm,
 				A.JIKGUBCD AS jikgubCd,
-				C.JIKGUBNM AS jikgubNm
+				C.JIKGUBNM AS jikgubNm,
+				A.CEO AS ceo
 		FROM	UI_USERS A
 				LEFT JOIN UI_DEPT B ON (A.DEPTCD = B.DEPTCD)
 				LEFT JOIN UI_JIKGUB C  ON (A.JIKGUBCD = C.JIKGUBCD)
@@ -24,5 +24,20 @@
 		ORDER	BY USER_ID
 	</select>
 
+	<select id="getHoliDay" resultType="HoliDayInfo">
+		SELECT  USER_ID AS coCd, USER_IP AS busiCd, USER_IP AS date, USER_IP AS comments
+		FROM 	UI_USER_IP A
+		ORDER	BY USER_ID
+	</select>
 
+	<select id="getWorkDay" resultType="WorkDayInfo">
+		SELECT  USER_ID AS coCd, USER_IP AS busiCd, USER_IP AS wDay, USER_IP AS wHour
+		FROM 	UI_USER_IP A
+		ORDER	BY USER_ID
+	</select>
+
+	<select id="getKeyword" resultType="string">
+		SELECT KEYWORD_NAME
+		FROM   UI_KEYWORD
+	</select>
 </mapper>

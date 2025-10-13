@@ -1,10 +1,13 @@
 package com.xcurenet.logvault.opensearch;
 
+import lombok.Builder;
 import lombok.Data;
 import org.opensearch.common.geo.GeoPoint;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.elasticsearch.annotations.*;
 
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -51,10 +54,13 @@ public class EmassDoc {
 	@Field("attach_count")
 	private int attachCount;
 
+	@Field("attach_exist_count")
+	private int attachExistCount;
+
 	@Field("attach")
 	private List<Attach> attach;
 
-	@Field("privacy_total")
+	@Field("privacy_total") //탐지 개인정보 총 건수
 	private int privacyTotal;
 
 	@Field("privacy_info")
@@ -120,6 +126,8 @@ public class EmassDoc {
 	public static class Http {
 		@Field("url")
 		private String url;
+		@Field("header")
+		private Header header;
 		@Field("user_agent")
 		private Agent agent;
 	}
@@ -162,6 +170,10 @@ public class EmassDoc {
 		private String name;
 		@Field("has_name")
 		private boolean hasName;
+		@Field("expected_extension")
+		private String expectedExtension;
+		@Field("expected_unknown")
+		private boolean expectedUnknown;
 		@Field("hash")
 		private String hash;
 		@Field("exist")
@@ -172,20 +184,37 @@ public class EmassDoc {
 		private String base64;
 		@Field("text")
 		private String text;
+		@Transient
+		private String srcPath;
 	}
 
 	@Data
 	public static class PrivacyInfo {
-		@Field("id")
+		@Field("id") //SN:주민번호, CN:카드번호
 		private String id;
-		@Field("type")
+
+		@Field("type") //B:본문, A:첨부
 		private String type;
+
 		@Field("attach_name")
 		private String attachName;
-		@Field("keywords")
-		private List<String> keywords;
+
+		@Field("privacy_data") //탐지 키워드 정보
+		private List<PrivacyData> privacyData;
+
 		@Field("count")
 		private int count;
+	}
+
+	@Data
+	@Builder
+	public static class PrivacyData {
+		@Field("start")
+		private int start;
+		@Field("end")
+		private int end;
+		@Field("match")
+		private String match;
 	}
 
 	@Data
@@ -219,5 +248,35 @@ public class EmassDoc {
 		private String client;
 		@Field("client_version") //3.4
 		private String clientVersion;
+	}
+
+	@Data
+	@Builder
+	public static class Header {
+		@Field("request")
+		private RequestHeader request;
+		@Field("response")
+		private ResponseHeader response;
+
+		@Data
+		@Builder
+		public static class RequestHeader {
+			@Field("method")
+			private String method;
+			@Field("protocol")
+			private String protocol;
+			@Field("origin")
+			private String origin;
+		}
+
+		@Data
+		@Builder
+		public static class ResponseHeader {
+			@Field(name = "date", type = FieldType.Date)
+			private ZonedDateTime date;
+
+			@Field("content-type")
+			private String contentType;
+		}
 	}
 }

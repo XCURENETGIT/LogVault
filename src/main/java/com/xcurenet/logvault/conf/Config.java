@@ -2,6 +2,7 @@ package com.xcurenet.logvault.conf;
 
 import com.xcurenet.common.Constants;
 import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.crypto.Crypto;
 import lombok.Data;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,7 +51,7 @@ public class Config {
 	@Value("${file.system.type:local}")
 	private String fileSystemType;
 
-	@Value("${edc.attach.path:/data01/attach/}")
+	@Value("${attach.path:/data01/attach/}")
 	private String edcAttachPath;
 
 	@Value("${decoder.split.dir:100}")
@@ -74,13 +75,13 @@ public class Config {
 	@Value("${worker.size.wmail:1}")
 	private int workerSizeWmail;
 
-	@Value("${edc.body.language.detect.size:2000}")
+	@Value("${body.language.detect.size:2000}")
 	private int bodyLanguageDetectSize;
 
-	@Value("${edc.decompress.depth:2000}")
+	@Value("${decompress.depth:2000}")
 	private int decompressDepth;
 
-	@Value("${edc.extract.text.timeout:5}")
+	@Value("${extract.text.timeout:5}")
 	private int extractTextTimeout;
 
 	@Value("${ocr.target.ext:tiff,tif,png,gif,jpg,jpeg,bmp,pcx,dcx,jb2,jfif,jp2,jpc,j2k,pdf}")
@@ -97,17 +98,14 @@ public class Config {
 		return new HashSet<>(Arrays.asList(ignoreExtractorExt.split(",")));
 	}
 
-	@Value("${edc.temp.path:/tmp}")
+	@Value("${temp.path:/tmp}")
 	private String tempPath;
 
-	@Value("${edc.ramdisk.path:/dev/shm/edc}")
+	@Value("${ramdisk.path:/dev/shm/edc}")
 	private String ramdiskPath;
 
-	@Value("${edc.ramdisk.limit:104857600}")
+	@Value("${ramdisk.limit:104857600}")
 	private long ramdiskLimit;
-
-	@Value("${edc.autostop.delay:1}")
-	private int autoStopDelay;
 
 	@Value("${spring.minio.url:http://127.0.0.1:9000}")
 	private String minioUrl;
@@ -130,6 +128,42 @@ public class Config {
 	@Value("${spring.minio.readTimeout:10000}")
 	private int minioReadTimeout;
 
+	@Value("${spring.opensearch.index.name:emass-}")
+	private String indexName;
+
+	//	암호화 관련 설정
+	@Value("${encrypt.enable:true}")
+	private boolean encryptEnable;
+
+	@Value("${encrypt.cipher:ARIA_256_CBC}")
+	private String encryptCipher;
+
+	public Crypto.CIPHER getEncyptCipher() {
+		return Crypto.CIPHER.getCipher(encryptCipher);
+	}
+
+	@Value("${encrypt.key:}")
+	private String encryptKey;
+
+	public byte[] getEncryptKey() {
+		return CommonUtil.hexToBytes(encryptKey);
+	}
+
+	@Value("${encrypt.key.file:/etc/xcnkey}")
+	private String encryptKeyFile;
+
+	@Value("${file.analysis.url:http://127.0.0.1:14545/api/text/path}")
+	private String fileAnalysisUrl;
+
+	@Value("${privacy.analysis.url:http://127.0.0.1:14544/api/detectText.xcn}")
+	private String privacyAnalysisUrl;
+
+	@Value("${text.limit.length:10000000}")
+	private int textLimitLength;
+
+	@Value("${text.limit.token:100}")
+	private int textLimitToken;
+
 	public int getInterval() {
 		return fileWaitTime * 1000;
 	}
@@ -141,5 +175,9 @@ public class Config {
 
 	public String getDestPath(final DateTime ctime, final String msgId) {
 		return CommonUtil.makeFilepath(getEdcAttachPath(), ctime.toString(Constants.YYYYMMDD), ctime.toString(Constants.HHMM_PATH), msgId);
+	}
+
+	public String getDestPath(final DateTime ctime, final String msgId, final String name) {
+		return CommonUtil.makeFilepath(getDestPath(ctime, msgId), name);
 	}
 }

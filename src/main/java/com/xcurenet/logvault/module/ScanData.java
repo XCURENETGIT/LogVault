@@ -20,7 +20,6 @@ public class ScanData {
 	public static final String ASCII = "ISO-8859-1";
 
 	private Long start;
-	private List<ScanData> removeOnSuccess = new ArrayList<>();
 	private String filePath;
 	private String fileName;
 	private long lastModified;

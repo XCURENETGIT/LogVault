@@ -23,16 +23,20 @@ public class ClearService {
 		long startTime = System.currentTimeMillis();
 		MSGData msg = data.getMsgData();
 		remove(data.getFilePath(), msg);
+		if (msg != null) {
+			if (msg.getMsgFilePath() != null) remove(msg.getMsgFilePath(), msg);
+			if (msg.getHeaderPath() != null) remove(msg.getHeaderPath(), msg);
 
-		if (msg == null) return;
-		if (msg.getMsgFilePath() != null) remove(msg.getMsgFilePath(), msg);
-		if (msg.getHeaderPath() != null) remove(msg.getHeaderPath(), msg);
-
-		List<String> appFilePaths = msg.getAppFilePath();
-		for (String path : appFilePaths) {
-			remove(path, msg);
+			List<String> appFilePaths = msg.getAppFilePath();
+			for (String path : appFilePaths) {
+				remove(path, msg);
+			}
+			List<String> pcFilePaths = msg.getPcFilePath();
+			for (String path : pcFilePaths) {
+				remove(path, msg);
+			}
+			log.info("[DEL_FILE] {} | {}", msg.getMsgid(), DateUtils.duration(startTime));
 		}
-		log.info("[DEL_FILE] {} | {}", msg.getMsgid(), DateUtils.duration(startTime));
 	}
 
 	private void remove(final String path, final MSGData msg) {

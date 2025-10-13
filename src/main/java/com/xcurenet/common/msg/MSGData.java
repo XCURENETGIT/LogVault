@@ -77,6 +77,8 @@ public class MSGData {
 	@FieldKey({"PCFILE", "ORG_FNAME"})
 	private List<String> pcFile = new ArrayList<>();
 
+	private List<String> pcFilePath = new ArrayList<>();
+
 	@FieldKey({"APPFILE", "SERVER_FNAME"})
 	private List<String> appFile = new ArrayList<>();
 

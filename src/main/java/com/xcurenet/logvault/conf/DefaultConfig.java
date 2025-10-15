@@ -21,7 +21,7 @@ public class DefaultConfig {
 		config.put("worker.size.wmail", 1); //운영중 설정 변경 불가 (재시작필요)
 		config.put("file.wait.time.sec", 1800); //운영중 설정 변경 불가 (재시작필요)
 
-		config.put("encrypt.enable", true); //운영중 설정 변경 불가 (재시작필요)
+		config.put("encrypt.enable", false); //운영중 설정 변경 불가 (재시작필요)
 		config.put("encrypt.cipher", "ARIA_256_CBC"); //운영중 설정 변경 불가 (재시작필요)
 		config.put("encrypt.key.file", "/etc/xcnkey"); //운영중 설정 변경 불가 (재시작필요)
 

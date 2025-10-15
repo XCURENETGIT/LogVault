@@ -20,4 +20,25 @@ public class InfoLoaderController {
 		infoLoader.init();
 		return ResponseEntity.ok().build();
 	}
+
+	@ResponseBody
+	@GetMapping(value = "/insa/user/reload")
+	public ResponseEntity<Object> userReload() {
+		infoLoader.userLoad();
+		return ResponseEntity.ok().build();
+	}
+
+	@ResponseBody
+	@GetMapping(value = "/insa/keyword/reload")
+	public ResponseEntity<Object> keywordReload() {
+		infoLoader.keywordLoad();
+		return ResponseEntity.ok().build();
+	}
+
+	@ResponseBody
+	@GetMapping(value = "/insa/pattern/reload")
+	public ResponseEntity<Object> patternReload() {
+		infoLoader.patternLoad();
+		return ResponseEntity.ok().build();
+	}
 }

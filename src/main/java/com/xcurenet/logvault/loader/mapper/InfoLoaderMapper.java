@@ -1,9 +1,7 @@
 package com.xcurenet.logvault.loader.mapper;
 
-import com.xcurenet.logvault.loader.type.HoliDayInfo;
-import com.xcurenet.logvault.loader.type.IPInfo;
-import com.xcurenet.logvault.loader.type.UserInfo;
-import com.xcurenet.logvault.loader.type.WorkDayInfo;
+import com.xcurenet.logvault.loader.KeywordLoader;
+import com.xcurenet.logvault.loader.type.*;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -18,5 +16,7 @@ public interface InfoLoaderMapper {
 
 	List<WorkDayInfo> getWorkDay();
 
-	List<String> getKeyword();
+	List<KeywordVO> getKeyword();
+
+	List<PatternInfo> getPatternInfo();
 }

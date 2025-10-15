@@ -5,39 +5,52 @@
 
 	<!-- 사용자 정보 -->
 	<select id="getUserInfo" resultType="UserInfo">
-		SELECT  A.USER_ID AS userId,
+		SELECT	A.USER_CD AS userId,
 				A.USER_NM AS name,
-				A.DEPTCD AS deptCd,
-				B.DEPTNM AS deptNm,
-				A.JIKGUBCD AS jikgubCd,
-				C.JIKGUBNM AS jikgubNm,
-				A.CEO AS ceo
+				A.GROUP_CD AS deptCd,
+				B.GROUP_NM AS deptNm,
+				A.JIKGUB_CD AS jikgubCd,
+				C.JIKGUB_NM AS jikgubNm,
+				A.IP AS ip,
+				A.IS_CEO AS ceo
 		FROM	UI_USERS A
-				LEFT JOIN UI_DEPT B ON (A.DEPTCD = B.DEPTCD)
-				LEFT JOIN UI_JIKGUB C  ON (A.JIKGUBCD = C.JIKGUBCD)
-		ORDER	BY A.USER_ID
+				LEFT JOIN UI_GROUPS B ON (A.GROUP_CD  = B.GROUP_CD)
+				LEFT JOIN UI_JIKGUB C  ON (A.JIKGUB_CD = C.JIKGUB_CD)
+		ORDER	BY A.USER_CD
 	</select>
 
 	<select id="getUserIp" resultType="IPInfo">
-		SELECT  USER_ID AS userId, USER_IP AS ip
+		SELECT	USER_ID AS userId, USER_IP AS ip
 		FROM 	UI_USER_IP A
 		ORDER	BY USER_ID
 	</select>
 
 	<select id="getHoliDay" resultType="HoliDayInfo">
-		SELECT  USER_ID AS coCd, USER_IP AS busiCd, USER_IP AS date, USER_IP AS comments
+		SELECT	USER_ID AS coCd, USER_IP AS busiCd, USER_IP AS date, USER_IP AS comments
 		FROM 	UI_USER_IP A
 		ORDER	BY USER_ID
 	</select>
 
 	<select id="getWorkDay" resultType="WorkDayInfo">
-		SELECT  USER_ID AS coCd, USER_IP AS busiCd, USER_IP AS wDay, USER_IP AS wHour
+		SELECT	USER_ID AS coCd, USER_IP AS busiCd, USER_IP AS wDay, USER_IP AS wHour
 		FROM 	UI_USER_IP A
 		ORDER	BY USER_ID
 	</select>
 
-	<select id="getKeyword" resultType="string">
-		SELECT KEYWORD_NAME
-		FROM   UI_KEYWORD
+	<select id="getKeyword" resultType="KeywordVO">
+		SELECT	MAX(KEYWORD_NM) AS keywordNm, MIN(MIN_CNT) AS minCnt
+		FROM	UI_KEYWORD
+		WHERE	ENABLE = 'Y'
+		GROUP	BY KEYWORD_NM
+	</select>
+
+	<select id="getPatternInfo" resultType="PatternInfo">
+		SELECT	PATTERN_CD AS patternCd,
+				PATTERN_NM AS patternNm,
+				PATTERN_TYPE AS patternType,
+				REGEX AS regex,
+				MIN_CNT AS minCount
+		FROM	AEGISAI.UI_PATTERN
+		WHERE	ENABLE = 'Y'
 	</select>
 </mapper>

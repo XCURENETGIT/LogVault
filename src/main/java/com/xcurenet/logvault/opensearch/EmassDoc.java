@@ -222,13 +222,23 @@ public class EmassDoc {
 		@Field("exist")
 		private boolean exist;
 		@Field("keywords")
-		private List<String> keywords;
+		private List<Keyword> keywords;
 		@Field("attach")
-		private List<String> attach;
+		private List<Keyword> attach;
 		@Field("attach_name")
-		private List<String> attachName;
+		private List<Keyword> attachName;
 		@Field("body")
-		private List<String> body;
+		private List<Keyword> body;
+
+		@Data
+		@Builder
+		public static class Keyword {
+			@Field("name")
+			private String name;
+
+			@Field("count")
+			private int count;
+		}
 	}
 
 	@Data

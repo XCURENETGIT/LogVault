@@ -194,7 +194,7 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 			String dest = conf.getDestPath(msg.getCtime(), msg.getMsgid(), file.getName());
 			fileSystem.write(msg.getMsgFilePath(), dest, file.getName());
 
-			log.info("[BDY_SEND] {} | {} ({}) | {} | {}", msg.getMsgid(), msg.getMsgFilePath(), CommonUtil.convertFileSize(file.length()), dest, DateUtils.duration(startTime));
+			log.info("[BDY_SEND] {} | {} ({}) | {}", msg.getMsgid(), dest, CommonUtil.convertFileSize(file.length()), DateUtils.duration(startTime));
 		} catch (Exception e) {
 			throw new FileSendException(e);
 		}

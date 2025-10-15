@@ -15,6 +15,7 @@ import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 
@@ -116,6 +117,8 @@ public class MSGWorker extends AbstractLogVaultWorker {
 		if (!file.exists()) return;
 		String text = CommonUtil.limitLength(FileUtil.getText(msg.getMsgFilePath()), conf.getTextLimitLength());
 		text = CommonUtil.limitTokenLengthWithSpace(text, conf.getTextLimitToken());
+		text = CommonUtil.unescapeJava(text);
+		log.debug("[BDY_TEXT] {}", text);
 
 		body.setSize(file.length());
 		body.setText(text);

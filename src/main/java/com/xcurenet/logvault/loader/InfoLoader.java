@@ -13,39 +13,39 @@ import org.springframework.stereotype.Service;
 public class InfoLoader {
 
 	private final UserLoader userLoader;
-	private final HoliDayLoader holiDayLoader;
-	private final WorkDayLoader workDayLoader;
 	private final KeywordLoader keywordLoader;
+	private final PatternLoader patternLoader;
 
 	@PostConstruct
 	public void init() {
-		load();
-	}
-
-	private void load() {
 		long startTime = System.currentTimeMillis();
 		log.info("[INFO_LOAD] START");
 
+		userLoad();
+		keywordLoad();
+		patternLoad();
+
+		log.info("[INFO_LOAD] END | {}\n", DateUtils.duration(startTime));
+	}
+
+	public void userLoad() {
 		log.debug("[INFO_LOAD] UserInfo START");
 		synchronized (this) {
 			userLoader.load();
 		}
+	}
 
-		log.debug("[INFO_LOAD] HoliDay START");
-		synchronized (this) {
-			holiDayLoader.load();
-		}
-
-		log.debug("[INFO_LOAD] WorkDay START");
-		synchronized (this) {
-			workDayLoader.load();
-		}
-
+	public void keywordLoad() {
 		log.debug("[INFO_LOAD] Keyword START");
 		synchronized (this) {
 			keywordLoader.load();
 		}
+	}
 
-		log.info("[INFO_LOAD] END | {}\n", DateUtils.duration(startTime));
+	public void patternLoad() {
+		log.debug("[INFO_LOAD] Pattern START");
+		synchronized (this) {
+			patternLoader.load();
+		}
 	}
 }

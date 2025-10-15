@@ -24,7 +24,6 @@ public class UserLoader {
 
 	public void load() {
 		loadUser();
-		loadIp();
 	}
 
 	public void loadUser() {
@@ -33,25 +32,18 @@ public class UserLoader {
 		data.clear();
 		for (UserInfo user : users) {
 			data.putUserID(user.getUserId(), user);
-		}
-	}
-
-	public void loadIp() {
-		List<IPInfo> ips = mapper.getUserIp();
-		log.info("[INFO_LOAD] User IP Size: {}", ips.size());
-
-		for (IPInfo ipInfo : ips) {
-			String userId = CommonUtil.nvl(ipInfo.getUserId()).toLowerCase();
-			final String ipStr = CommonUtil.nvl(ipInfo.getIp());
-			final UserInfo user = data.getUserByID(userId);
-			if (user == null || CommonUtil.isEmpty(ipStr)) continue; //사용자가 없는 IP 혹은 IP 정보가 없으면 무시
-
-			try {
-				IP ip = new IP(ipStr);
-				user.addIp(ip);
-				data.putIp(ip, user);
-			} catch (IOException e) {
-				log.warn("ip error: user:{}, input:{} message:{}", user.getName(), ipStr, e.getMessage());
+			log.debug("[INFO_LOAD] User Info: {}", user);
+			String[] ips = CommonUtil.toArray(user.getIp(), ",");
+			for (String ipStr : ips) {
+				if (ipStr == null || CommonUtil.isEmpty(ipStr)) continue; //사용자가 없는 IP 혹은 IP 정보가 없으면 무시
+				try {
+					IP ip = new IP(ipStr.trim());
+					user.addIp(ip);
+					data.putIp(ip, user);
+					log.debug("[INFO_LOAD] IP: {}", ip);
+				} catch (IOException e) {
+					log.warn("ip error: user:{}, input:{} message:{}", user.getName(), ipStr, e.getMessage());
+				}
 			}
 		}
 	}

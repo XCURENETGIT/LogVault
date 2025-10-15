@@ -327,16 +327,48 @@
 							"type": "boolean"
 						},
 						"keywords": {
-							"type": "keyword"
+							"type": "nested",
+							"properties": {
+								"name": {
+									"type": "keyword"
+								},
+								"count": {
+									"type": "integer"
+								}
+							}
 						},
 						"attach": {
-							"type": "keyword"
+							"type": "nested",
+							"properties": {
+								"name": {
+									"type": "keyword"
+								},
+								"count": {
+									"type": "integer"
+								}
+							}
 						},
 						"attach_name": {
-							"type": "keyword"
+							"type": "nested",
+							"properties": {
+								"name": {
+									"type": "keyword"
+								},
+								"count": {
+									"type": "integer"
+								}
+							}
 						},
 						"body": {
-							"type": "keyword"
+							"type": "nested",
+							"properties": {
+								"name": {
+									"type": "keyword"
+								},
+								"count": {
+									"type": "integer"
+								}
+							}
 						}
 					}
 				}

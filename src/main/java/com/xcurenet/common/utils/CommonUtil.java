@@ -1,5 +1,7 @@
 package com.xcurenet.common.utils;
 
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
 import com.google.common.base.Preconditions;
 import com.xcurenet.common.Constants;
 import com.xcurenet.common.io.LimitedBufferedReader;
@@ -893,6 +895,14 @@ public final class CommonUtil {
 		return defaultNum;
 	}
 
+	public static boolean isArrEmpty(JSONArray a) {
+		return a == null || a.isEmpty();
+	}
+
+	public static boolean isObjEmpty(JSONObject o) {
+		return o == null || o.isEmpty();
+	}
+
 	public static String makeMsgId(final DateTime ctime, final String filePath) {
 		return String.format("%s.%s", ctime.toString(Constants.YYYYMMDDHHMMSS), CommonUtil.toBase32(CommonUtil.sha1(filePath)));
 	}
@@ -1168,5 +1178,10 @@ public final class CommonUtil {
 			return input;
 		}
 		return input.substring(0, maxLength);
+	}
+
+	public static String unescapeJava(final String text) {
+		if (text == null || text.isEmpty()) return text;
+		return text.replace("\\r\\n", "\r\n").replace("\\\\r\\\\n", "\r\n").replace("\\\\n", "\n").replace("\\n", "\n");
 	}
 }

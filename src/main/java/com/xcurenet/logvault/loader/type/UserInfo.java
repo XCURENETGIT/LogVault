@@ -35,6 +35,8 @@ public class UserInfo implements Serializable {
 
 	private String ceo;
 
+	private String ip;
+
 	private final List<String> emails = new ArrayList<>();
 
 	private final List<IP> ips = new ArrayList<>();

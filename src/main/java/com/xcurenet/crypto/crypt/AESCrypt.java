@@ -1,8 +1,11 @@
 package com.xcurenet.crypto.crypt;
 
+import lombok.Getter;
+
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Objects;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -13,25 +16,23 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 public class AESCrypt implements CryptCodec {
+	@Getter
 	public enum BlockCipherMode {
 		CBC("AES/CBC/NoPadding"), ECB("AES/ECB/NoPadding");
 
-		private String transformation;
+		private final String transformation;
 
 		BlockCipherMode(final String transformation) {
 			this.transformation = transformation;
 		}
 
-		public String getTransformation() {
-			return this.transformation;
-		}
 	}
 
 	private static final int AES_BLOCK_SIZE = 16;
 	private static final IvParameterSpec IVSPEC = new IvParameterSpec(new byte[AES_BLOCK_SIZE]);
 	private final Cipher cipher;
 	private final int keySize;
-	private BlockCipherMode bcm;
+	private final BlockCipherMode bcm;
 
 	public AESCrypt(final BlockCipherMode bcm, final int keySize) throws NoSuchAlgorithmException, NoSuchPaddingException {
 		this.bcm = bcm;
@@ -51,18 +52,18 @@ public class AESCrypt implements CryptCodec {
 	}
 
 	@Override
-	public byte[] update(final byte[] input, final int inputOffset, final int inputLen) throws InvalidKeyException {
+	public byte[] update(final byte[] input, final int inputOffset, final int inputLen) {
 		if (inputLen < AES_BLOCK_SIZE) {
-			return cipher.update(Padding.add(input, inputOffset, inputLen));
+			return cipher.update(Objects.requireNonNull(Padding.add(input, inputOffset, inputLen)));
 		} else {
 			return cipher.update(input, inputOffset, inputLen);
 		}
 	}
 
 	@Override
-	public int update(final byte[] input, final int inputOffset, final int inputLen, final byte[] output, final int outputOffset) throws InvalidKeyException, ShortBufferException {
+	public int update(final byte[] input, final int inputOffset, final int inputLen, final byte[] output, final int outputOffset) throws ShortBufferException {
 		if (inputLen < AES_BLOCK_SIZE) {
-			return cipher.update(Padding.add(input, inputOffset, inputLen), 0, AES_BLOCK_SIZE, output, outputOffset);
+			return cipher.update(Objects.requireNonNull(Padding.add(input, inputOffset, inputLen)), 0, AES_BLOCK_SIZE, output, outputOffset);
 		} else {
 			return cipher.update(input, inputOffset, inputLen, output, outputOffset);
 		}

@@ -21,7 +21,7 @@ public class Padding {
 	
 	public static byte[] removePadding(final byte[] b) {
 		final byte padLength = b[b.length - 1];
-		final int length = Crypto.BLOCK_SIZE - (byte) padLength & 0xFF;
+		final int length = Crypto.BLOCK_SIZE - padLength & 0xFF;
 		if (length < 1) {
 			return b;
 		}

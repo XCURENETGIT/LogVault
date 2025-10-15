@@ -2,12 +2,14 @@ package com.xcurenet.common.io;
 
 import com.xcurenet.common.utils.CommonUtil;
 import com.xcurenet.crypto.GrowBufferdOutputStream;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.io.OutputStream;
 
 public class PreRenderPeaksOutputStream extends GrowBufferdOutputStream {
 	private final int width;
+	@Getter
 	private PcmHeader header = null;
 
 	private Peak[] peaks;
@@ -125,11 +127,7 @@ public class PreRenderPeaksOutputStream extends GrowBufferdOutputStream {
 		}
 	}
 
-	public PcmHeader getHeader() {
-		return header;
-	}
-
-	private class PcmHeader {
+	private static class PcmHeader {
 		public static final int HEADER_SIZE = 44;
 
 		public final int channels;
@@ -150,18 +148,16 @@ public class PreRenderPeaksOutputStream extends GrowBufferdOutputStream {
 
 		@Override
 		public String toString() {
-			final StringBuilder sb = new StringBuilder();
-			sb.append("channels:").append(channels).append("\n");
-			sb.append("sampleRate:").append(sampleRate).append("\n");
-			sb.append("byteRate:").append(byteRate).append("\n");
-			sb.append("blockAlign:").append(blockAlign).append("\n");
-			sb.append("bitPerSample:").append(bitPerSample).append("\n");
-			sb.append("chunkSize:").append(chunkSize);
-			return sb.toString();
+			return "channels:" + channels + "\n" +
+					"sampleRate:" + sampleRate + "\n" +
+					"byteRate:" + byteRate + "\n" +
+					"blockAlign:" + blockAlign + "\n" +
+					"bitPerSample:" + bitPerSample + "\n" +
+					"chunkSize:" + chunkSize;
 		}
 	}
 
-	private class Peak {
+	private static class Peak {
 		public double max;
 		public double min;
 

@@ -105,11 +105,7 @@ public class FastWildcardMatch {
 			return true;
 		}
 
-		if (wildcardMatch(reverseText, wildGlobsReverse)) {
-			return true;
-		}
-
-		return false;
+		return wildcardMatch(reverseText, wildGlobsReverse);
 	}
 
 	private boolean wildcardMatch(final String text, final NavigableMap<String, List<String[]>> map) {

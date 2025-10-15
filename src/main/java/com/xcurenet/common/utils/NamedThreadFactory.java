@@ -1,5 +1,7 @@
 package com.xcurenet.common.utils;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -12,7 +14,7 @@ public class NamedThreadFactory implements ThreadFactory {
 	}
 
 	@Override
-	public Thread newThread(Runnable r) {
+	public Thread newThread(@NotNull Runnable r) {
 		Thread t = new Thread(r);
 		t.setName(namePrefix + "-" + threadNumber.getAndIncrement());
 		return t;

@@ -3,7 +3,6 @@ package com.xcurenet.logvault.module.analysis;
 import com.alibaba.fastjson2.JSONObject;
 import com.xcurenet.common.utils.CommonUtil;
 import com.xcurenet.common.utils.DateUtils;
-import com.xcurenet.common.utils.FileUtil;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;

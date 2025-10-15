@@ -103,7 +103,7 @@ public class FastWildcardMatchValue<T> {
 			list.add(buffer.toString());
 		}
 
-		return list.toArray(new String[list.size()]);
+		return list.toArray(new String[0]);
 	}
 
 	public void reset() {
@@ -115,7 +115,7 @@ public class FastWildcardMatchValue<T> {
 	}
 
 	public interface MatchInterface<T> {
-		public boolean match(T value);
+		boolean match(T value);
 	}
 
 	private class DefaultMatch implements MatchInterface<T> {

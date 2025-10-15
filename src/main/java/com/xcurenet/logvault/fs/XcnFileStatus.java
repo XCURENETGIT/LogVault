@@ -5,23 +5,19 @@ import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.net.URI;
 
 public class XcnFileStatus implements Serializable {
+	@Serial
 	private static final long serialVersionUID = 3615438876286670223L;
 
 	public final URI path_uri;
 	public long length;
 	public boolean isdir;
-	public short block_replication;
-	public long blocksize;
 	public long modification_time;
-	public long access_time;
 	public short permission_short;
-	public String owner;
-	public String group;
-	public URI symlink_uri;
 
 	public XcnFileStatus(final File file) throws IOException {
 		this.length = file.length();

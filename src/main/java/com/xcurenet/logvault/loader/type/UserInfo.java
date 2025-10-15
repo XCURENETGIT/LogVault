@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.type.Alias;
-import org.springframework.data.elasticsearch.annotations.Field;
 
 import java.io.Serial;
 import java.io.Serializable;

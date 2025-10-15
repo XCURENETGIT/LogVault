@@ -9,10 +9,13 @@ import java.security.InvalidKeyException;
 import javax.crypto.ShortBufferException;
 
 import com.xcurenet.crypto.crypt.CryptCodec.CryptMode;
+import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 
 public class CryptoInputStream extends FilterInputStream {
 	private final Crypto crypto;
-	private boolean encryptedFile = true;
+	@Getter
+	private boolean encryptedFile;
 
 	private final byte[] input = new byte[Crypto.BUFFER_SIZE];
 	private final byte[] output = new byte[Crypto.BUFFER_SIZE];
@@ -26,7 +29,6 @@ public class CryptoInputStream extends FilterInputStream {
 	protected int offset;
 
 	protected long blockCount;
-	private boolean lastBlock;
 	private int nread;
 	private int version;
 
@@ -73,7 +75,7 @@ public class CryptoInputStream extends FilterInputStream {
 	private int getTryRead() {
 		if (version == 1) {
 			// 버전1에서는 컨텐츠 길이에서 패딩 사이즈를 계산한다.
-			lastBlock = (++blockCount == numBlocks);
+			boolean lastBlock = (++blockCount == numBlocks);
 			if (lastBlock && padSize > 0) {
 				return (int) ((contentLength % Crypto.BUFFER_SIZE) + padSize);
 			}
@@ -84,13 +86,13 @@ public class CryptoInputStream extends FilterInputStream {
 	private void checkEOF(final int nTryRead) throws IOException {
 		if (nread < nTryRead) {
 			nread -= trailerSize;
-			nread -= CryptoTrailer.read(input, nread).padSize;
+			nread -= CryptoTrailer.read(input, nread).padSize();
 		} else {
 			final int remain = available();
 			if (remain <= trailerSize) {
 				final int len = trailerSize - remain;
 				nread -= len;
-				nread -= CryptoTrailer.read(input, nread, len, in).padSize;
+				nread -= CryptoTrailer.read(input, nread, len, in).padSize();
 			}
 		}
 	}
@@ -123,7 +125,7 @@ public class CryptoInputStream extends FilterInputStream {
 	}
 
 	@Override
-	public int read(final byte[] b, final int off, final int len) throws IOException {
+	public int read(@NotNull final byte[] b, final int off, final int len) throws IOException {
 		if (!encryptedFile && offset >= initReadSize) {
 			return super.read(b, off, len);
 		}
@@ -143,7 +145,4 @@ public class CryptoInputStream extends FilterInputStream {
 		return encryptedFile ? contentLength : -1;
 	}
 
-	public boolean isEncryptedFile() {
-		return encryptedFile;
-	}
 }

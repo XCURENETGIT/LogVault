@@ -1,5 +1,7 @@
 package com.xcurenet.common.io;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -12,7 +14,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AsyncOutputStream extends FilterOutputStream {
 	private static final int DEFAULT_CAPACITY = 1024;
-	private final Thread thread;
 	private final BlockingQueue<byte[]> queue;
 	private final AtomicBoolean close = new AtomicBoolean(false);
 	private final CountDownLatch latch = new CountDownLatch(1);
@@ -24,11 +25,11 @@ public class AsyncOutputStream extends FilterOutputStream {
 	public AsyncOutputStream(final OutputStream out, final int capacity) {
 		super(out);
 		this.queue = new ArrayBlockingQueue<byte[]>(capacity);
-		this.thread = new Thread(new Runnable() {
+		Thread thread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				try {
-					while (close.get() == false || queue.size() > 0) {
+					while (!close.get() || !queue.isEmpty()) {
 						final byte[] b = queue.poll(1, TimeUnit.MILLISECONDS);
 						if (b == null) {
 							continue;
@@ -42,7 +43,7 @@ public class AsyncOutputStream extends FilterOutputStream {
 				}
 			}
 		});
-		this.thread.start();
+		thread.start();
 	}
 
 	@Override
@@ -55,7 +56,7 @@ public class AsyncOutputStream extends FilterOutputStream {
 	}
 
 	@Override
-	public synchronized void write(final byte[] buf, final int offset, final int length) throws IOException {
+	public synchronized void write(@NotNull final byte[] buf, final int offset, final int length) throws IOException {
 		try {
 			queue.put(Arrays.copyOfRange(buf, offset, offset + length));
 		} catch (final InterruptedException e) {

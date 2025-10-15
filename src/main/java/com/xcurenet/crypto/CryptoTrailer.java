@@ -5,17 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-public class CryptoTrailer {
+public record CryptoTrailer(byte[] digest, byte padSize) {
 	public static final int DIGEST_SIZE = 32;
 	public static final int TRAILER_SIZE = DIGEST_SIZE + 1;
-
-	public final byte[] digest;
-	public final byte padSize;
-
-	public CryptoTrailer(final byte[] digest, final byte padSize) {
-		this.digest = digest;
-		this.padSize = padSize;
-	}
 
 	public CryptoTrailer(final byte[] digest, final long contentLength) {
 		this(digest, getPadSize(contentLength));

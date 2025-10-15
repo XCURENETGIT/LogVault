@@ -45,8 +45,6 @@ public class Crypto {
 	private byte encryptType;
 	private byte compressType;
 	private CryptCodec encryptCodec;
-	private CompressCodec compressCodec;
-	private byte[] lastDigest;
 
 	public static final int ARIA = 0x10;
 	public static final int AES = 0x20;
@@ -74,7 +72,7 @@ public class Crypto {
 
 		UNKNOWN(0);
 
-		private int encryptType;
+		private final int encryptType;
 
 		CIPHER(final int encryptType) {
 			this.encryptType = encryptType;
@@ -130,30 +128,19 @@ public class Crypto {
 	}
 
 	private CryptCodec getCryptCodec(final int encryptType) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
-		switch (encryptType) {
-			case ARIA_128_CBC:
-				return new ARIACrypt(128);
-			case ARIA_192_CBC:
-				return new ARIACrypt(192);
-			case ARIA_256_CBC:
-				return new ARIACrypt(256);
-			case AES_128_CBC:
-				return new AESCrypt(BlockCipherMode.CBC, 128);
-			case AES_192_CBC:
-				return new AESCrypt(BlockCipherMode.CBC, 192);
-			case AES_256_CBC:
-				return new AESCrypt(BlockCipherMode.CBC, 256);
-			case AES_128_ECB:
-				return new AESCrypt(BlockCipherMode.ECB, 128);
-			case AES_192_ECB:
-				return new AESCrypt(BlockCipherMode.ECB, 192);
-			case AES_256_ECB:
-				return new AESCrypt(BlockCipherMode.ECB, 256);
-			case UNKNOWN_DECRYPT_ONLY:
-				return null;
-			default:
-				throw new NoSuchAlgorithmException("Not support algorithm");
-		}
+		return switch (encryptType) {
+			case ARIA_128_CBC -> new ARIACrypt(128);
+			case ARIA_192_CBC -> new ARIACrypt(192);
+			case ARIA_256_CBC -> new ARIACrypt(256);
+			case AES_128_CBC -> new AESCrypt(BlockCipherMode.CBC, 128);
+			case AES_192_CBC -> new AESCrypt(BlockCipherMode.CBC, 192);
+			case AES_256_CBC -> new AESCrypt(BlockCipherMode.CBC, 256);
+			case AES_128_ECB -> new AESCrypt(BlockCipherMode.ECB, 128);
+			case AES_192_ECB -> new AESCrypt(BlockCipherMode.ECB, 192);
+			case AES_256_ECB -> new AESCrypt(BlockCipherMode.ECB, 256);
+			case UNKNOWN_DECRYPT_ONLY -> null;
+			default -> throw new NoSuchAlgorithmException("Not support algorithm");
+		};
 	}
 
 	public void setCompressCodec(final byte compressType) throws NoSuchAlgorithmException {
@@ -162,18 +149,15 @@ public class Crypto {
 
 	public void setCompressCodec(final int compressType) throws NoSuchAlgorithmException {
 		this.compressType = (byte) compressType;
-		this.compressCodec = getCompressCodec(compressType);
+		CompressCodec compressCodec = getCompressCodec(compressType);
 	}
 
 	private CompressCodec getCompressCodec(final int compressType) throws NoSuchAlgorithmException {
-		switch (compressType) {
-			case COMPRESS_NONE:
-				return null;
-			case COMPRESS_LZ4:
-				return new LZ4Compress();
-			default:
-				throw new NoSuchAlgorithmException("Not support algorithm");
-		}
+		return switch (compressType) {
+			case COMPRESS_NONE -> null;
+			case COMPRESS_LZ4 -> new LZ4Compress();
+			default -> throw new NoSuchAlgorithmException("Not support algorithm");
+		};
 	}
 
 	public void init(final CryptMode mode) throws InvalidKeyException, InvalidAlgorithmParameterException {
@@ -187,7 +171,7 @@ public class Crypto {
 		return out.toByteArray();
 	}
 
-	public byte[] encrypt(final InputStream in, final OutputStream out, final long len) throws IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, ShortBufferException, NoSuchAlgorithmException {
+	public void encrypt(final InputStream in, final OutputStream out, final long len) throws IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, ShortBufferException, NoSuchAlgorithmException {
 		if (encryptCodec == null) {
 			throw new NoSuchAlgorithmException("Algorithm not defined");
 		}
@@ -212,7 +196,6 @@ public class Crypto {
 
 		final byte[] dgst = digest.digest();
 		out.write(new CryptoTrailer(dgst, writeLength).toBytes());
-		return dgst;
 	}
 
 	public byte[] decrypt(final byte[] src, final int offset, final int length) throws Exception {
@@ -272,7 +255,7 @@ public class Crypto {
 
 		final byte[] hash = new byte[32];
 		input.read(hash);
-		lastDigest = digest.digest();
+		byte[] lastDigest = digest.digest();
 		return Arrays.equals(hash, lastDigest);
 	}
 
@@ -285,13 +268,13 @@ public class Crypto {
 		for (int i = 0; i < numBlock; i++) {
 			final int pos = i * BLOCK_SIZE;
 			final int offset = inputOffset + pos;
-			final int len = inputLen - offset < BLOCK_SIZE ? inputLen - offset : BLOCK_SIZE;
+			final int len = Math.min(inputLen - offset, BLOCK_SIZE);
 			encryptCodec.update(input, offset, len, output, outputOffset + pos);
 		}
 		return numBlock * BLOCK_SIZE;
 	}
 
-	public byte[] doFinal() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+	public byte[] doFinal() throws IllegalBlockSizeException, BadPaddingException {
 		return encryptCodec.doFinal();
 	}
 
@@ -354,7 +337,7 @@ public class Crypto {
 		in = new CryptoInputStream(new Crypto(key), in);
 		final MessageDigest digest = MessageDigest.getInstance(DIGEST_ALG);
 		final byte[] buf = new byte[BUFFER_SIZE];
-		int nread = 0;
+		int nread;
 		while ((nread = in.read(buf)) != -1) {
 			digest.update(buf, 0, nread);
 		}

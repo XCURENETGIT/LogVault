@@ -153,7 +153,7 @@ public class ARIAEngine {
 		}
 		this.decRoundKeys = null;
 		this.encRoundKeys = null;
-		this.masterKey = (byte[]) masterKey.clone();
+		this.masterKey = masterKey.clone();
 	}
 
 	void setupEncRoundKeys() throws InvalidKeyException {
@@ -181,7 +181,7 @@ public class ARIAEngine {
 				setupEncRoundKeys();
 			}
 		}
-		this.decRoundKeys = (int[]) encRoundKeys.clone();
+		this.decRoundKeys = encRoundKeys.clone();
 		doDecKeySetup(this.masterKey, this.decRoundKeys, this.keySize);
 	}
 
@@ -190,7 +190,7 @@ public class ARIAEngine {
 	}
 
 	private static void doCrypt(final byte[] i, final int ioffset, final int[] rk, final int nr, final byte[] o, final int ooffset) {
-		int t0 = toInt(i[0 + ioffset], i[1 + ioffset], i[2 + ioffset], i[3 + ioffset]);
+		int t0 = toInt(i[ioffset], i[1 + ioffset], i[2 + ioffset], i[3 + ioffset]);
 		int t1 = toInt(i[4 + ioffset], i[5 + ioffset], i[6 + ioffset], i[7 + ioffset]);
 		int t2 = toInt(i[8 + ioffset], i[9 + ioffset], i[10 + ioffset], i[11 + ioffset]);
 		int t3 = toInt(i[12 + ioffset], i[13 + ioffset], i[14 + ioffset], i[15 + ioffset]);
@@ -272,7 +272,7 @@ public class ARIAEngine {
 		t1 ^= rk[j++];
 		t2 ^= rk[j++];
 		t3 ^= rk[j++];
-		o[0 + ooffset] = (byte) (X1[0xff & (t0 >>> 24)] ^ (rk[j] >>> 24));
+		o[ooffset] = (byte) (X1[0xff & (t0 >>> 24)] ^ (rk[j] >>> 24));
 		o[1 + ooffset] = (byte) (X2[0xff & (t0 >>> 16)] ^ (rk[j] >>> 16));
 		o[2 + ooffset] = (byte) (S1[0xff & (t0 >>> 8)] ^ (rk[j] >>> 8));
 		o[3 + ooffset] = (byte) (S2[0xff & (t0)] ^ (rk[j]));
@@ -501,14 +501,13 @@ public class ARIAEngine {
 	 *            execution this will hold the decryption round keys.
 	 * @param keyBits
 	 *            the length of the master key
-	 * @return
 	 */
 	private static void doDecKeySetup(final byte[] mk, final int[] rk, final int keyBits) {
 		int a = 0;
 		final int[] t = new int[4];
 
 		int z = 32 + keyBits / 8;
-		swapBlocks(rk, 0, z);
+		swapBlocks(rk, z);
 		a += 4;
 		z -= 4;
 
@@ -526,38 +525,30 @@ public class ARIAEngine {
 		return (b0 & 0xff) << 24 ^ (b1 & 0xff) << 16 ^ (b2 & 0xff) << 8 ^ b3 & 0xff;
 	}
 
-	private static void toByteArray(final int i, final byte[] b, final int offset) {
-		b[offset] = (byte) (i >>> 24);
-		b[offset + 1] = (byte) (i >>> 16);
-		b[offset + 2] = (byte) (i >>> 8);
-		b[offset + 3] = (byte) (i);
+	private static void toByteArray(final int i, final byte[] b) {
+		b[0] = (byte) (i >>> 24);
+		b[1] = (byte) (i >>> 16);
+		b[2] = (byte) (i >>> 8);
+		b[3] = (byte) (i);
 	}
 
 	private static int m(final int t) {
 		return 0x00010101 * ((t >>> 24) & 0xff) ^ 0x01000101 * ((t >>> 16) & 0xff) ^ 0x01010001 * ((t >>> 8) & 0xff) ^ 0x01010100 * (t & 0xff);
 	}
 
-//	private static final int ms(int t) {
-//		return TS1[(t >>> 24) & 0xff] ^ TS2[(t >>> 16) & 0xff] ^ TX1[(t >>> 8) & 0xff] ^ TX2[t & 0xff];
-//	}
-//
-//	private static final int mx(int t) {
-//		return TX1[(t >>> 24) & 0xff] ^ TX2[(t >>> 16) & 0xff] ^ TS1[(t >>> 8) & 0xff] ^ TS2[t & 0xff];
-//	}
-	
-	private static final int badc(final int t) {
+	private static int badc(final int t) {
 		return ((t << 8) & 0xff00ff00) ^ ((t >>> 8) & 0x00ff00ff);
 	}
 
-	private static final int cdab(final int t) {
+	private static int cdab(final int t) {
 		return ((t << 16) & 0xffff0000) ^ ((t >>> 16) & 0x0000ffff);
 	}
 
-	private static final int dcba(final int t) {
+	private static int dcba(final int t) {
 		return (t & 0x000000ff) << 24 ^ (t & 0x0000ff00) << 8 ^ (t & 0x00ff0000) >>> 8 ^ (t & 0xff000000) >>> 24;
 	}
 
-	private static final void gsrk(final int[] x, final int[] y, final int rot, final int[] rk, final int offset) {
+	private static void gsrk(final int[] x, final int[] y, final int rot, final int[] rk, final int offset) {
 		final int q = 4 - (rot / 32), r = rot % 32, s = 32 - r;
 
 		rk[offset] = x[0] ^ y[(q) % 4] >>> r ^ y[(q + 3) % 4] << s;
@@ -566,7 +557,7 @@ public class ARIAEngine {
 		rk[offset + 3] = x[3] ^ y[(q + 3) % 4] >>> r ^ y[(q + 2) % 4] << s;
 	}
 
-	private static final void diff(final int[] i, final int offset1, final int[] o, final int offset2) {
+	private static void diff(final int[] i, final int offset1, final int[] o, final int offset2) {
 		int t0 = m(i[offset1]);
 		int t1 = m(i[offset1 + 1]);
 		int t2 = m(i[offset1 + 2]);
@@ -592,16 +583,16 @@ public class ARIAEngine {
 		o[offset2 + 3] = t3;
 	}
 
-	private static final void swapBlocks(final int[] arr, final int offset1, final int offset2) {
+	private static void swapBlocks(final int[] arr, final int offset2) {
 		int t;
 		for (int i = 0; i < 4; i++) {
-			t = arr[offset1 + i];
-			arr[offset1 + i] = arr[offset2 + i];
+			t = arr[i];
+			arr[i] = arr[offset2 + i];
 			arr[offset2 + i] = t;
 		}
 	}
 
-	private static final void swapAndDiffuse(final int[] arr, final int offset1, final int offset2, final int[] tmp) {
+	private static void swapAndDiffuse(final int[] arr, final int offset1, final int offset2, final int[] tmp) {
 		diff(arr, offset1, tmp, 0);
 		diff(arr, offset2, arr, offset1);
 		arr[offset2] = tmp[0];
@@ -645,7 +636,7 @@ public class ARIAEngine {
 
 	private static void intToHex(final PrintStream out, final int i) {
 		final byte[] b = new byte[4];
-		toByteArray(i, b, 0);
+		toByteArray(i, b);
 		byteToHex(out, b[0]);
 		byteToHex(out, b[1]);
 		byteToHex(out, b[2]);
@@ -698,10 +689,10 @@ public class ARIAEngine {
 		out.print("decrypted : ");
 		printBlock(out, p);
 		out.println();
-		flag = false;
 		for (int i = 0; i < 16; i++) {
 			if (p[i] != 0) {
 				flag = true;
+				break;
 			}
 		}
 		if (flag) {

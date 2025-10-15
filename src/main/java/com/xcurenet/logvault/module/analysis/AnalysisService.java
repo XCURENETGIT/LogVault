@@ -1,6 +1,5 @@
 package com.xcurenet.logvault.module.analysis;
 
-import com.xcurenet.logvault.loader.KeywordLoader;
 import com.xcurenet.logvault.module.ScanData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

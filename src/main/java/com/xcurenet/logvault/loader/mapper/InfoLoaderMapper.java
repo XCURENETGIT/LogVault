@@ -1,6 +1,5 @@
 package com.xcurenet.logvault.loader.mapper;
 
-import com.xcurenet.logvault.loader.KeywordLoader;
 import com.xcurenet.logvault.loader.type.*;
 import org.apache.ibatis.annotations.Mapper;
 

@@ -33,14 +33,14 @@ public abstract class CustomDirectoryWalker extends SimpleFileVisitor<Path> {
 
 	@NotNull
 	@Override
-	public FileVisitResult visitFile(Path file, @NotNull BasicFileAttributes attrs) throws IOException {
+	public FileVisitResult visitFile(@NotNull Path file, @NotNull BasicFileAttributes attrs) throws IOException {
 		handleFile(file, attrs);
 		return FileVisitResult.CONTINUE;
 	}
 
 	@NotNull
 	@Override
-	public FileVisitResult visitFileFailed(Path file, @NotNull IOException exc) {
+	public FileVisitResult visitFileFailed(@NotNull Path file, @NotNull IOException exc) {
 		return FileVisitResult.CONTINUE;
 	}
 }

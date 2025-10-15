@@ -116,22 +116,6 @@ public class KeywordMatcher implements Serializable {
 		prepared = true;
 	}
 
-	// ========== 탐지 API (Set / Count / MinCount) ==========
-
-	/**
-	 * 기존 호환: 키워드 존재 여부만 반환 (String 입력)
-	 */
-	public Set<String> checkKeyword(final String text) {
-		return checkKeywordCounts(text).keySet();
-	}
-
-	/**
-	 * 기존 호환: 키워드 존재 여부만 반환 (byte[] 입력)
-	 */
-	public Set<String> checkKeyword(final byte[] text) {
-		return checkKeywordCounts(text).keySet();
-	}
-
 	/**
 	 * 신규: 키워드별 탐지 건수 반환 (String 입력)
 	 */
@@ -148,7 +132,7 @@ public class KeywordMatcher implements Serializable {
 			if (cnt > 0) result.put(k, cnt);
 		}
 
-// 복합(AND) 키워드 충족 여부(모든 토큰 등장)
+		// 복합(AND) 키워드 충족 여부(모든 토큰 등장)
 		for (Map.Entry<String, List<String>> e : complexKeywords.entrySet()) {
 			String complexKey = e.getKey();
 			List<String> tokens = e.getValue();
@@ -254,10 +238,6 @@ public class KeywordMatcher implements Serializable {
 
 		// 복합(AND) 키워드 등록
 		k.addKeyword("감염기록", 4);
-
-		// 단일 키워드도 함께 보고 싶다면 (선택)
-		// k.addKeyword("보안", 1);
-		// k.addKeyword("사고", 1);
 
 		k.prepare();
 

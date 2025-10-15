@@ -1,19 +1,20 @@
 package com.xcurenet.common.io;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.io.Reader;
 
 public class LimitedBufferedReader extends Reader {
 
 	private static final int DEFAULT_MAX_LINE_LENGTH = 8192;
-	private static int defaultCharBufferSize = 8192;
-	private static int defaultExpectedLineLength = 80;
+	private static final int defaultCharBufferSize = 8192;
 
-	private int lineLength;
+	private final int lineLength;
 
 	private Reader in;
 
-	private char cb[];
+	private char[] cb;
 	private int nChars, nextChar;
 
 	private static final int INVALIDATED = -2;
@@ -71,16 +72,14 @@ public class LimitedBufferedReader extends Reader {
 				if (readAheadLimit <= cb.length) {
 					/* Shuffle in the current buffer */
 					System.arraycopy(cb, markedChar, cb, 0, delta);
-					markedChar = 0;
-					dst = delta;
 				} else {
 					/* Reallocate buffer to accommodate read-ahead limit */
-					char ncb[] = new char[readAheadLimit];
+					char[] ncb = new char[readAheadLimit];
 					System.arraycopy(cb, markedChar, ncb, 0, delta);
 					cb = ncb;
-					markedChar = 0;
-					dst = delta;
 				}
+				markedChar = 0;
+				dst = delta;
 				nextChar = nChars = delta;
 			}
 		}
@@ -140,7 +139,7 @@ public class LimitedBufferedReader extends Reader {
 	}
 
 	@Override
-	public int read(char cbuf[], int off, int len) throws IOException {
+	public int read(@NotNull char[] cbuf, int off, int len) throws IOException {
 		synchronized (lock) {
 			ensureOpen();
 			if ((off < 0) || (off > cbuf.length) || (len < 0) || ((off + len) > cbuf.length) || ((off + len) < 0)) {
@@ -161,7 +160,7 @@ public class LimitedBufferedReader extends Reader {
 	}
 
 	public String readLine(boolean ignoreLF) throws IOException {
-		StringBuffer s = null;
+		StringBuilder s = null;
 		int startChar;
 
 		synchronized (lock) {
@@ -171,7 +170,7 @@ public class LimitedBufferedReader extends Reader {
 			for (; ; ) {
 				if (nextChar >= nChars) fill();
 				if (nextChar >= nChars) { /* EOF */
-					if (s != null && s.length() > 0) return s.toString();
+					if (s != null && !s.isEmpty()) return s.toString();
 					else return null;
 				}
 				boolean eol = false;
@@ -209,7 +208,8 @@ public class LimitedBufferedReader extends Reader {
 					return str;
 				}
 
-				if (s == null) s = new StringBuffer(defaultExpectedLineLength);
+				int defaultExpectedLineLength = 80;
+				if (s == null) s = new StringBuilder(defaultExpectedLineLength);
 
 				s.append(cb, startChar, i - startChar);
 			}

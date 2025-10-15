@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -28,10 +27,10 @@ public class HoliDayLoader {
 		log.info("[INFO_LOAD] HoliDay Size: {}", datas.size());
 		data.clear();
 		for (HoliDayInfo item : datas) {
-			final String cocd = CommonUtil.nvl(item.getCoCd());
-			final String busicd = CommonUtil.nvl(item.getBusiCd());
-			final String time = CommonUtil.nvl(item.getDate());
-			final String comments = CommonUtil.nvl(item.getComments());
+			final String cocd = CommonUtil.nvl(item.coCd());
+			final String busicd = CommonUtil.nvl(item.busiCd());
+			final String time = CommonUtil.nvl(item.date());
+			final String comments = CommonUtil.nvl(item.comments());
 			data.put(String.format("%s_%s_%s", cocd, busicd, time), comments);
 		}
 	}

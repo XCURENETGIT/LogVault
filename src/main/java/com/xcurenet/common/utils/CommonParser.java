@@ -16,7 +16,7 @@ public class CommonParser {
 	public static final String BODY_TEXT = "BODY_TEXT";
 	public static final String FROM = "FROM";
 	public static final String TO = "TO";
-	public static final String IM_DELIMITER = String.valueOf('ÿ') + new String(new byte[]{-1});
+	public static final String IM_DELIMITER = 'ÿ' + new String(new byte[]{-1});
 	public static final String _ID_ = "[ID]";
 	public static final String _FROM_ = "[FROM]";
 	public static final String _TO_ = "[TO]";
@@ -53,7 +53,7 @@ public class CommonParser {
 				map.put("TO", to);
 			}
 
-			if (sb.length() > 0) {
+			if (!sb.isEmpty()) {
 				map.put("BODY_TEXT", sb.toString());
 			}
 		} finally {
@@ -87,7 +87,7 @@ public class CommonParser {
 				sb.append(line).append('\n');
 			}
 
-			if (sb.length() > 0) {
+			if (!sb.isEmpty()) {
 				map.put("BODY_TEXT", sb.toString());
 			}
 		} finally {
@@ -110,7 +110,7 @@ public class CommonParser {
 					sb.append(line).append('\n');
 				}
 
-				if (sb.length() > 0) {
+				if (!sb.isEmpty()) {
 					map.put("BODY_TEXT", sb.toString());
 				}
 			}

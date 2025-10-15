@@ -5,17 +5,14 @@ import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.config.SocketConfig;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.reactor.IOReactorConfig;
-import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContexts;
 import org.opensearch.client.Node;
 import org.opensearch.client.RestClient;
 import org.opensearch.client.RestClientBuilder;
 import org.opensearch.client.RestHighLevelClient;
 import org.opensearch.data.client.orhlc.OpenSearchRestTemplate;
-import org.opensearch.http.HttpResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,9 +20,6 @@ import org.springframework.context.annotation.Configuration;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import java.net.URI;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 @Log4j2
@@ -71,7 +65,7 @@ public class OpenSearchConfig {
 	}
 
 	@Bean(destroyMethod = "close")
-	public RestHighLevelClient restHighLevelClient() throws Exception {
+	public RestHighLevelClient restHighLevelClient() {
 		BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 		credentialsProvider.setCredentials(new AuthScope(null, -1), new UsernamePasswordCredentials(userName, password));
 		HttpHost[] hosts = Arrays.stream(uris.split(","))

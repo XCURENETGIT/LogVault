@@ -34,7 +34,7 @@ public class CollectionUtil {
 		return CacheBuilder.newBuilder().expireAfterWrite(duration, unit).removalListener(listener).build();
 	}
 
-	public static <K extends Object, V extends Object> LoadingCache<K, V> makeCache(final CacheLoader<K, V> loader, final long duration, final TimeUnit unit, final RemovalListener<K, V> listener) {
+	public static <K, V> LoadingCache<K, V> makeCache(final CacheLoader<K, V> loader, final long duration, final TimeUnit unit, final RemovalListener<K, V> listener) {
 		return CacheBuilder.newBuilder().expireAfterWrite(duration, unit).removalListener(listener).build(loader);
 	}
 }

@@ -7,6 +7,7 @@ import java.io.*;
 import java.util.Properties;
 
 public class PropConfig extends Properties {
+	@Serial
 	private static final long serialVersionUID = -4418544012942677590L;
 
 	public PropConfig() {

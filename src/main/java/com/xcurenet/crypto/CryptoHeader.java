@@ -1,5 +1,7 @@
 package com.xcurenet.crypto;
 
+import com.xcurenet.common.utils.CommonUtil;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,11 +48,7 @@ public class CryptoHeader {
 			return false;
 		}
 
-		if (Arrays.binarySearch(Crypto.COMPRESS_TYPE, compressType) == -1) {
-			return false;
-		}
-
-		return true;
+		return Arrays.binarySearch(Crypto.COMPRESS_TYPE, compressType) != -1;
 	}
 
 	public byte[] toBytes() throws IOException {
@@ -66,11 +64,7 @@ public class CryptoHeader {
 	}
 
 	public static byte[] toBytes(final long n, final int length) {
-		final byte[] b = new byte[length];
-		for (int i = 0; i < length; i++) {
-			b[i] = (byte) (n >> ((length - i - 1) * 8) & 0xFF);
-		}
-		return b;
+		return CommonUtil.toBytes(n, length);
 	}
 
 	public static long toLong(final byte[] input, final int inputOffset, final int inputLen) {

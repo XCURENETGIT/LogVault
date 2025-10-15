@@ -19,9 +19,8 @@ public class BaseSystemUtils {
 	 * IO callback interface
 	 *
 	 * @param <T>
-	 * @author 임 성천.
 	 */
 	public interface IOCallback<T> {
-		public T doInProcessIO() throws Exception;
+		T doInProcessIO() throws Exception;
 	}
 }

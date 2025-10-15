@@ -18,6 +18,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
 import org.jsoup.Jsoup;
@@ -134,7 +135,7 @@ public final class CommonUtil {
 			deque.addFirst(p.getName());
 		}
 
-		final String[] array = deque.toArray(new String[deque.size()]);
+		final String[] array = deque.toArray(new String[0]);
 		return makeFilepath(array);
 	}
 
@@ -350,7 +351,7 @@ public final class CommonUtil {
 				parameterTypes.add(Object.class);
 			}
 		}
-		return newInstance(clazz, parameterTypes.toArray(new Class<?>[parameterTypes.size()]), initargs);
+		return newInstance(clazz, parameterTypes.toArray(new Class<?>[0]), initargs);
 	}
 
 	public static Object newInstance(final String className, final Class<?>[] parameterTypes, final Object... initargs) throws Exception {
@@ -434,10 +435,6 @@ public final class CommonUtil {
 		return digestSupress("SHA-256", inputs);
 	}
 
-//	public static byte[] sha256(final String filePath) {
-//		CommonUtil.digest(Constants.SHA256, new FileInputStream(filePath));
-//	}
-
 	public static byte[] sha256(final byte[]... inputs) {
 		return digestSupress("SHA-256", inputs);
 	}
@@ -460,7 +457,7 @@ public final class CommonUtil {
 		if (buffer != null && buffer.length - offset >= nRead) {
 			for (int i = offset; i < offset + nRead; i++) {
 				final char c = buffer[i];
-				if (c == 0x9 || c == 0xA || c == 0xD || (c >= 0x20 && c <= 0xD7FF) || (c >= 0xE000 && c <= 0xFFFD) || (c >= 0x10000 && c <= 0x10FFFF)) {
+				if (c == 0x9 || c == 0xA || c == 0xD || c >= 0x20 && c <= 0xD7FF || c >= 0xE000 && c <= 0xFFFD) {
 					sb.append(c);
 				}
 			}
@@ -482,7 +479,7 @@ public final class CommonUtil {
 		if (buffer != null && buffer.length - offset >= nRead) {
 			for (int i = offset; i < offset + nRead; i++) {
 				final char c = buffer[i];
-				if (c == 0x9 || c == 0xD || (c >= 0x20 && c <= 0xD7FF) || (c >= 0xE000 && c <= 0xFFFD) || (c >= 0x10000 && c <= 0x10FFFF)) {
+				if (c == 0x9 || c == 0xD || c >= 0x20 && c <= 0xD7FF || c >= 0xE000 && c <= 0xFFFD) {
 					sb.append(c);
 				}
 			}
@@ -590,36 +587,6 @@ public final class CommonUtil {
 		}
 	}
 
-
-	public static <T extends Enum<T>> T getEnum(Class<T> clazz, String name) {
-		return getEnum(clazz, name, null);
-	}
-
-	public static <T extends Enum<T>> T getEnum(Class<T> clazz, String name, boolean addEnum) {
-		return getEnum(clazz, name, null, addEnum);
-	}
-
-	public static <T extends Enum<T>> T getEnum(Class<T> clazz, String name, T defaultValue) {
-		return getEnum(clazz, name, defaultValue, false);
-	}
-
-	public static <T extends Enum<T>> T getEnum(Class<T> clazz, String name, T defaultValue, boolean addEnum) {
-		if (name == null) {
-			return defaultValue;
-		}
-		String tName = name.replaceAll("-", "_");
-		try {
-			return Enum.valueOf(clazz, tName);
-		} catch (IllegalArgumentException e) {
-			if (addEnum) {
-				T addedEnum = DynamicEnum.addEnum(clazz, tName);
-				return addedEnum != null ? addedEnum : defaultValue;
-			} else {
-				return defaultValue;
-			}
-		}
-	}
-
 	public static void copy(final InputStream in, final boolean compress, final CIPHER cipher, final byte[] key, final long srcLen, final OutputStream out) throws Exception {
 		copy(in, compress, null, cipher, key, srcLen, out);
 	}
@@ -666,7 +633,7 @@ public final class CommonUtil {
 
 	public static String getParentDir(final String path) {
 		final int lastSlash = path.lastIndexOf('/');
-		if (lastSlash < 0 || path.isEmpty() || (lastSlash == 0 && path.length() == 1)) {
+		if (lastSlash < 0 || lastSlash == 0 && path.length() == 1) {
 			return null;
 		}
 		return path.substring(0, lastSlash == 0 ? 1 : lastSlash);
@@ -743,7 +710,7 @@ public final class CommonUtil {
 		}
 
 		@Override
-		public int read(byte[] b, int off, int len) throws IOException {
+		public int read(@NotNull byte[] b, int off, int len) throws IOException {
 			if (this.left == 0L) {
 				return -1;
 			}

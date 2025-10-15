@@ -15,7 +15,6 @@ import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 

@@ -3,7 +3,6 @@ package com.xcurenet.logvault.loader;
 import com.xcurenet.common.types.IP;
 import com.xcurenet.common.utils.CommonUtil;
 import com.xcurenet.logvault.loader.mapper.InfoLoaderMapper;
-import com.xcurenet.logvault.loader.type.IPInfo;
 import com.xcurenet.logvault.loader.type.UserInfo;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

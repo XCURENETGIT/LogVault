@@ -1,5 +1,7 @@
 package com.xcurenet.crypto;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -29,7 +31,7 @@ public class GrowBufferdOutputStream extends FilterOutputStream {
 	}
 
 	@Override
-	public synchronized void write(final byte[] src, final int offset, final int length) throws IOException {
+	public synchronized void write(@NotNull final byte[] src, final int offset, final int length) throws IOException {
 		if (length > buf.length) {
 			// 버퍼 사이즈보다 큰 사이즈의 데이터가 들어올 경우 버퍼 증설
 			flushBuffer();

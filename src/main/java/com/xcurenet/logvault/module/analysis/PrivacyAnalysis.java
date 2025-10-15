@@ -40,6 +40,9 @@ public class PrivacyAnalysis {
 				total += processText(doc, a.getText(), "A", a.getName());
 			}
 		}
+		if (total == 0) {
+			doc.setPrivacyInfo(null);
+		}
 		doc.setPrivacyTotal(total);
 	}
 

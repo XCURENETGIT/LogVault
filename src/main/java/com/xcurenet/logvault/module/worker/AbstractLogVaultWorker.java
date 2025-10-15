@@ -11,6 +11,7 @@ import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.exception.*;
 import com.xcurenet.logvault.fs.FileProcessor;
 import com.xcurenet.logvault.module.ScanData;
+import com.xcurenet.logvault.module.alert.AlertService;
 import com.xcurenet.logvault.module.analysis.AnalysisService;
 import com.xcurenet.logvault.module.clear.ClearService;
 import com.xcurenet.logvault.module.filter.FilterService;
@@ -44,6 +45,7 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 	protected final GeoLocation geoLocation;
 	protected final OpenSearchRestTemplate template;
 	protected final FilterService filterService;
+	protected final AlertService alertService;
 
 	protected final ThroughputMetrics metrics;
 
@@ -59,6 +61,7 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 		this.metrics = context.getBean(ThroughputMetrics.class);
 		this.geoLocation = context.getBean(GeoLocation.class);
 		this.filterService = context.getBean(FilterService.class);
+		this.alertService = context.getBean(AlertService.class);
 		this.template = context.getBean(OpenSearchRestTemplate.class);
 	}
 
@@ -90,6 +93,7 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 							transToBody(data);      // 본문 전송     (Error 발생 시 해당 로직 3회 재처리 후 지속 에러 발생 시 처음부터 재 처리)
 							transToAttach(data);    // 첨부파일 전송  (Error 발생 시 해당 로직 3회 재처리 후 지속 에러 발생 시 처음부터 재 처리)
 							index(data);            // Elastic 색인 (Error 발생 시 해당 로직 3회 재처리 후 지속 에러 발생 시 처음부터 재 처리)
+							alert(data);            // 이상행위 (룰) 탐지 시 알림 전송
 							success = true;
 							break;
 						} catch (final FileSendException | IndexerException e) {
@@ -98,10 +102,10 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 							CommonUtil.sleep(2000);
 						}
 					}
-					if (!success) return;                // 오류 상황 시 원본 데이터 삭제 금지. (재 처리시 필요함.)
+					if (!success) return;            // 오류 상황 시 원본 데이터 삭제 금지. (재 처리시 필요함.)
 				}
 				clearService.clear(data);            // 처리 후 파일 삭제 (Error 발생 시 continue)
-				logService.log(data);                  // 완료 로그
+				logService.log(data);                // 완료 로그
 
 				metrics.increment();
 				LogVaultApplication.getMinuteBy1Count().incrementAndGet();  // 1분 통계 증가
@@ -201,6 +205,8 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 	}
 
 	protected abstract void index(ScanData data) throws IndexerException;
+
+	protected abstract void alert(ScanData data);
 
 	/**
 	 * 본문, 헤더, 첨부파일 파일이 없는 경우 최대 30분 대기

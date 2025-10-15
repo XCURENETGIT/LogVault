@@ -77,6 +77,11 @@ public class MSGWorker extends AbstractLogVaultWorker {
 		log.info("[MG_INDEX] {} | {}", doc.getMsgid(), DateUtils.duration(startTime));
 	}
 
+	@Override
+	protected void alert(ScanData data) {
+		alertService.send(data);
+	}
+
 	private void setService(MSGData msg, EmassDoc doc) {
 		EmassDoc.Service service = new EmassDoc.Service();
 		char[] chars = msg.getSvc().toCharArray();
@@ -198,4 +203,6 @@ public class MSGWorker extends AbstractLogVaultWorker {
 		if (doc.getBody() != null) doc.setSize(doc.getAttachTotalSize() + doc.getBody().getSize());
 		else doc.setSize(doc.getAttachTotalSize());
 	}
+
+
 }

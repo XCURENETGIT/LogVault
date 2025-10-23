@@ -6,6 +6,7 @@ import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
 @Log4j2
 @Service
@@ -13,10 +14,10 @@ import org.springframework.stereotype.Service;
 public class AlertService {
 
 	public void send(final ScanData data) {
-		long startTime = System.currentTimeMillis();
+		StopWatch sw = DateUtils.start();
 		EmassDoc doc = data.getEmassDoc();
 		try {
-			log.info("[ALT_SEND] {} | {}", doc.getMsgid(), DateUtils.duration(startTime));
+			log.info("[ALT_SEND] {} | {}", doc.getMsgid(), DateUtils.stop(sw));
 		} catch (Exception e) {
 			log.warn("[ALERT] {} | {}", doc.getMsgid(), e.getMessage());
 			log.error("", e);

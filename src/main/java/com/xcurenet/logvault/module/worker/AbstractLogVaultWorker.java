@@ -22,8 +22,10 @@ import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.opensearch.data.client.orhlc.OpenSearchRestTemplate;
 import org.springframework.context.ApplicationContext;
+import org.springframework.util.StopWatch;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -76,6 +78,9 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 				inprogress.set(true);
 				if (data.getFilePath() == null || !new File(data.getFilePath()).exists()) continue;
 
+
+				log.info("[MG_START] {}", data.getFilePath());
+				data.setStopWatch(DateUtils.start());
 				data.setStart(System.currentTimeMillis());
 				process(data);                 // INFO 파일 파싱
 				checkAttachments(data);        // 첨부파일 체크  (각 Worker 에서 파일 대기에 대한 기준을 재 정립, 첨부가 없으면 대기)
@@ -111,9 +116,11 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 				LogVaultApplication.getMinuteBy1Count().incrementAndGet();  // 1분 통계 증가
 				LogVaultApplication.getSecBy10Count().incrementAndGet();    // 10초 통계 증가
 			} catch (final SkipFileException e) { // 첨부 파일이 늦게 들어오는 경우 대기 용도
-				log.info("[WAIT_SEC] {} | {} seconds until the file is available.", e.getMessage(), this.conf.getInterval() / 1000);
-			} catch (final ProcessDataException | ParsingException | InsaMappingException e) {
+				log.info("[WAIT_SEC] {} | {} seconds until the file is available.\n", e.getMessage(), this.conf.getInterval() / 1000);
+			} catch (final ProcessDataException | ParsingException e) {
 				log.warn("{}", data.getFilePath(), e);
+				// 기본 파싱이 되지 않는 다면 권한을 제거하여 재 처리 되는 오류를 방지한다.
+				CommonUtil.removeAllPermissions(new File(data.getFilePath()));
 			} catch (final Exception e) {
 				log.warn("{}", data.getFilePath(), e);
 				CommonUtil.sleep(10000);
@@ -137,51 +144,46 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 	}
 
 	protected void process(ScanData data) throws ProcessDataException {
-		long startTime = System.currentTimeMillis();
+		StopWatch sw = DateUtils.start();
+
 		MSGData msg = MSGParser.parse(data.getFilePath());
-		msg.setHeaderPath(conf.getPath(msg.getHeader()));
-		msg.setMsgFilePath(conf.getPath(msg.getMsgFile()));
-		for (String appFile : msg.getAppFile()) {
-			msg.getAppFilePath().add(conf.getPath(appFile));
-		}
-		for (String pcFile : msg.getPcFile()) {
-			msg.getPcFilePath().add(conf.getPath(pcFile));
-		}
 		data.setMsgData(msg);
 
-		log.info("[MG_START] {} | {} | {}", msg.getMsgid(), msg.getInfoFilePath(), DateUtils.duration(startTime));
-		log.debug("[MG_START] {}", msg);
+		log.info("[PRS_DONE] {} | {} | {} | ATT_CNT:{} | {} | {}", msg.getMsgid(), msg.getSourceIp(), msg.getSvc(), msg.getAppFile().size(), msg.getSubject(), DateUtils.stop(sw));
+		log.debug("[PRS_DONE] {}", msg);
 	}
 
 	protected void checkAttachments(ScanData data) throws SkipFileException {
 		MSGData msg = data.getMsgData();
-		if (msg.getHeaderPath() != null) checkFiles(data, msg.getHeaderPath(), msg.getMsgid());
-		if (msg.getMsgFilePath() != null) checkFiles(data, msg.getMsgFilePath(), msg.getMsgid());
+		if (msg.getHeader() != null) checkFiles(data, conf.getPath(msg.getHeader()), msg.getMsgid());
+		if (msg.getMsgFile() != null) checkFiles(data, conf.getPath(msg.getMsgFile()), msg.getMsgid());
 		if (msg.getAppFile() != null) {
-			for (String appFilePath : msg.getAppFilePath()) {
-				checkFiles(data, appFilePath, msg.getMsgid());
+			for (String appFile : msg.getAppFile()) {
+				checkFiles(data, conf.getPath(appFile), msg.getMsgid());
 			}
 		}
 	}
 
 	protected abstract void parse(ScanData data) throws ParsingException;
 
-	protected abstract void insaMapping(ScanData data) throws InsaMappingException;
+	protected abstract void insaMapping(ScanData data);
 
 	protected void transToAttach(ScanData data) throws FileSendException {
 		MSGData msg = data.getMsgData();
-		List<String> files = msg.getAppFilePath();
-		for (String path : files) {
-			File file = new File(path);
-			if (file.exists()) {
-				try {
-					long startTime = System.currentTimeMillis();
-					String dest = conf.getDestPath(msg.getCtime(), msg.getMsgid(), file.getName());
-					fileSystem.write(path, dest, file.getName());
-					log.info("[ATT_SEND] {} | {} ({}) | {} | {}", msg.getMsgid(), path, CommonUtil.convertFileSize(file.length()), dest, DateUtils.duration(startTime));
-				} catch (Exception e) {
-					throw new FileSendException(e);
-				}
+		List<String> appPaths = msg.getAppFile();
+		for (String src : appPaths) {
+			if (src == null) continue;
+
+			File file = new File(src);
+			if (!file.exists()) continue;
+
+			try {
+				StopWatch sw = DateUtils.start();
+				String dest = conf.getDestPath(msg.getCtime(), msg.getMsgid(), new File(src).getName());
+				fileSystem.write(src, dest, file.getName());
+				log.info("[ATT_SEND] {} | {} ({}) | {}", msg.getMsgid(), dest, CommonUtil.convertFileSize(file.length()), DateUtils.stop(sw));
+			} catch (Exception e) {
+				throw new FileSendException(e);
 			}
 		}
 	}
@@ -189,16 +191,15 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 	protected void transToBody(ScanData data) throws FileSendException {
 		try {
 			MSGData msg = data.getMsgData();
-			if (msg.getMsgFilePath() == null) return;
+			if (msg.getMsgFile() == null) return;
 
-			File file = new File(msg.getMsgFilePath());
+			File file = new File(conf.getPath(msg.getMsgFile()));
 			if (!file.exists()) return;
 
-			long startTime = System.currentTimeMillis();
-			String dest = conf.getDestPath(msg.getCtime(), msg.getMsgid(), file.getName());
-			fileSystem.write(msg.getMsgFilePath(), dest, file.getName());
-
-			log.info("[BDY_SEND] {} | {} ({}) | {}", msg.getMsgid(), dest, CommonUtil.convertFileSize(file.length()), DateUtils.duration(startTime));
+			StopWatch sw = DateUtils.start();
+			String dest = conf.getDestPath(msg.getCtime(), msg.getMsgid(), msg.getMsgid() + ".body");
+			fileSystem.write(file.getAbsolutePath(), dest, file.getName());
+			log.info("[BDY_SEND] {} | {} ({}) | {}", msg.getMsgid(), dest, CommonUtil.convertFileSize(file.length()), DateUtils.stop(sw));
 		} catch (Exception e) {
 			throw new FileSendException(e);
 		}

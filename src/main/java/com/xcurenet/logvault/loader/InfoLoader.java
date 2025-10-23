@@ -5,6 +5,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
 
 @Log4j2
@@ -18,14 +19,14 @@ public class InfoLoader {
 
 	@PostConstruct
 	public void init() {
-		long startTime = System.currentTimeMillis();
+		StopWatch sw = DateUtils.start();
 		log.info("[INFO_LOAD] START");
 
 		userLoad();
 		keywordLoad();
 		patternLoad();
 
-		log.info("[INFO_LOAD] END | {}\n", DateUtils.duration(startTime));
+		log.info("[INFO_LOAD] END | {}\n", DateUtils.stop(sw));
 	}
 
 	public void userLoad() {
@@ -44,6 +45,13 @@ public class InfoLoader {
 
 	public void patternLoad() {
 		log.debug("[INFO_LOAD] Pattern START");
+		synchronized (this) {
+			patternLoader.load();
+		}
+	}
+
+	public void confLoad() {
+		log.debug("[INFO_LOAD] Config START");
 		synchronized (this) {
 			patternLoader.load();
 		}

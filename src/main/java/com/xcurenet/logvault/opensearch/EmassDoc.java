@@ -158,6 +158,8 @@ public class EmassDoc {
 		private long size;
 		@Field("language")
 		private String language;
+		@Field("path")
+		private String path;
 		@Field("text")
 		private String text;
 	}
@@ -174,6 +176,10 @@ public class EmassDoc {
 		private String expectedExtension;
 		@Field("expected_unknown")
 		private boolean expectedUnknown;
+		@Field("change_extension")
+		private boolean changeExtension;
+		@Field("encrypted")
+		private boolean encrypted;
 		@Field("hash")
 		private String hash;
 		@Field("exist")
@@ -182,6 +188,8 @@ public class EmassDoc {
 		private Long size;
 		@Field("base64")
 		private String base64;
+		@Field("path")
+		private String path;
 		@Field("text")
 		private String text;
 		@Transient

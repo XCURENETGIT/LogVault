@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
 import java.io.File;
 import java.util.List;
@@ -20,22 +21,36 @@ public class ClearService {
 	protected final Config conf;
 
 	public void clear(final ScanData data) {
-		long startTime = System.currentTimeMillis();
+		StopWatch sw = DateUtils.start();
 		MSGData msg = data.getMsgData();
-		remove(data.getFilePath(), msg);
-		if (msg != null) {
-			if (msg.getMsgFilePath() != null) remove(msg.getMsgFilePath(), msg);
-			if (msg.getHeaderPath() != null) remove(msg.getHeaderPath(), msg);
 
-			List<String> appFilePaths = msg.getAppFilePath();
+		boolean bodyDeleted = false;
+		boolean headerDeleted = false;
+		boolean attachDeleted = false;
+		remove(data.getFilePath(), msg);
+		boolean msgDeleted = true;
+
+		if (msg != null) {
+			if (msg.getMsgFile() != null) {
+				remove(conf.getPath(msg.getMsgFile()), msg);
+				bodyDeleted = true;
+			}
+			if (msg.getHeader() != null) {
+				remove(conf.getPath(msg.getHeader()), msg);
+				headerDeleted = true;
+			}
+
+			List<String> appFilePaths = msg.getAppFile();
 			for (String path : appFilePaths) {
 				remove(path, msg);
+				attachDeleted = true;
 			}
-			List<String> pcFilePaths = msg.getPcFilePath();
+			List<String> pcFilePaths = msg.getPcFile();
 			for (String path : pcFilePaths) {
 				remove(path, msg);
+				attachDeleted = true;
 			}
-			log.info("[DEL_FILE] {} | {}", msg.getMsgid(), DateUtils.duration(startTime));
+			log.info("[DEL_FILE] {} | MSG:{} | BODY:{} | HEADER:{} | ATTACH:{} | {}", msg.getMsgid(), msgDeleted, bodyDeleted, headerDeleted, attachDeleted, DateUtils.stop(sw));
 		}
 	}
 

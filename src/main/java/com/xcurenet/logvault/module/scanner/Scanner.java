@@ -10,7 +10,11 @@ import org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -57,11 +61,14 @@ public class Scanner extends DirectoryWalker<File> implements Runnable {
 
 	@Override
 	protected void handleFile(File file, int depth, final Collection<File> results) {
-		if (file.length() > 0 && filePermission(file) && !file.isHidden()) { // 파일 권한 검사 7xx or not
+		if (file.length() > 0 && CommonUtil.filePermission(file) && !file.isHidden()) { // 파일 권한 검사 7xx or not
 			try {
 				addQueue(getData(file));
 			} catch (Exception e) {
 				log.error("info file parsing error : {}", file.getAbsolutePath(), e);
+				//SCAN 후 에러 발생의 경우 파일 이름 파싱 오류로 간주한다.
+				//파일 이름 오류의 경우 권한을 변경하여, 더 이상 처리 하지 않도록 한다.
+				CommonUtil.removeAllPermissions(file);
 			}
 		} else {
 			// 파일 생성이 24시간 지났으면서 권한이 7xx가 아닌 파일 삭제 (권한 검사는 앞에서 진행)
@@ -93,11 +100,6 @@ public class Scanner extends DirectoryWalker<File> implements Runnable {
 
 	private ScanData getData(final File file) throws Exception {
 		return new ScanData(file, scannerCount);
-	}
-
-	private boolean filePermission(final File file) {
-		if (CommonUtil.isWindow()) return true;
-		return file.canRead() && file.canWrite() && file.canExecute();
 	}
 
 	private void addQueue(final ScanData data) {

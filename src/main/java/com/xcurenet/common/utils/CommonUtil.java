@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
 import org.jsoup.Jsoup;
+import org.springframework.util.StopWatch;
 
 import java.io.*;
 import java.lang.management.ManagementFactory;
@@ -29,6 +30,8 @@ import java.lang.reflect.Constructor;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.attribute.PosixFilePermission;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
@@ -1056,6 +1059,7 @@ public final class CommonUtil {
 		StringBuilder sb = new StringBuilder();
 		if (command == null || command.isEmpty()) return sb.toString();
 		try {
+			StopWatch sw = DateUtils.start();
 			long startTime = System.currentTimeMillis();
 			Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
 			try (BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
@@ -1068,7 +1072,7 @@ public final class CommonUtil {
 			boolean finished = process.waitFor(Math.max(0, limitMillis - (System.currentTimeMillis() - startTime)), TimeUnit.MILLISECONDS);
 			if (!finished) process.destroyForcibly();
 
-			log.debug("[PROCESS] {}", DateUtils.duration(startTime));
+			log.debug("[PROCESS] {}", DateUtils.stop(sw));
 		} catch (IOException | InterruptedException e) {
 			throw new RuntimeException(e);
 		}
@@ -1102,9 +1106,13 @@ public final class CommonUtil {
 		return (v != null && i < v.size()) ? v.get(i) : null;
 	}
 
-	public static String getSummaryText(final String text) {
+	public static String getSummaryText(final String text, final int limit) {
 		if (text == null || text.isEmpty()) return null;
-		return text.substring(0, Math.min(text.length(), 20)).replaceAll("\n", " ") + "...";
+		return text.substring(0, Math.min(text.length(), limit)).replaceAll("\n", " ") + "...";
+	}
+
+	public static String getSummaryText(final String text) {
+		return getSummaryText(text, 20);
 	}
 
 	/**
@@ -1150,5 +1158,22 @@ public final class CommonUtil {
 	public static String unescapeJava(final String text) {
 		if (text == null || text.isEmpty()) return text;
 		return text.replace("\\r\\n", "\r\n").replace("\\\\r\\\\n", "\r\n").replace("\\\\n", "\n").replace("\\n", "\n");
+	}
+
+	public static boolean filePermission(final File file) {
+		if (CommonUtil.isWindow()) return true;
+		return file.canRead() && file.canWrite() && file.canExecute();
+	}
+
+	public static void removeAllPermissions(File file) {
+		if (CommonUtil.isWindow()) return;
+
+		try {
+			Set<PosixFilePermission> perms = EnumSet.noneOf(PosixFilePermission.class);
+			Files.setPosixFilePermissions(file.toPath(), perms);
+			log.info("[PERMISSION_CHANGE] {}", file);
+		} catch (Exception e) {
+			log.info("[PERMISSION_CHANGE_ERROR] ", e);
+		}
 	}
 }

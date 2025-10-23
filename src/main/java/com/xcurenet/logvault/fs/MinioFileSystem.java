@@ -8,6 +8,7 @@ import lombok.extern.log4j.Log4j2;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -61,9 +62,9 @@ public class MinioFileSystem implements FileSystemService {
 
 	@Override
 	public InputStream open(String path) throws Exception {
-		long startTime = System.currentTimeMillis();
+		StopWatch sw = DateUtils.start();
 		InputStream inputStream = minioClient.getObject(GetObjectArgs.builder().bucket(conf.getMinioBucket()).object(path).build());
-		log.debug("[AT_OPEN] {} | {}", path, DateUtils.duration(startTime));
+		log.debug("[AT_OPEN] {} | {}", path, DateUtils.stop(sw));
 		return inputStream;
 	}
 
@@ -96,10 +97,10 @@ public class MinioFileSystem implements FileSystemService {
 
 	@Override
 	public void write(String path, InputStream is, String fileName) throws Exception {
-		long startTime = System.currentTimeMillis();
+		StopWatch sw = DateUtils.start();
 		try {
 			minioClient.putObject(PutObjectArgs.builder().bucket(conf.getMinioBucket()).object(path).stream(is, -1, 10485760).build());
-			log.debug("[AT_WRITE] {} | {} | {}", fileName, path, DateUtils.duration(startTime));
+			log.debug("[AT_WRITE] {} | {} | {}", fileName, path, DateUtils.stop(sw));
 		} catch (Exception e) {
 			log.error("", e);
 			throw new IOException(e);

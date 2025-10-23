@@ -5,6 +5,7 @@ import com.xcurenet.common.utils.CommonUtil;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.common.utils.FileUtil;
 import com.xcurenet.common.utils.HttpHeaderUtil;
+import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
@@ -19,12 +20,13 @@ import java.time.ZonedDateTime;
 @Service
 @RequiredArgsConstructor
 public class UserAgentAnalysis {
+	private final Config conf;
 
 	public void detect(final ScanData scanData) {
 		MSGData msg = scanData.getMsgData();
-		if (msg.getHeaderPath() == null || !new File(msg.getHeaderPath()).exists()) return;
+		if (msg.getHeader() == null || !new File(conf.getPath(msg.getHeader())).exists()) return;
 
-		final String raw = FileUtil.getText(msg.getHeaderPath());
+		final String raw = FileUtil.getText(conf.getPath(msg.getHeader()));
 		HttpHeaderUtil.HttpHeader httpHeader = HttpHeaderUtil.parserHeader(raw);
 		HttpHeaderUtil.HttpHeader.HttpRequestHeader request = httpHeader.getRequestHeader();
 		HttpHeaderUtil.HttpHeader.HttpResponseHeader response = httpHeader.getResponseHeader();

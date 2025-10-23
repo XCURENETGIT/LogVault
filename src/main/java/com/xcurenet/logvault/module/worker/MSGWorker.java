@@ -17,12 +17,12 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
+import org.springframework.util.StopWatch;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -54,27 +54,32 @@ public class MSGWorker extends AbstractLogVaultWorker {
 
 	@Override
 	protected void insaMapping(final ScanData data) {
-		UserInfo info = insaManager.getUser(data);
-		EmassDoc.User user = new EmassDoc.User();
-		user.setIp(data.getMsgData().getSourceIp().toCanonicalAddr());
-		if (info != null) {
-			user.setId(info.getUserId());
-			user.setName(info.getName());
-			user.setCeo(CommonUtil.isEquals(info.getCeo(), "Y"));
-			user.setDeptCode(info.getDeptCd());
-			user.setDeptName(info.getDeptNm());
-			user.setJikgubCode(info.getJikgubCd());
-			user.setJikgubName(info.getJikgubNm());
+		try {
+			UserInfo info = insaManager.getUser(data);
+			EmassDoc.User user = new EmassDoc.User();
+			user.setIp(data.getMsgData().getSourceIp().toCanonicalAddr());
+			if (info != null) {
+				user.setId(info.getUserId());
+				user.setName(info.getName());
+				user.setCeo(CommonUtil.isEquals(info.getCeo(), "Y"));
+				user.setDeptCode(info.getDeptCd());
+				user.setDeptName(info.getDeptNm());
+				user.setJikgubCode(info.getJikgubCd());
+				user.setJikgubName(info.getJikgubNm());
+			}
+			data.getEmassDoc().setUser(user);
+		} catch (Exception e) {
+			log.warn("[MGG_INSA] {} | {}", data, e.getMessage());
 		}
-		data.getEmassDoc().setUser(user);
 	}
 
 	@Override
 	protected void index(ScanData data) throws IndexerException {
-		long startTime = System.currentTimeMillis();
+		StopWatch sw = DateUtils.start();
 		EmassDoc doc = data.getEmassDoc();
-		template.save(doc, IndexCoordinates.of(conf.getIndexName() + doc.getCtime().substring(0, 8)));
-		log.info("[MG_INDEX] {} | {}", doc.getMsgid(), DateUtils.duration(startTime));
+		String index = conf.getIndexName() + doc.getCtime().substring(0, 8);
+		template.save(doc, IndexCoordinates.of(index));
+		log.info("[MG_INDEX] {} | {} | {}", doc.getMsgid(), index, DateUtils.stop(sw));
 	}
 
 	@Override
@@ -115,25 +120,25 @@ public class MSGWorker extends AbstractLogVaultWorker {
 
 	private void setBody(MSGData msg, EmassDoc doc) {
 		EmassDoc.Body body = new EmassDoc.Body();
-		if (msg.getMsgFilePath() == null) return;
+		if (msg.getMsgFile() == null) return;
 
-		File file = new File(msg.getMsgFilePath());
+		File file = new File(conf.getPath(msg.getMsgFile()));
 		if (!file.exists()) return;
-		String text = CommonUtil.limitLength(FileUtil.getText(msg.getMsgFilePath()), conf.getTextLimitLength());
+
+		String text = CommonUtil.limitLength(FileUtil.getText(file.getAbsolutePath()), conf.getTextLimitLength());
 		text = CommonUtil.limitTokenLengthWithSpace(text, conf.getTextLimitToken());
 		text = CommonUtil.unescapeJava(text);
 		log.debug("[BDY_TEXT] {}", text);
 
+		body.setPath(conf.getDestPath(msg.getCtime(), msg.getMsgid(), msg.getMsgid() + ".body"));
 		body.setSize(file.length());
 		body.setText(text);
 		doc.setBody(body);
 	}
 
 	private void setAttach(MSGData msg, EmassDoc doc) {
-		final List<String> appFiles = CommonUtil.nvl(msg.getAppFile());
-		final List<String> appFilePaths = CommonUtil.nvl(msg.getAppFilePath());
-		final List<String> pcFiles = CommonUtil.nvl(msg.getPcFile());
-		final List<String> pcFilePaths = CommonUtil.nvl(msg.getPcFilePath());
+		final List<String> appFiles = CommonUtil.nvl(msg.getAppFile()); // 원본 파일
+		final List<String> pcFiles = CommonUtil.nvl(msg.getPcFile()); //원본 파일명
 		final List<AttachExtension> extensions = CommonUtil.nvl(msg.getExtension());
 		final int count = Math.max(appFiles.size(), pcFiles.size());
 		if (count == 0) {
@@ -152,6 +157,7 @@ public class MSGWorker extends AbstractLogVaultWorker {
 
 			String name = CommonUtil.get(pcFiles, i);
 			if (name == null) name = CommonUtil.get(appFiles, i);
+
 			if (CommonUtil.isNotEmpty(name)) {
 				if (StringUtils.containsAny(name, MSGParser.ERROR_CHAR)) {
 					log.warn("[ERR_NAME] {} {}", doc.getMsgid(), name);
@@ -160,15 +166,20 @@ public class MSGWorker extends AbstractLogVaultWorker {
 				at.setName(name);
 			}
 
-			String srcPath = CommonUtil.get(appFilePaths, i);
-			if (srcPath == null && CommonUtil.get(pcFiles, i) != null) srcPath = CommonUtil.get(pcFilePaths, i);
-			at.setSrcPath(srcPath);
-
-			File srcFile = (CommonUtil.isEmpty(srcPath) ? null : new File(Objects.requireNonNull(srcPath)));
-			boolean exists = (srcFile != null && srcFile.exists());
-			long fSize = exists ? srcFile.length() : 0L;
+			long size = 0L;
+			boolean exists = false;
+			final String srcPath = CommonUtil.get(appFiles, i);
+			if (srcPath != null) {
+				File srcFile = new File(conf.getPath(srcPath));
+				at.setSrcPath(srcFile.getAbsolutePath());
+				exists = srcFile.exists();
+				size = (srcFile.exists() ? srcFile.length() : 0L);
+				if (exists) {
+					at.setPath(conf.getDestPath(msg.getCtime(), msg.getMsgid(), srcFile.getName()));
+				}
+			}
 			at.setExist(exists);
-			at.setSize(fSize);
+			at.setSize(size);
 			at.setHash(CommonUtil.digest(Constants.SHA256, srcPath));
 			at.setHasName(getFileNameExist(i, extensions));
 
@@ -180,7 +191,7 @@ public class MSGWorker extends AbstractLogVaultWorker {
 			at.setId(id);
 
 			if (exists) existCnt++;
-			sizeSum += fSize;
+			sizeSum += at.getSize();
 			attaches.add(at);
 		}
 

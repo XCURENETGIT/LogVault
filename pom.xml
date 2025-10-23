@@ -13,8 +13,7 @@
 	<version>0.0.1</version>
 	<packaging>war</packaging>
 	<name>LogVault</name>
-	<description>📦 File Ingestion and Metadata Persistence\n1. Storing Uploaded Files\n2. Extracting and Saving Metadata\n3. Optional Features
-	</description>
+	<description>📦 File Ingestion and Metadata Persistence\n1. Storing Uploaded Files\n2. Extracting and Saving Metadata\n3. Optional Features</description>
 	<properties>
 		<release.version>1</release.version>
 		<java.version>17</java.version>
@@ -229,6 +228,16 @@
 			<groupId>org.ahocorasick</groupId>
 			<artifactId>ahocorasick</artifactId>
 			<version>0.6.3</version>
+		</dependency>
+		<dependency>
+			<groupId>net.coobird</groupId>
+			<artifactId>thumbnailator</artifactId>
+			<version>0.4.21</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+			<version>3.0.5</version>
 		</dependency>
 	</dependencies>
 	<build>

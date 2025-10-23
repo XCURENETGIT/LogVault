@@ -5,6 +5,7 @@ import com.xcurenet.common.types.FileNameInfo;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.util.StopWatch;
 
 import java.io.File;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -17,7 +18,8 @@ public class ScanData {
 	public static final String UTF8 = "UTF8";
 	public static final String ASCII = "ISO-8859-1";
 
-	private Long start;
+	private long start;
+	private StopWatch stopWatch;
 	private String filePath;
 	private String fileName;
 	private long lastModified;

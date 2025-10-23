@@ -7,6 +7,7 @@ import com.xcurenet.logvault.conf.Config;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -42,9 +43,9 @@ public class LocalFileSystem implements FileSystemService {
 
 	@Override
 	public InputStream open(String path) throws Exception {
-		long startTime = System.currentTimeMillis();
+		StopWatch sw = DateUtils.start();
 		InputStream inputStream = new FileInputStream(path);
-		log.debug("[AT_OPEN] {} | {}", path, DateUtils.duration(startTime));
+		log.debug("[AT_OPEN] {} | {}", path, DateUtils.stop(sw));
 		return inputStream;
 	}
 
@@ -60,7 +61,7 @@ public class LocalFileSystem implements FileSystemService {
 
 	@Override
 	public void write(final String src, final String dst, final String fileName) throws Exception {
-		long startTime = System.currentTimeMillis();
+		StopWatch sw = DateUtils.start();
 		File srcFile = new File(src);
 		File dstFile = new File(dst);
 		Files.createDirectories(dstFile.getParentFile().toPath());
@@ -71,27 +72,27 @@ public class LocalFileSystem implements FileSystemService {
 			} else {
 				fis.transferTo(fos);
 			}
-			log.debug("[AT_WRITE] | {} {} | {} | {} | {}", fileName, src, dst, CommonUtil.convertFileSize(srcFile.length()), DateUtils.duration(startTime));
+			log.debug("[AT_WRITE] | {} {} | {} | {} | {}", fileName, src, dst, CommonUtil.convertFileSize(srcFile.length()), DateUtils.stop(sw));
 		}
 	}
 
 	@Override
 	public void writeText(final String path, final String text) throws Exception {
-		long startTime = System.currentTimeMillis();
+		StopWatch sw = DateUtils.start();
 		Files.writeString(new File(path).toPath(), text, StandardCharsets.UTF_8);
-		log.debug("[AT_WRITE] {} | {} | {}", path, CommonUtil.convertFileSize(text.length()), DateUtils.duration(startTime));
+		log.debug("[AT_WRITE] {} | {} | {}", path, CommonUtil.convertFileSize(text.length()), DateUtils.stop(sw));
 	}
 
 	@Override
 	public void write(final String path, final InputStream is, final String fileName) throws Exception {
-		long startTime = System.currentTimeMillis();
+		StopWatch sw = DateUtils.start();
 		try (FileOutputStream fos = new FileOutputStream(path)) {
 			if (conf.isEncryptEnable()) {
 				CommonUtil.copy(is, false, Constants.SHA256, conf.getEncyptCipher(), conf.getEncryptKey(), is.available(), fos, null);
 			} else {
 				is.transferTo(fos);
 			}
-			log.debug("[AT_WRITE] {} | {} | {}", fileName, path, DateUtils.duration(startTime));
+			log.debug("[AT_WRITE] {} | {} | {}", fileName, path, DateUtils.stop(sw));
 		}
 	}
 }

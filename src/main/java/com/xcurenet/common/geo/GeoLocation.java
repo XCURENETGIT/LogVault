@@ -72,7 +72,7 @@ public class GeoLocation {
 		}
 	}
 
-	private String checkCountryForIp(IP ip) throws IOException, GeoIp2Exception {
+	private String checkCountryForIp(IP ip) {
 		if (isPrivateIp(ip.toString())) return "LX";
 
 		try {
@@ -95,7 +95,8 @@ public class GeoLocation {
 	}
 
 	private Location isLocationIp(String ip) {
-		if (ip.startsWith("172.64") || ip.startsWith("160.79")) return new Location(0, 0, EN_LATITUDE, EN_LONGITUDE, 0, 0, null);
+		if (ip.startsWith("172.64") || ip.startsWith("160.79"))
+			return new Location(0, 0, EN_LATITUDE, EN_LONGITUDE, 0, 0, null);
 		return null;
 	}
 }

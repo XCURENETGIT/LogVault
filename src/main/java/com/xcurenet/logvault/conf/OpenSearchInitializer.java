@@ -8,6 +8,7 @@ import lombok.extern.log4j.Log4j2;
 import org.opensearch.client.*;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.util.StopWatch;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,7 +29,7 @@ public class OpenSearchInitializer {
 
 	@PostConstruct
 	public void init() throws IOException {
-		long startTime = System.currentTimeMillis();
+		StopWatch sw = DateUtils.start();
 		log.info("[INIT_OPENSEARCH] START");
 		if (existsPolicy()) log.info("ISM POLICY [{}] already exists. Skipping creation.", OpenSearchInitializer.POLICY_NAME);
 		else {
@@ -41,7 +42,7 @@ public class OpenSearchInitializer {
 			createTemplate(loadJson(OpenSearchInitializer.TEMPLATE_PATH));
 			CommonUtil.sleep(2000);
 		}
-		log.info("[INIT_OPENSEARCH] END | {}\n", DateUtils.duration(startTime));
+		log.info("[INIT_OPENSEARCH] END | {}\n", DateUtils.stop(sw));
 	}
 
 	/**

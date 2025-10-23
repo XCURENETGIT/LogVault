@@ -21,6 +21,7 @@ public class AnalysisService {
 			networkGEOLocation.networkGEO(data);         // source ip, dest ip MAXMIND 유틸을 활용하여 국가 탐지
 			bodyLanguage.detect(data);                   // 본문 텍스트의 국가 탐지 (최대 2000자 기준, 나머지는 자르고 탐지)
 			attachAnalysis.setAttachText(data);          // 첨부 암호여부, 압축 파일목록, 텍스트 추출, 텍스트 추출 후 관련 분석 기능 실행 필수!! (모든 파일)
+			attachAnalysis.setAttachThumbnail(data);     // 파일의 썸네일 생성
 			keywordAnalysis.detect(data);                // 키워드 탐지
 			privacyAnalysis.detect(data);                // 개인정보 탐지
 			userAgentAnalysis.detect(data);              // 사용자의 OS, Agent 정보를 탐지 및 추가

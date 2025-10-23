@@ -5,6 +5,7 @@ import com.alibaba.fastjson2.JSONObject;
 import com.xcurenet.common.regex.MatchResult;
 import com.xcurenet.common.regex.PatternDetector;
 import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.loader.PatternLoader;
 import com.xcurenet.logvault.module.ScanData;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 import org.springframework.web.client.RestClient;
 
 import java.nio.charset.StandardCharsets;
@@ -52,11 +54,12 @@ public class PrivacyAnalysis {
 	private int processText(EmassDoc doc, String text, String type, String attachName) {
 		if (CommonUtil.isEmpty(text)) return 0;
 
+		StopWatch sw = DateUtils.start();
 		StringBuilder sb = new StringBuilder();
 		List<EmassDoc.PrivacyInfo> bucket = ensurePrivacyInfoList(doc);
 		int added = 0;
 		// 1) API 결과 처리 — detectCode 검사 적용
-		JSONObject api = callPrivacyApi(text);
+		JSONObject api = callPrivacyApi(doc.getMsgid(), text);
 		if (api != null) {
 			JSONObject data = api.getJSONObject("data");
 			if (data != null && !data.isEmpty()) {
@@ -98,8 +101,9 @@ public class PrivacyAnalysis {
 				sb.append(key).append(":").append(info.getCount()).append(" ");
 			}
 		}
-		if(CommonUtil.isNotEmpty(sb.toString())) {
-			log.info("[REG_DONE] {} | {} | {}", doc.getMsgid(), type, sb.toString());
+		String duration = DateUtils.stop(sw);
+		if (CommonUtil.isNotEmpty(sb.toString())) {
+			log.info("[REG_DONE] {} | {} | {} | {}", doc.getMsgid(), type, sb.toString(), duration);
 		}
 		return added;
 	}
@@ -114,12 +118,12 @@ public class PrivacyAnalysis {
 		}
 	}
 
-	private JSONObject callPrivacyApi(String text) {
+	private JSONObject callPrivacyApi(final String msgId, final String text) {
 		for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
 			try {
 				return restClient.post().uri(conf.getPrivacyAnalysisUrl()).contentType(TEXT_PLAIN_UTF8).body(text).retrieve().body(JSONObject.class);
 			} catch (Exception e) {
-				log.warn("[PRIVACY_API] {} | ({}/{}) | {}", CommonUtil.getSummaryText(text), attempt, MAX_RETRIES, e.getMessage());
+				log.warn("[PRIVACY_API] {} | {} | ({}/{}) | {}", msgId, CommonUtil.getSummaryText(text), attempt, MAX_RETRIES, e.getMessage());
 				if (attempt < MAX_RETRIES) CommonUtil.sleep(RETRY_SLEEP_MS);
 			}
 		}

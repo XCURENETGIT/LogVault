@@ -40,12 +40,8 @@ public class MSGData {
 	@FieldKey("HDRFILE")
 	private String header;
 
-	private String headerPath;
-
 	@FieldKey("MSGFILE")
 	private String msgFile; //본문 파일 명
-
-	private String msgFilePath; //본문 파일 명
 
 	@FieldKey("MSGSIZE")
 	private int bodySize; //본문 사이즈
@@ -77,12 +73,8 @@ public class MSGData {
 	@FieldKey({"PCFILE", "ORG_FNAME"})
 	private List<String> pcFile = new ArrayList<>();
 
-	private List<String> pcFilePath = new ArrayList<>();
-
 	@FieldKey({"APPFILE", "SERVER_FNAME"})
 	private List<String> appFile = new ArrayList<>();
-
-	private List<String> appFilePath = new ArrayList<>();
 
 	@FieldKey("EXTENSION")
 	private List<AttachExtension> extension = new ArrayList<>();

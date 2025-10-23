@@ -9,6 +9,7 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.springframework.util.StopWatch;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -147,5 +148,24 @@ public class DateUtils {
 	 */
 	public static String formatToYYYYMMDDHHMMSS(long millis) {
 		return new DateTime(millis).toString(YYYYMMDDHHMMSS);
+	}
+
+
+	/**
+	 * 시간 측정 용도의 메소드
+	 * @return StopWatch
+	 */
+	public static StopWatch start() {
+		StopWatch sw = new StopWatch();
+		sw.start();
+		return sw;
+	}
+
+	/**
+	 * 시간 측정 용도의 메소드
+	 */
+	public static String stop(final StopWatch sw) {
+		sw.stop();
+		return DurationFormatUtils.formatDuration(sw.getTotalTimeMillis(), "s.SSS's'");
 	}
 }

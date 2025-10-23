@@ -9,6 +9,8 @@
 			"index": {
 				"number_of_shards": 1,
 				"number_of_replicas": 0,
+				"codec": "best_compression",
+				"highlight": { "max_analyzed_offset": 2000000 },
 				"opendistro.index_state_management.policy_id": "emass_policy",
 				"analysis": {
 					"tokenizer": {
@@ -134,14 +136,17 @@
 									"properties": {
 										"method": {
 											"type": "keyword",
+											"doc_values": false,
 											"index": false
 										},
 										"protocol": {
 											"type": "keyword",
+											"doc_values": false,
 											"index": false
 										},
 										"origin": {
 											"type": "keyword",
+											"doc_values": false,
 											"index": false
 										}
 									}
@@ -151,10 +156,12 @@
 										"date": {
 											"type": "date",
 											"format": "strict_date_optional_time||EEE, dd MMM yyyy HH:mm:ss zzz",
+											"doc_values": false,
 											"index": false
 										},
 										"content-type": {
 											"type": "keyword",
+											"doc_values": false,
 											"index": false
 										}
 									}
@@ -165,26 +172,32 @@
 							"properties": {
 								"raw": {
 									"type": "keyword",
+									"doc_values": false,
 									"index": false
 								},
 								"device": {
 									"type": "keyword",
+									"doc_values": false,
 									"index": false
 								},
 								"os": {
 									"type": "keyword",
+									"doc_values": false,
 									"index": false
 								},
 								"os_version": {
 									"type": "keyword",
+									"doc_values": false,
 									"index": false
 								},
 								"client": {
 									"type": "keyword",
+									"doc_values": false,
 									"index": false
 								},
 								"client_version": {
 									"type": "keyword",
+									"doc_values": false,
 									"index": false
 								}
 							}
@@ -230,6 +243,11 @@
 						"language": {
 							"type": "keyword"
 						},
+						"path": {
+							"type": "keyword",
+							"doc_values": false,
+							"index": false
+						},
 						"text": {
 							"type": "text",
 							"analyzer": "index_analyzer",
@@ -266,8 +284,15 @@
 						"expected_unknown": {
 							"type": "boolean"
 						},
+						"change_extension": {
+							"type": "boolean"
+						},
+						"encrypted": {
+							"type": "boolean"
+						},
 						"hash": {
 							"type": "keyword",
+							"doc_values": false,
 							"index": false
 						},
 						"exist": {
@@ -278,6 +303,12 @@
 						},
 						"base64": {
 							"type": "keyword",
+							"doc_values": false,
+							"index": false
+						},
+						"path": {
+							"type": "keyword",
+							"doc_values": false,
 							"index": false
 						},
 						"text": {

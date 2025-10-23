@@ -34,7 +34,7 @@ public class LogService {
 			EmassDoc.Http http = msg.getHttp();
 			String url = http != null ? http.getUrl() : "";
 			String agent = getUserAgent(http);
-			log.info("[MSG_DONE] {} | {} | BODY:{} ({}) {} | AT_CNT:{} | EXIST_CNT:{} ({}) | {} | {} | {} | {}:{} > {}:{} | {} | {} | {}\n", msg.getMsgid(), msg.getService().getSvc(), isBody, bodySize, bodyLang, attachCnt, attachExistCnt, attSize, deptName, userId, userName, sIp, sPort, dIp, dPort, url, agent, DateUtils.duration(data.getStart()));
+			log.info("[MSG_DONE] {} | {} | BODY:{} ({}) {} | AT_CNT:{} | EXIST_CNT:{} ({}) | {} | {} | {} | {}:{} > {}:{} | {} | {} | {}\n", msg.getMsgid(), msg.getService().getSvc(), isBody, bodySize, bodyLang, attachCnt, attachExistCnt, attSize, deptName, userId, userName, sIp, sPort, dIp, dPort, url, agent, DateUtils.stop(data.getStopWatch()));
 		} catch (Exception e) {
 			log.warn("[DEBUG_LOG] {} | {}", msg.getMsgid(), e.getMessage());
 			log.error("", e);

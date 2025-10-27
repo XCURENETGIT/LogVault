@@ -1,7 +1,7 @@
 package com.xcurenet.logvault.module.analysis;
 
 import com.xcurenet.common.msg.MSGData;
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.common.utils.FileUtil;
 import com.xcurenet.common.utils.HttpHeaderUtil;
@@ -50,7 +50,7 @@ public class UserAgentAnalysis {
 
 	private ZonedDateTime getHeaderDate(final HttpHeaderUtil.HttpHeader.HttpResponseHeader response) {
 		String date = response.getHeaders().get("date");
-		if (CommonUtil.isNotEmpty(date)) {
+		if (Common.isNotEmpty(date)) {
 			return ZonedDateTime.parse(date, DateUtils.RESPONSE_DATETIME);
 		}
 		return null;

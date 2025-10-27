@@ -44,9 +44,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
 @Log4j2
-public final class CommonUtil {
+public final class Common {
 
-	private CommonUtil() {
+	private Common() {
 		throw new IllegalStateException("Utility class");
 	}
 
@@ -874,7 +874,7 @@ public final class CommonUtil {
 	}
 
 	public static String makeMsgId(final DateTime ctime, final String filePath) {
-		return String.format("%s.%s", ctime.toString(Constants.YYYYMMDDHHMMSS), CommonUtil.toBase32(CommonUtil.sha1(filePath)));
+		return String.format("%s.%s", ctime.toString(Constants.YYYYMMDDHHMMSS), Common.toBase32(Common.sha1(filePath)));
 	}
 
 	public static IP toIP(final String str) {
@@ -1161,12 +1161,12 @@ public final class CommonUtil {
 	}
 
 	public static boolean filePermission(final File file) {
-		if (CommonUtil.isWindow()) return true;
+		if (Common.isWindow()) return true;
 		return file.canRead() && file.canWrite() && file.canExecute();
 	}
 
 	public static void removeAllPermissions(File file) {
-		if (CommonUtil.isWindow()) return;
+		if (Common.isWindow()) return;
 
 		try {
 			Set<PosixFilePermission> perms = EnumSet.noneOf(PosixFilePermission.class);

@@ -53,11 +53,4 @@
 		FROM	AEGISAI.UI_PATTERN
 		WHERE	ENABLE = 'Y'
 	</select>
-
-	<select id="getUIConf" resultType="ConfVO">
-		SELECT  CONF_ID AS confId, NVL(VAL, DEFAULT_VAL) AS val
-		FROM	AEGISAI.UI_CONF
-		WHERE	CONF_ID = 'logvault'
-		AND		USE_YN = 'Y'
-	</select>
 </mapper>

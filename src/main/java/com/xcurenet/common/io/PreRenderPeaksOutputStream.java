@@ -1,6 +1,6 @@
 package com.xcurenet.common.io;
 
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.crypto.GrowBufferdOutputStream;
 import lombok.Getter;
 
@@ -98,8 +98,8 @@ public class PreRenderPeaksOutputStream extends GrowBufferdOutputStream {
 		final byte[] output = new byte[peaks.length * 8];
 		for (int i = 0; i < peaks.length; i++) {
 			final Peak peak = peaks[i];
-			CommonUtil.putFloat(output, i * 8, (float) peak.max);
-			CommonUtil.putFloat(output, i * 8 + 4, (float) peak.min);
+			Common.putFloat(output, i * 8, (float) peak.max);
+			Common.putFloat(output, i * 8 + 4, (float) peak.min);
 		}
 		return output;
 	}
@@ -138,12 +138,12 @@ public class PreRenderPeaksOutputStream extends GrowBufferdOutputStream {
 		public final int chunkSize;
 
 		public PcmHeader(final byte[] header, final int offset) {
-			channels = CommonUtil.toIntFromLittle(header, offset + 22, 2);
-			sampleRate = CommonUtil.toIntFromLittle(header, offset + 24, 4);
-			byteRate = CommonUtil.toIntFromLittle(header, offset + 28, 4);
-			blockAlign = CommonUtil.toIntFromLittle(header, offset + 32, 2);
-			bitPerSample = CommonUtil.toIntFromLittle(header, offset + 34, 2);
-			chunkSize = CommonUtil.toIntFromLittle(header, offset + 40, 4);
+			channels = Common.toIntFromLittle(header, offset + 22, 2);
+			sampleRate = Common.toIntFromLittle(header, offset + 24, 4);
+			byteRate = Common.toIntFromLittle(header, offset + 28, 4);
+			blockAlign = Common.toIntFromLittle(header, offset + 32, 2);
+			bitPerSample = Common.toIntFromLittle(header, offset + 34, 2);
+			chunkSize = Common.toIntFromLittle(header, offset + 40, 4);
 		}
 
 		@Override

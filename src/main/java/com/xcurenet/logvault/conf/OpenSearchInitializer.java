@@ -1,6 +1,6 @@
 package com.xcurenet.logvault.conf;
 
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -34,13 +34,13 @@ public class OpenSearchInitializer {
 		if (existsPolicy()) log.info("ISM POLICY [{}] already exists. Skipping creation.", OpenSearchInitializer.POLICY_NAME);
 		else {
 			createPolicy(loadJson(OpenSearchInitializer.POLICY_PATH));
-			CommonUtil.sleep(2000);
+			Common.sleep(2000);
 		}
 
 		if (existsTemplate()) log.info("INDEX TEMPLATE [{}] already exists. Skipping creation.", OpenSearchInitializer.TEMPLATE_NAME);
 		else {
 			createTemplate(loadJson(OpenSearchInitializer.TEMPLATE_PATH));
-			CommonUtil.sleep(2000);
+			Common.sleep(2000);
 		}
 		log.info("[INIT_OPENSEARCH] END | {}\n", DateUtils.stop(sw));
 	}

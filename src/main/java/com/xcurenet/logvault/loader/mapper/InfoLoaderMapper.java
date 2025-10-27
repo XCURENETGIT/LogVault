@@ -18,6 +18,4 @@ public interface InfoLoaderMapper {
 	List<KeywordVO> getKeyword();
 
 	List<PatternInfo> getPatternInfo();
-
-	List<ConfVO> getUIConf();
 }

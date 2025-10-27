@@ -1,7 +1,7 @@
 package com.xcurenet.logvault.module.analysis;
 
 import com.xcurenet.common.utils.CollectionUtil;
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.logvault.loader.KeywordLoader;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
@@ -23,13 +23,13 @@ public class KeywordAnalysis {
 
 	public void detect(final ScanData scanData) {
 		EmassDoc doc = scanData.getEmassDoc();
-		if (CommonUtil.isNotEquals(doc.getService().getSvc3(), "S")) return; // 발신 데이터만 처리
+		if (Common.isNotEquals(doc.getService().getSvc3(), "S")) return; // 발신 데이터만 처리
 
 		EmassDoc.Body body = doc.getBody();
 		EmassDoc.KeywordInfo keywordInfo = new EmassDoc.KeywordInfo();
 
 		// ✅ 본문 키워드 탐지
-		if (body != null && CommonUtil.isNotEmpty(body.getText())) {
+		if (body != null && Common.isNotEmpty(body.getText())) {
 			keywordInfo.setBody(checkKeyword(body.getText()));
 		}
 

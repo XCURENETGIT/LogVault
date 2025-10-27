@@ -1,7 +1,7 @@
 package com.xcurenet.logvault.module.filter;
 
 import com.xcurenet.common.msg.MSGData;
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.logvault.exception.FilterException;
 import com.xcurenet.logvault.module.ScanData;
 import lombok.RequiredArgsConstructor;
@@ -16,12 +16,12 @@ public class FilterService {
 		boolean rs;
 		try {
 			MSGData msg = data.getMsgData();
-			rs = !CommonUtil.nvl(msg.getSvc()).startsWith("I");
+			rs = !Common.nvl(msg.getSvc()).startsWith("I");
 			if (rs) {
 				log.info("[FILT_SVC] {} | {}", msg.getMsgid(), msg.getSvc());
 				return true;
 			}
-			rs = CommonUtil.isEquals(msg.getSvc(), "IUKU");
+			rs = Common.isEquals(msg.getSvc(), "IUKU");
 			if (rs) {
 				log.info("[FILT_SVC] {} | {}", msg.getMsgid(), msg.getSvc());
 				return true;

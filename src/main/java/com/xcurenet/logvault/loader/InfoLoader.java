@@ -49,11 +49,4 @@ public class InfoLoader {
 			patternLoader.load();
 		}
 	}
-
-	public void confLoad() {
-		log.debug("[INFO_LOAD] Config START");
-		synchronized (this) {
-			patternLoader.load();
-		}
-	}
 }

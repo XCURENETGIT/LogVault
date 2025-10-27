@@ -1,7 +1,7 @@
 package com.xcurenet.logvault.loader;
 
 import com.xcurenet.common.ahocorasick.KeywordMatcher;
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.logvault.loader.mapper.InfoLoaderMapper;
 import com.xcurenet.logvault.loader.type.KeywordVO;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ public class KeywordLoader {
 		List<KeywordVO> keywords = mapper.getKeyword();
 		KeywordMatcher keywordMatcher = new KeywordMatcher();
 		for (KeywordVO item : keywords) {
-			if (CommonUtil.isEmpty(item.getKeywordNm())) continue;
+			if (Common.isEmpty(item.getKeywordNm())) continue;
 			keywordMatcher.addKeyword(item.getKeywordNm(), item.getMinCnt());
 		}
 		keywordMatcher.prepare();

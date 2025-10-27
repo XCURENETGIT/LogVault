@@ -1,6 +1,6 @@
 package com.xcurenet.logvault.module.log;
 
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
@@ -16,9 +16,9 @@ public class LogService {
 			boolean isBody = (msg.getBody() != null && msg.getBody().getSize() > 0);
 			int attachCnt = msg.getAttachCount();
 			int attachExistCnt = msg.getAttachExistCount();
-			String bodySize = msg.getBody() != null ? CommonUtil.convertFileSize(msg.getBody().getSize()) : "0";
+			String bodySize = msg.getBody() != null ? Common.convertFileSize(msg.getBody().getSize()) : "0";
 			String bodyLang = msg.getBody() != null ? msg.getBody().getLanguage() : "";
-			String attSize = CommonUtil.convertFileSize(msg.getAttachTotalSize());
+			String attSize = Common.convertFileSize(msg.getAttachTotalSize());
 
 			EmassDoc.User user = msg.getUser();
 			String deptName = user.getDeptName() != null ? user.getDeptName() : "unknown dept";

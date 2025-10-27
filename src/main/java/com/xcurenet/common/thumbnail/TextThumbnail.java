@@ -1,6 +1,6 @@
 package com.xcurenet.common.thumbnail;
 
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.io.ClassPathResource;
 
@@ -32,7 +32,7 @@ public class TextThumbnail {
 	 * @param height 썸네일 세로
 	 */
 	public String execute(final String text, final int width, final int height) {
-		final String target = CommonUtil.getSummaryText(CommonUtil.nvl(text), 1000);
+		final String target = Common.getSummaryText(Common.nvl(text), 1000);
 
 		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 		Graphics2D g = img.createGraphics();
@@ -59,7 +59,7 @@ public class TextThumbnail {
 		drawWrappedText(g, target, width, height);
 
 		g.dispose();
-		return CommonUtil.toBase64(toJpegBytes(img));
+		return Common.toBase64(toJpegBytes(img));
 	}
 
 	/**

@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 
 public class IP implements Serializable {
 	@Serial
@@ -29,7 +29,7 @@ public class IP implements Serializable {
 	public IP(final String ip) throws IOException {
 		if (HEX_REGEX.matcher(ip).find()) {
 			// Hex 값일 것이다.
-			byte[] b = CommonUtil.hexToBytes(ip);
+			byte[] b = Common.hexToBytes(ip);
 			if (b.length < 4) {
 				// 4 바이트 미만인 경우 패딩 추가
 				final byte[] buf = new byte[4];
@@ -43,7 +43,7 @@ public class IP implements Serializable {
 	}
 
 	public IP(final byte[] ip) throws IOException {
-		setInetAddress(InetAddress.getByAddress(ip), CommonUtil.toHexString(ip));
+		setInetAddress(InetAddress.getByAddress(ip), Common.toHexString(ip));
 	}
 
 	public IP(final InetAddress inetAddress) {
@@ -51,7 +51,7 @@ public class IP implements Serializable {
 	}
 
 	public static IP create(final long ip) throws IOException {
-		return new IP(CommonUtil.inet_ltoa(ip));
+		return new IP(Common.inet_ltoa(ip));
 	}
 
 	public static IP create(final String ip) throws IOException {
@@ -71,7 +71,7 @@ public class IP implements Serializable {
 
 	public String toHexString() {
 		if (hexAddr == null) {
-			hexAddr = CommonUtil.toHexString(addr);
+			hexAddr = Common.toHexString(addr);
 		}
 		return hexAddr;
 	}
@@ -82,7 +82,7 @@ public class IP implements Serializable {
 			if (isIPv6()) {
 				throw new RuntimeException("IPv4 address only");
 			}
-			lAddr = CommonUtil.inet_btol(toBytes());
+			lAddr = Common.inet_btol(toBytes());
 		}
 		return lAddr;
 	}

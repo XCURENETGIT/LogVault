@@ -1,7 +1,7 @@
 package com.xcurenet.logvault.module.clear;
 
 import com.xcurenet.common.msg.MSGData;
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.module.ScanData;
@@ -58,7 +58,7 @@ public class ClearService {
 		if (path == null || path.isEmpty() || !new File(path).exists()) return;
 		try {
 			log.debug("[DEL_FILE] {} | {}", msg.getMsgid(), path);
-			if (CommonUtil.isWindow()) return;
+			if (Common.isWindow()) return;
 			FileUtils.delete(new File(path));
 		} catch (Exception e) {
 			log.warn("{}", path, e);

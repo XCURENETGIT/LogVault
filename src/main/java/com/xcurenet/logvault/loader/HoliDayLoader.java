@@ -1,6 +1,6 @@
 package com.xcurenet.logvault.loader;
 
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.logvault.loader.mapper.InfoLoaderMapper;
 import com.xcurenet.logvault.loader.type.HoliDayInfo;
 import com.xcurenet.logvault.module.util.HoliDayData;
@@ -27,10 +27,10 @@ public class HoliDayLoader {
 		log.info("[INFO_LOAD] HoliDay Size: {}", datas.size());
 		data.clear();
 		for (HoliDayInfo item : datas) {
-			final String cocd = CommonUtil.nvl(item.coCd());
-			final String busicd = CommonUtil.nvl(item.busiCd());
-			final String time = CommonUtil.nvl(item.date());
-			final String comments = CommonUtil.nvl(item.comments());
+			final String cocd = Common.nvl(item.coCd());
+			final String busicd = Common.nvl(item.busiCd());
+			final String time = Common.nvl(item.date());
+			final String comments = Common.nvl(item.comments());
 			data.put(String.format("%s_%s_%s", cocd, busicd, time), comments);
 		}
 	}

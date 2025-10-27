@@ -1,7 +1,7 @@
 package com.xcurenet.logvault.loader;
 
 import com.xcurenet.common.types.IP;
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.logvault.loader.mapper.InfoLoaderMapper;
 import com.xcurenet.logvault.loader.type.UserInfo;
 import lombok.Getter;
@@ -32,9 +32,9 @@ public class UserLoader {
 		for (UserInfo user : users) {
 			data.putUserID(user.getUserId(), user);
 			log.debug("[INFO_LOAD] User Info: {}", user);
-			String[] ips = CommonUtil.toArray(user.getIp(), ",");
+			String[] ips = Common.toArray(user.getIp(), ",");
 			for (String ipStr : ips) {
-				if (ipStr == null || CommonUtil.isEmpty(ipStr)) continue; //사용자가 없는 IP 혹은 IP 정보가 없으면 무시
+				if (ipStr == null || Common.isEmpty(ipStr)) continue; //사용자가 없는 IP 혹은 IP 정보가 없으면 무시
 				try {
 					IP ip = new IP(ipStr.trim());
 					user.addIp(ip);

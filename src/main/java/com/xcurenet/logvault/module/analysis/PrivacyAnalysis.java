@@ -4,7 +4,7 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.xcurenet.common.regex.MatchResult;
 import com.xcurenet.common.regex.PatternDetector;
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.loader.PatternLoader;
@@ -52,7 +52,7 @@ public class PrivacyAnalysis {
 	 * 텍스트 1개를 처리하고, 생성된 항목 수를 반환
 	 */
 	private int processText(EmassDoc doc, String text, String type, String attachName) {
-		if (CommonUtil.isEmpty(text)) return 0;
+		if (Common.isEmpty(text)) return 0;
 
 		StopWatch sw = DateUtils.start();
 		StringBuilder sb = new StringBuilder();
@@ -102,7 +102,7 @@ public class PrivacyAnalysis {
 			}
 		}
 		String duration = DateUtils.stop(sw);
-		if (CommonUtil.isNotEmpty(sb.toString())) {
+		if (Common.isNotEmpty(sb.toString())) {
 			log.info("[REG_DONE] {} | {} | {} | {}", doc.getMsgid(), type, sb.toString(), duration);
 		}
 		return added;
@@ -113,7 +113,7 @@ public class PrivacyAnalysis {
 			PatternDetector detector = PatternLoader.getUserCodeMap();
 			return detector.detectAll(text);
 		} catch (Exception e) {
-			log.warn("[LOCAL_PRIVACY] {} | {}", CommonUtil.getSummaryText(text), e.toString());
+			log.warn("[LOCAL_PRIVACY] {} | {}", Common.getSummaryText(text), e.toString());
 			return Collections.emptyMap();
 		}
 	}
@@ -123,8 +123,8 @@ public class PrivacyAnalysis {
 			try {
 				return restClient.post().uri(conf.getPrivacyAnalysisUrl()).contentType(TEXT_PLAIN_UTF8).body(text).retrieve().body(JSONObject.class);
 			} catch (Exception e) {
-				log.warn("[PRIVACY_API] {} | {} | ({}/{}) | {}", msgId, CommonUtil.getSummaryText(text), attempt, MAX_RETRIES, e.getMessage());
-				if (attempt < MAX_RETRIES) CommonUtil.sleep(RETRY_SLEEP_MS);
+				log.warn("[PRIVACY_API] {} | {} | ({}/{}) | {}", msgId, Common.getSummaryText(text), attempt, MAX_RETRIES, e.getMessage());
+				if (attempt < MAX_RETRIES) Common.sleep(RETRY_SLEEP_MS);
 			}
 		}
 		return null;

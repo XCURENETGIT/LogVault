@@ -4,7 +4,7 @@ package com.xcurenet.logvault.module.worker;
 import com.xcurenet.common.geo.GeoLocation;
 import com.xcurenet.common.msg.MSGData;
 import com.xcurenet.common.msg.MSGParser;
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.LogVaultApplication;
 import com.xcurenet.logvault.conf.Config;
@@ -18,6 +18,7 @@ import com.xcurenet.logvault.module.filter.FilterService;
 import com.xcurenet.logvault.module.log.LogService;
 import com.xcurenet.logvault.module.statics.ThroughputMetrics;
 import com.xcurenet.logvault.module.util.InsaManager;
+import com.xcurenet.logvault.opensearch.IndexService;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.opensearch.data.client.orhlc.OpenSearchRestTemplate;
@@ -25,7 +26,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.util.StopWatch;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +45,7 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 	protected final ClearService clearService;
 	protected final LogService logService;
 	protected final GeoLocation geoLocation;
-	protected final OpenSearchRestTemplate template;
+	protected final IndexService indexService;
 	protected final FilterService filterService;
 	protected final AlertService alertService;
 
@@ -64,7 +64,7 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 		this.geoLocation = context.getBean(GeoLocation.class);
 		this.filterService = context.getBean(FilterService.class);
 		this.alertService = context.getBean(AlertService.class);
-		this.template = context.getBean(OpenSearchRestTemplate.class);
+		this.indexService = context.getBean(IndexService.class);
 	}
 
 	@Override
@@ -104,7 +104,7 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 						} catch (final FileSendException | IndexerException e) {
 							log.error("[ERROR] {} | {}", data.getMsgData().getMsgid(), e.getMessage(), e);
 							retryCnt++;
-							CommonUtil.sleep(2000);
+							Common.sleep(2000);
 						}
 					}
 					if (!success) return;            // 오류 상황 시 원본 데이터 삭제 금지. (재 처리시 필요함.)
@@ -120,10 +120,10 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 			} catch (final ProcessDataException | ParsingException e) {
 				log.warn("{}", data.getFilePath(), e);
 				// 기본 파싱이 되지 않는 다면 권한을 제거하여 재 처리 되는 오류를 방지한다.
-				CommonUtil.removeAllPermissions(new File(data.getFilePath()));
+				Common.removeAllPermissions(new File(data.getFilePath()));
 			} catch (final Exception e) {
 				log.warn("{}", data.getFilePath(), e);
-				CommonUtil.sleep(10000);
+				Common.sleep(10000);
 			} finally {
 				data.decrementCount(); // 처리 건수 감소
 				inprogress.set(false);
@@ -181,7 +181,7 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 				StopWatch sw = DateUtils.start();
 				String dest = conf.getDestPath(msg.getCtime(), msg.getMsgid(), new File(src).getName());
 				fileSystem.write(src, dest, file.getName());
-				log.info("[ATT_SEND] {} | {} ({}) | {}", msg.getMsgid(), dest, CommonUtil.convertFileSize(file.length()), DateUtils.stop(sw));
+				log.info("[ATT_SEND] {} | {} ({}) | {}", msg.getMsgid(), dest, Common.convertFileSize(file.length()), DateUtils.stop(sw));
 			} catch (Exception e) {
 				throw new FileSendException(e);
 			}
@@ -199,7 +199,7 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 			StopWatch sw = DateUtils.start();
 			String dest = conf.getDestPath(msg.getCtime(), msg.getMsgid(), msg.getMsgid() + ".body");
 			fileSystem.write(file.getAbsolutePath(), dest, file.getName());
-			log.info("[BDY_SEND] {} | {} ({}) | {}", msg.getMsgid(), dest, CommonUtil.convertFileSize(file.length()), DateUtils.stop(sw));
+			log.info("[BDY_SEND] {} | {} ({}) | {}", msg.getMsgid(), dest, Common.convertFileSize(file.length()), DateUtils.stop(sw));
 		} catch (Exception e) {
 			throw new FileSendException(e);
 		}

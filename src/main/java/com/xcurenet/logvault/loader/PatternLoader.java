@@ -2,7 +2,7 @@ package com.xcurenet.logvault.loader;
 
 import com.xcurenet.common.regex.DetectOptions;
 import com.xcurenet.common.regex.PatternDetector;
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.logvault.loader.mapper.InfoLoaderMapper;
 import com.xcurenet.logvault.loader.type.PatternInfo;
 import lombok.Getter;
@@ -39,7 +39,7 @@ public class PatternLoader {
 		for (PatternInfo item : datas) {
 			if (item == null) continue;
 
-			if (CommonUtil.isEquals(item.getPatternType(), "N")) fresh.put(item.getPatternCd(), item.getMinCount());
+			if (Common.isEquals(item.getPatternType(), "N")) fresh.put(item.getPatternCd(), item.getMinCount());
 			else {
 				String pattern = StringEscapeUtils.unescapeJava(item.getRegex());
 				Pattern p = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.UNIX_LINES);

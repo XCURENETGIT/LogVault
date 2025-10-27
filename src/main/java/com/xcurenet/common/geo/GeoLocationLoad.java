@@ -8,6 +8,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 @Log4j2
 @Component
@@ -24,16 +25,22 @@ public class GeoLocationLoad {
 
 	@Bean
 	public DatabaseReader databaseReader() throws IOException {
-		return new DatabaseReader.Builder(geoIpDBResource.getFile()).build();
+		try (InputStream is = geoIpDBResource.getInputStream()) {
+			return new DatabaseReader.Builder(is).build();
+		}
 	}
 
 	@Bean
 	public DatabaseReader databaseASNReader() throws IOException {
-		return new DatabaseReader.Builder(geoASNDBResource.getFile()).build();
+		try (InputStream is = geoASNDBResource.getInputStream()) {
+			return new DatabaseReader.Builder(is).build();
+		}
 	}
 
 	@Bean
 	public DatabaseReader databaseCityReader() throws IOException {
-		return new DatabaseReader.Builder(geoCityResource.getFile()).build();
+		try (InputStream is = geoCityResource.getInputStream()) {
+			return new DatabaseReader.Builder(is).build();
+		}
 	}
 }

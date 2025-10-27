@@ -1,6 +1,6 @@
 package com.xcurenet.logvault;
 
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.FileTimeComparator;
 import com.xcurenet.common.utils.NamedThreadFactory;
 import com.xcurenet.crypto.Crypto;
@@ -76,11 +76,11 @@ public class LogVaultApplication implements CommandLineRunner {
 			startWorker(workers);
 
 			while (run.get()) {
-				CommonUtil.sleep(1000);
+				Common.sleep(1000);
 			}
 		} finally {
 			while (!isCompleteWorkers(workers)) {
-				CommonUtil.sleep(1000);
+				Common.sleep(1000);
 			}
 			shutdownLatch.countDown();
 		}
@@ -104,7 +104,7 @@ public class LogVaultApplication implements CommandLineRunner {
 	}
 
 	private void startScanner(final String dir, final PriorityBlockingQueue<ScanData> queue) {
-		if (CommonUtil.isEmpty(dir)) return;
+		if (Common.isEmpty(dir)) return;
 
 		ExecutorService executor = Executors.newFixedThreadPool(1);
 		executor.execute(new Scanner(dir, queue, run, conf.getScanDirectoryScanningWaitingSec()));
@@ -133,7 +133,7 @@ public class LogVaultApplication implements CommandLineRunner {
 		if (conf.isEncryptEnable()) {
 			if (!new File(conf.getEncryptKeyFile()).exists()) {
 				log.warn("The file encryption setting is enabled, but no key file is available.");
-				if (!CommonUtil.isWindow()) System.exit(1);
+				if (!Common.isWindow()) System.exit(1);
 
 				//아래 key 생성은 실전에서는 필요없음. (모듈 실행 전 키 파일이 필요함)
 				if (!makeKey()) {
@@ -142,8 +142,8 @@ public class LogVaultApplication implements CommandLineRunner {
 				}
 			}
 
-			final String key = CommonUtil.toHexString(Crypto.loadKeyFile(conf.getEncryptKeyFile()));
-			if (CommonUtil.isNotEmpty(key)) {
+			final String key = Common.toHexString(Crypto.loadKeyFile(conf.getEncryptKeyFile()));
+			if (Common.isNotEmpty(key)) {
 				log.info("[LOAD_ENCRYPT] {} | {}", conf.getEncryptKeyFile(), conf.getEncryptCipher());
 				conf.setEncryptKey(key);
 			} else {

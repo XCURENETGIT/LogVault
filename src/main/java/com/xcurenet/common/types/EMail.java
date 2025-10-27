@@ -1,6 +1,6 @@
 package com.xcurenet.common.types;
 
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -98,26 +98,26 @@ public class EMail implements Serializable {
 		final List<EMail> emails = new ArrayList<>();
 		if (b != null && b.length >= 2) {
 			int offset = 0;
-			final int size = CommonUtil.toShort(b, offset);
+			final int size = Common.toShort(b, offset);
 			offset += 2;
 			for (int i = 0; i < size; i++) {
 				String email = null;
 				String rep = null;
-				int len = CommonUtil.toShort(b, offset);
+				int len = Common.toShort(b, offset);
 				if (len > 0) {
-					email = Objects.requireNonNull(CommonUtil.toString(b, offset + 2, len)).trim();
+					email = Objects.requireNonNull(Common.toString(b, offset + 2, len)).trim();
 				}
 				offset += 2 + len;
-				len = CommonUtil.toShort(b, offset);
+				len = Common.toShort(b, offset);
 				if (len > 0) {
-					rep = Objects.requireNonNull(CommonUtil.toString(b, offset + 2, len)).trim();
+					rep = Objects.requireNonNull(Common.toString(b, offset + 2, len)).trim();
 				}
 				offset += 2 + len;
 
 				if (rep != null && !rep.isEmpty()) {
-					CommonUtil.add(emails, parse(rep));
+					Common.add(emails, parse(rep));
 				} else if (email != null && !email.isEmpty()) {
-					CommonUtil.add(emails, parse(email));
+					Common.add(emails, parse(email));
 				}
 			}
 		}
@@ -169,7 +169,7 @@ public class EMail implements Serializable {
 	}
 
 	public byte[] toBytes() {
-		return CommonUtil.add(CommonUtil.toSizeBytes(getEmailAddr(), 2), CommonUtil.toSizeBytes(toString(), 2));
+		return Common.add(Common.toSizeBytes(getEmailAddr(), 2), Common.toSizeBytes(toString(), 2));
 	}
 
 	public static byte[] toBytes(final EMail email) {
@@ -183,7 +183,7 @@ public class EMail implements Serializable {
 
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
-			baos.write(CommonUtil.toBytes(emails.size(), 2));
+			baos.write(Common.toBytes(emails.size(), 2));
 			for (final EMail email : emails) {
 				baos.write(email.toBytes());
 			}

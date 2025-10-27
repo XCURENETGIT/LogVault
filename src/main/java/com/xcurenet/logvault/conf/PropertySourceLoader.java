@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class PropertySourceLoader implements EnvironmentPostProcessor, Ordered {
 	private final Log log;
-	private static final String QUERY = "SELECT CONF_ID, VAL FROM UI_CONF";
+	private static final String QUERY = "SELECT CONF_ID, NVL(VAL, DEFAULT_VAL) AS VAL FROM UI_CONF WHERE APP_CD = ? AND USE_YN =?";
 
 	public PropertySourceLoader(DeferredLogFactory logFactory) {
 		this.log = logFactory.getLog(PropertySourceLoader.class);
@@ -29,19 +29,19 @@ public class PropertySourceLoader implements EnvironmentPostProcessor, Ordered {
 		String driver = env.getProperty("spring.datasource.driver-class-name", "org.mariadb.jdbc.Driver");
 		String appName = env.getProperty("spring.application.name", "LogVault");
 
-		Map<String, Object> defaults = DefaultConfig.getDefaultConfig();
-		Map<String, Object> props = new HashMap<>(defaults);
+		Map<String, Object> props = new HashMap<>();
 		if (url != null && user != null) {
 			try {
 				Class.forName(driver); // 일부 환경에서 필요
-				try (Connection conn = DriverManager.getConnection(url, user, pass);
-					 PreparedStatement ps = conn.prepareStatement(QUERY)) {
+				try (Connection conn = DriverManager.getConnection(url, user, pass); PreparedStatement ps = conn.prepareStatement(QUERY)) {
 					ps.setString(1, appName);
+					ps.setString(2, "Y");
 					try (ResultSet rs = ps.executeQuery()) {
 						while (rs.next()) {
 							String key = rs.getString("CONF_ID");
 							String val = rs.getString("VAL");
 							props.put(key, val);
+							log.info("✅ DB CONF : " + key + " = " + val);
 						}
 					}
 				}

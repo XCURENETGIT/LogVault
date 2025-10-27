@@ -31,7 +31,7 @@ public class DateUtils {
 	public static final DateTimeFormatter YYYYMMDDHHMMSS = DateTimeFormat.forPattern("yyyyMMddHHmmss");
 	public static final DateTimeFormatter DATETIME_CTIME = DateTimeFormat.forPattern("yyyy/MM/dd HH:mm:ss");
 
-	private static final String YYYYMMDD = "yyyyMMdd";
+	public static final String YYYYMMDD = "yyyyMMdd";
 	public static final String YYYYMMDDHHMMSSSSS = "yyyyMMddHHmmssSSS";
 	private static final int YYYYMMDD_SIZE = 8;
 	private static final int YYYYMMDDHH_SIZE = 10;

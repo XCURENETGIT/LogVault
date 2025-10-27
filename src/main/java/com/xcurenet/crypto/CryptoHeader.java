@@ -1,6 +1,6 @@
 package com.xcurenet.crypto;
 
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -64,7 +64,7 @@ public class CryptoHeader {
 	}
 
 	public static byte[] toBytes(final long n, final int length) {
-		return CommonUtil.toBytes(n, length);
+		return Common.toBytes(n, length);
 	}
 
 	public static long toLong(final byte[] input, final int inputOffset, final int inputLen) {

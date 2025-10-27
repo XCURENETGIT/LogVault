@@ -1,6 +1,6 @@
 package com.xcurenet.logvault.module.scanner;
 
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.logvault.LogVaultApplication;
 import com.xcurenet.logvault.module.ScanData;
 import lombok.extern.log4j.Log4j2;
@@ -10,11 +10,7 @@ import org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.attribute.PosixFilePermission;
 import java.util.Collection;
-import java.util.EnumSet;
-import java.util.Set;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,32 +45,32 @@ public class Scanner extends DirectoryWalker<File> implements Runnable {
 			}
 			log.debug("[WAITING] {} seconds for directory scanning: {}, ScannerCount : {}, QueueSize : {}", scanningWaitingSec, startDirectory, scannerCount.get(), scanQueue.size());
 			for (int i = 0; i < scanningWaitingSec && run.get(); i++) {
-				CommonUtil.sleep(1000); // 1초 대기
+				Common.sleep(1000); // 1초 대기
 			}
 
 			while (run.get() && scannerCount.get() > 0) {
 				log.debug("directory : {}, ScannerCount : {}, QueueSize : {}", startDirectory, scannerCount.get(), scanQueue.size());
-				CommonUtil.sleep(1000);
+				Common.sleep(1000);
 			}
 		}
 	}
 
 	@Override
 	protected void handleFile(File file, int depth, final Collection<File> results) {
-		if (file.length() > 0 && CommonUtil.filePermission(file) && !file.isHidden()) { // 파일 권한 검사 7xx or not
+		if (file.length() > 0 && Common.filePermission(file) && !file.isHidden()) { // 파일 권한 검사 7xx or not
 			try {
 				addQueue(getData(file));
 			} catch (Exception e) {
 				log.error("info file parsing error : {}", file.getAbsolutePath(), e);
 				//SCAN 후 에러 발생의 경우 파일 이름 파싱 오류로 간주한다.
 				//파일 이름 오류의 경우 권한을 변경하여, 더 이상 처리 하지 않도록 한다.
-				CommonUtil.removeAllPermissions(file);
+				Common.removeAllPermissions(file);
 			}
 		} else {
 			// 파일 생성이 24시간 지났으면서 권한이 7xx가 아닌 파일 삭제 (권한 검사는 앞에서 진행)
-			if (CommonUtil.diffTime(file.lastModified()) > DELETE_TMP_DELAY) {
+			if (Common.diffTime(file.lastModified()) > DELETE_TMP_DELAY) {
 				log.info("Time delay and not permission: {}", file.getAbsolutePath());
-				if (CommonUtil.isWindow()) return;
+				if (Common.isWindow()) return;
 				try {
 					Files.delete(file.toPath());
 				} catch (IOException e) {
@@ -104,7 +100,7 @@ public class Scanner extends DirectoryWalker<File> implements Runnable {
 
 	private void addQueue(final ScanData data) {
 		while (run.get() && scanQueue.size() >= LogVaultApplication.QUEUE_CAPACITY) {
-			CommonUtil.sleep(1000);
+			Common.sleep(1000);
 		}
 		if (!run.get()) return;
 
@@ -121,7 +117,7 @@ public class Scanner extends DirectoryWalker<File> implements Runnable {
 		if (startDirectory.getAbsolutePath().equals(directory.getAbsolutePath())) return true;
 
 		// 24시간이 지나고 디렉터리 밑에 파일이 없는 경우에 삭제 후 다시 생성
-		if (CommonUtil.diffTime(directory.lastModified()) > DELETE_TMP_DELAY) {
+		if (Common.diffTime(directory.lastModified()) > DELETE_TMP_DELAY) {
 			log.debug("Delete and recreate the Directory that has no files while specific hours: {}", directory.getAbsolutePath());
 			if (directory.delete()) directory.deleteOnExit();
 			try {

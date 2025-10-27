@@ -1,16 +1,18 @@
 package com.xcurenet.logvault.fs;
 
 import com.xcurenet.common.Constants;
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
 
@@ -60,6 +62,17 @@ public class LocalFileSystem implements FileSystemService {
 	}
 
 	@Override
+	public boolean deleteDirectory(String path) {
+		try {
+			FileUtils.deleteDirectory(new File(path));
+			return true;
+		} catch (Exception e) {
+			log.warn("[DIR_DELETE] Error ", e);
+		}
+		return false;
+	}
+
+	@Override
 	public void write(final String src, final String dst, final String fileName) throws Exception {
 		StopWatch sw = DateUtils.start();
 		File srcFile = new File(src);
@@ -68,11 +81,11 @@ public class LocalFileSystem implements FileSystemService {
 
 		try (FileInputStream fis = new FileInputStream(srcFile); FileOutputStream fos = new FileOutputStream(dstFile)) {
 			if (conf.isEncryptEnable()) {
-				CommonUtil.copy(fis, false, Constants.SHA256, conf.getEncyptCipher(), conf.getEncryptKey(), srcFile.length(), fos, null);
+				Common.copy(fis, false, Constants.SHA256, conf.getEncyptCipher(), conf.getEncryptKey(), srcFile.length(), fos, null);
 			} else {
 				fis.transferTo(fos);
 			}
-			log.debug("[AT_WRITE] | {} {} | {} | {} | {}", fileName, src, dst, CommonUtil.convertFileSize(srcFile.length()), DateUtils.stop(sw));
+			log.debug("[AT_WRITE] | {} {} | {} | {} | {}", fileName, src, dst, Common.convertFileSize(srcFile.length()), DateUtils.stop(sw));
 		}
 	}
 
@@ -80,7 +93,7 @@ public class LocalFileSystem implements FileSystemService {
 	public void writeText(final String path, final String text) throws Exception {
 		StopWatch sw = DateUtils.start();
 		Files.writeString(new File(path).toPath(), text, StandardCharsets.UTF_8);
-		log.debug("[AT_WRITE] {} | {} | {}", path, CommonUtil.convertFileSize(text.length()), DateUtils.stop(sw));
+		log.debug("[AT_WRITE] {} | {} | {}", path, Common.convertFileSize(text.length()), DateUtils.stop(sw));
 	}
 
 	@Override
@@ -88,11 +101,41 @@ public class LocalFileSystem implements FileSystemService {
 		StopWatch sw = DateUtils.start();
 		try (FileOutputStream fos = new FileOutputStream(path)) {
 			if (conf.isEncryptEnable()) {
-				CommonUtil.copy(is, false, Constants.SHA256, conf.getEncyptCipher(), conf.getEncryptKey(), is.available(), fos, null);
+				Common.copy(is, false, Constants.SHA256, conf.getEncyptCipher(), conf.getEncryptKey(), is.available(), fos, null);
 			} else {
 				is.transferTo(fos);
 			}
 			log.debug("[AT_WRITE] {} | {} | {}", fileName, path, DateUtils.stop(sw));
+		}
+	}
+
+	@Override
+	public long getTotalSpace(String path) {
+		try {
+			return Files.getFileStore(new File(path).toPath()).getTotalSpace();
+		} catch (IOException e) {
+			log.warn("[AT_TOTAL] {}", e.getMessage());
+		}
+		return 0L;
+	}
+
+	@Override
+	public long getUsableSpace(String path) {
+		try {
+			return Files.getFileStore(new File(path).toPath()).getUsableSpace();
+		} catch (IOException e) {
+			log.warn("[AT_USABLE] {}", e.getMessage());
+		}
+		return 0L;
+	}
+
+	@Override
+	public long size(String path) {
+		try {
+			return new File(path).length();
+		} catch (Exception e) {
+			log.warn("[FILE_SIZE]: {} | {}", path, e.getMessage());
+			return 0L;
 		}
 	}
 }

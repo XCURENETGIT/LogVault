@@ -1,7 +1,7 @@
 package com.xcurenet.common.types;
 
 import com.xcurenet.common.Constants;
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import lombok.Data;
 
 @Data
@@ -18,11 +18,11 @@ public class AttachExtension {
 		if (input == null) return;
 
 		String[] parts = input.split("\\|");
-		if (parts.length >= 1 && CommonUtil.isEquals(parts[0], "1")) this.fileNameExist = true;
+		if (parts.length >= 1 && Common.isEquals(parts[0], "1")) this.fileNameExist = true;
 		if (parts.length >= 2) this.ext = parts[1].toLowerCase();
 		if (parts.length >= 3) this.filterType = FILTERTYPE.valueOf(parts[2]);
 		if (parts.length >= 4) this.desc = parts[3];
-		if (parts.length >= 5 && CommonUtil.isEquals(parts[4], "1")) this.encrypted = true;
+		if (parts.length >= 5 && Common.isEquals(parts[4], "1")) this.encrypted = true;
 		this.unknown = Constants.UNKNOWN.equalsIgnoreCase(this.ext);
 	}
 

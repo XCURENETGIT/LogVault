@@ -1,6 +1,6 @@
 package com.xcurenet.common.thumbnail;
 
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import lombok.extern.log4j.Log4j2;
 import net.coobird.thumbnailator.Thumbnails;
 import net.coobird.thumbnailator.geometry.Positions;
@@ -35,7 +35,7 @@ public class PdfThumbnail {
 			PDFRenderer pdfRenderer = new PDFRenderer(document);
 			BufferedImage pageImage = pdfRenderer.renderImageWithDPI(0, 150, ImageType.RGB);
 			Thumbnails.of(pageImage).forceSize(width, height).crop(Positions.CENTER).outputFormat("jpg").toOutputStream(out);
-			return CommonUtil.toBase64(out.toByteArray());
+			return Common.toBase64(out.toByteArray());
 		} catch (IOException e) {
 			log.warn("[THUMNAIL] {} | {}", file.getPath(), e.getMessage());
 		}

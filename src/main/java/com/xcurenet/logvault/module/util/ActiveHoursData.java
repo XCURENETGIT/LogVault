@@ -1,6 +1,6 @@
 package com.xcurenet.logvault.module.util;
 
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import lombok.ToString;
 import org.joda.time.DateTime;
 import org.springframework.stereotype.Component;
@@ -28,7 +28,7 @@ public class ActiveHoursData {
 		String aHour = activeHour.get(userId);
 
 		// 인사기록에 존재하지 않는 값이면 이상행위 판단 안함
-		if (CommonUtil.isEmpty(aHour)) return true;
+		if (Common.isEmpty(aHour)) return true;
 
 		final int hour = dt.getHourOfDay();
 		return '1' == aHour.charAt(hour);

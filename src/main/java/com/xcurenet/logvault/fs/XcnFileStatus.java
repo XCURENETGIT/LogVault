@@ -1,6 +1,6 @@
 package com.xcurenet.logvault.fs;
 
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
@@ -83,7 +83,7 @@ public class XcnFileStatus implements Serializable {
 
 	public String getParent() {
 		final String path = getPath();
-		return CommonUtil.getParentDir(path);
+		return Common.getParentDir(path);
 	}
 
 	public boolean isDirectory() {

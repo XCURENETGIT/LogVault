@@ -1,7 +1,7 @@
 package com.xcurenet.common.msg;
 
 import com.xcurenet.common.types.*;
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.exception.ProcessDataException;
 import lombok.extern.log4j.Log4j2;
@@ -36,7 +36,7 @@ public class MSGParser {
 			data.setInfoFilePath(filePath);
 			data.setInfoText(input);
 			data.setFileNameInfo(FileNameInfo.getInfo(filePath));
-			data.setMsgid(CommonUtil.makeMsgId(data.getCtime(), CommonUtil.makeFilepath(data.getInfoFilePath())));
+			data.setMsgid(Common.makeMsgId(data.getCtime(), Common.makeFilepath(data.getInfoFilePath())));
 			return data;
 		} catch (Exception e) {
 			throw new ProcessDataException(e);
@@ -98,7 +98,7 @@ public class MSGParser {
 	}
 
 	private static Object parseValue(Class<?> type, Object value, Field field) throws IOException {
-		String strVal = CommonUtil.nvl(value);
+		String strVal = Common.nvl(value);
 		if ("userIp".equals(field.getName()) && !"unknown".equals(strVal)) {
 			return IP.create(StringUtils.split(strVal, ":, ")[0]);
 		}

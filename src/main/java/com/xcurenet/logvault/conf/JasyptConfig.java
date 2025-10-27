@@ -42,7 +42,7 @@ public class JasyptConfig {
 	 * jasypt encrypt
 	 */
 	public static void main(String[] args) {
-		String password = "NewPassword1e3!";
+		String password = "admin";
 
 		JasyptConfig jasyptConfig = new JasyptConfig();
 		StringEncryptor stringEncryptor = jasyptConfig.stringEncryptor();

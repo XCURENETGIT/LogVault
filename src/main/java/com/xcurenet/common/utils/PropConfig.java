@@ -73,7 +73,7 @@ public class PropConfig extends Properties {
 
 	public boolean getPropertyBoolean(final String key, final boolean defaultValue) {
 		final String value = getProperty(key);
-		if (CommonUtil.parseBoolean(value)) {
+		if (Common.parseBoolean(value)) {
 			return true;
 		}
 		return defaultValue;

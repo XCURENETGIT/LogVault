@@ -2,7 +2,7 @@ package com.xcurenet.logvault.module.analysis;
 
 import com.alibaba.fastjson2.JSONObject;
 import com.xcurenet.common.thumbnail.FileThumbnail;
-import com.xcurenet.common.utils.CommonUtil;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.module.ScanData;
@@ -10,7 +10,6 @@ import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.time.DurationFormatUtils;
-import org.apache.commons.lang3.time.DurationUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -45,7 +44,7 @@ public class AttachAnalysis {
 				return restClient.post().uri(conf.getFileAnalysisUrl()).contentType(MediaType.MULTIPART_FORM_DATA).body(body).retrieve().body(JSONObject.class);
 			} catch (Exception e) {
 				log.warn("[GET_TEXT] {} | ({}/{}) | {}", filePath, attempt, maxRetries, e.getMessage());
-				if (attempt < maxRetries) CommonUtil.sleep(1000);
+				if (attempt < maxRetries) Common.sleep(1000);
 			}
 		}
 		return null;
@@ -62,17 +61,17 @@ public class AttachAnalysis {
 			JSONObject text = getText(doc.getMsgid(), attach.getSrcPath(), attach.getName());
 			if (text != null && text.getBoolean("success")) {
 				JSONObject data = text.getJSONObject("data");
-				String limit = CommonUtil.limitLength(data.getString("text"), conf.getTextLimitLength());
-				limit = CommonUtil.limitTokenLengthWithSpace(limit, conf.getTextLimitToken());
+				String limit = Common.limitLength(data.getString("text"), conf.getTextLimitLength());
+				limit = Common.limitTokenLengthWithSpace(limit, conf.getTextLimitToken());
 
 				attach.setText(limit);
 				attach.setExpectedExtension(data.getString("extension"));
 				attach.setExpectedUnknown(data.getBoolean("unknownType"));
 				attach.setChangeExtension(data.getBoolean("changeExtension"));
 				attach.setEncrypted(data.getBoolean("encrypted"));
-				log.info("[ATT_TEXT] {} | {} | {} | {} | {}", doc.getMsgid(), attach.getSrcPath(), text.get("success"), DateUtils.stop(sw), CommonUtil.getSummaryText(attach.getText()));
+				log.info("[ATT_TEXT] {} | {} | {} | {} | {}", doc.getMsgid(), attach.getSrcPath(), text.get("success"), DateUtils.stop(sw), Common.getSummaryText(attach.getText()));
 			} else {
-				log.warn("[ATT_TEXT] {} | {} | {} | {} | {}", doc.getMsgid(), attach.getSrcPath(), text, DateUtils.stop(sw), CommonUtil.getSummaryText(attach.getText()));
+				log.warn("[ATT_TEXT] {} | {} | {} | {} | {}", doc.getMsgid(), attach.getSrcPath(), text, DateUtils.stop(sw), Common.getSummaryText(attach.getText()));
 			}
 		}
 	}
@@ -104,7 +103,7 @@ public class AttachAnalysis {
 		StopWatch sw = new StopWatch();
 		sw.start();
 		for (int i = 1; i <= 100; i++) {
-			CommonUtil.sleep(1);
+			Common.sleep(1);
 		}
 		sw.stop();
 		String formatted = DurationFormatUtils.formatDuration(sw.getTotalTimeMillis(), "s.SSS's'");

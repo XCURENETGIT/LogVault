@@ -3,17 +3,16 @@ package com.xcurenet.logvault.fs;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
 import io.minio.*;
+import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
+import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -82,6 +81,21 @@ public class MinioFileSystem implements FileSystemService {
 	}
 
 	@Override
+	public boolean deleteDirectory(String path) {
+		try {
+			Iterable<Result<Item>> results = minioClient.listObjects(ListObjectsArgs.builder().bucket(conf.getMinioBucket()).prefix(path.endsWith("/") ? path : path + "/").recursive(true).build());
+			for (Result<Item> result : results) {
+				Item item = result.get();
+				minioClient.removeObject(RemoveObjectArgs.builder().bucket(conf.getMinioBucket()).object(item.objectName()).build());
+			}
+			return true;
+		} catch (Exception e) {
+			log.warn("[AT_DELETE] Error deleting directory {}", path, e);
+			return false;
+		}
+	}
+
+	@Override
 	public void write(final String src, final String dst, final String fileName) throws Exception {
 		try (FileInputStream in = new FileInputStream(src)) {
 			write(dst, in, fileName);
@@ -109,5 +123,25 @@ public class MinioFileSystem implements FileSystemService {
 
 	private StatObjectResponse getStatObject(final String path) throws Exception {
 		return minioClient.statObject(StatObjectArgs.builder().bucket(conf.getMinioBucket()).object(path).build());
+	}
+
+	@Override
+	public long getTotalSpace(final String src) {
+		return 0L;
+	}
+
+	@Override
+	public long getUsableSpace(String path) {
+		return 0L;
+	}
+
+	@Override
+	public long size(String path) {
+		try {
+			return getStatObject(path).size();
+		} catch (Exception e) {
+			log.warn("[FILE_SIZE]: {} | {}", path, e.getMessage());
+			return 0L;
+		}
 	}
 }

@@ -42,6 +42,10 @@ public class IndexService {
 	protected final OpenSearchRestTemplate template;
 	private final Config conf;
 
+	public <T> T get(final String msgId, final Class<T> clazz, final String indexName) {
+		return template.get(msgId, clazz, IndexCoordinates.of(indexName));
+	}
+
 	public <T> void index(final T data, final String msgId, final String indexName) throws IndexerException {
 		StopWatch sw = DateUtils.start();
 		try {
@@ -150,7 +154,8 @@ public class IndexService {
 			Request req = new Request("GET", String.format(ENDPOINT, conf.getIndexName()));
 			Response resp = low.performRequest(req);
 			String json = EntityUtils.toString(resp.getEntity());
-			List<Map<String, String>> list = new ObjectMapper().readValue(json, new TypeReference<>() {});
+			List<Map<String, String>> list = new ObjectMapper().readValue(json, new TypeReference<>() {
+			});
 			list.sort(Comparator.comparing(m -> {
 				try {
 					String dateStr = m.get("index").replaceAll(".*-(\\d{8})$", "$1");

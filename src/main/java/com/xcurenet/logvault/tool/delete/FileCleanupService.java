@@ -49,8 +49,11 @@ public class FileCleanupService {
 		boolean attachDeleted = fileProcessor.deleteDirectory(Common.makeFilepath(conf.getAttachRoot(), date));
 		log.info("[DEL_FILES] Path:{} | AttachDeleted:{}", Common.makeFilepath(conf.getAttachRoot(), date), attachDeleted);
 		if (attachDeleted) {
-			indexService.deleteIndices(index); //인덱스 삭제
-			log.info("[DEL_INDEX] Index:{} | Date:{}", index, DateUtils.parseDateTimeYYYYMMDD(date));
+			if (indexService.deleteIndices(index)) { //인덱스 삭제
+				log.info("[DEL_INDEX] Index:{} | Date:{}", index, DateUtils.parseDateTimeYYYYMMDD(date));
+			} else {
+				log.warn("[DEL_INDEX] Index:{} | Date:{}", index, DateUtils.parseDateTimeYYYYMMDD(date));
+			}
 		}
 	}
 

@@ -1,5 +1,6 @@
 package com.xcurenet.logvault.module.worker;
 
+import com.alibaba.fastjson2.JSON;
 import com.xcurenet.common.Constants;
 import com.xcurenet.common.msg.MSGData;
 import com.xcurenet.common.msg.MSGParser;
@@ -78,6 +79,8 @@ public class MSGWorker extends AbstractLogVaultWorker {
 		EmassDoc doc = data.getEmassDoc();
 		String index = conf.getIndexName() + doc.getCtime().substring(0, 8);
 		indexService.index(doc, doc.getMsgid(), index);
+
+		log.info(indexService.get(doc.getMsgid(), EmassDoc.class, index));
 	}
 
 	@Override

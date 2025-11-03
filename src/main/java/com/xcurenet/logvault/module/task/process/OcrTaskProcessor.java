@@ -45,13 +45,10 @@ public class OcrTaskProcessor implements TaskProcessor {
 					.data("boxes_type", "line")
 					.data("image", "sample.png", in);
 
-			// POST 전송 및 응답 수신
-			Document response = connection.post();
-
 			// 2️⃣ 실제 OCR 처리 로직 (예시)
 			// 실제로는 OCR 엔진 호출, 파일 읽기, 결과 저장 등의 작업 수행
 			//Thread.sleep(1000L); // 모의 처리 지연
-			log.info("[OCR] OCR 작업 완료: {} {}", message.getMsgId(), response);
+			log.info("[OCR] OCR 작업 완료: {} {}", message.getMsgId(), JSONObject.parseObject(String.valueOf(connection.post().body().text())));
 
 			// 3️⃣ 처리 결과 저장 또는 후속 Task enqueue
 			// ex) repository.updateStatus(message.getMsgId(), "DONE");

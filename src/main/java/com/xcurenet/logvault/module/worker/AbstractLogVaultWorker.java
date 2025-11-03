@@ -17,6 +17,7 @@ import com.xcurenet.logvault.module.clear.ClearService;
 import com.xcurenet.logvault.module.filter.FilterService;
 import com.xcurenet.logvault.module.log.LogService;
 import com.xcurenet.logvault.module.statics.ThroughputMetrics;
+import com.xcurenet.logvault.module.task.service.TaskService;
 import com.xcurenet.logvault.module.util.InsaManager;
 import com.xcurenet.logvault.opensearch.IndexService;
 import lombok.Data;
@@ -48,6 +49,7 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 	protected final IndexService indexService;
 	protected final FilterService filterService;
 	protected final AlertService alertService;
+	protected final TaskService taskService;
 
 	protected final ThroughputMetrics metrics;
 
@@ -64,6 +66,7 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 		this.geoLocation = context.getBean(GeoLocation.class);
 		this.filterService = context.getBean(FilterService.class);
 		this.alertService = context.getBean(AlertService.class);
+		this.taskService = context.getBean(TaskService.class);
 		this.indexService = context.getBean(IndexService.class);
 	}
 
@@ -99,6 +102,7 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 							transToAttach(data);    // 첨부파일 전송  (Error 발생 시 해당 로직 3회 재처리 후 지속 에러 발생 시 처음부터 재 처리)
 							index(data);            // Elastic 색인 (Error 발생 시 해당 로직 3회 재처리 후 지속 에러 발생 시 처음부터 재 처리)
 							alert(data);            // 이상행위 (룰) 탐지 시 알림 전송
+							task(data);             // OCR 사용이면, OCR 처리
 							success = true;
 							break;
 						} catch (final FileSendException | IndexerException e) {
@@ -208,6 +212,8 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 	protected abstract void index(ScanData data) throws IndexerException;
 
 	protected abstract void alert(ScanData data);
+
+	protected abstract void task(ScanData data);
 
 	/**
 	 * 본문, 헤더, 첨부파일 파일이 없는 경우 최대 30분 대기

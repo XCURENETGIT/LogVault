@@ -88,6 +88,11 @@ public class MSGWorker extends AbstractLogVaultWorker {
 		alertService.send(data);
 	}
 
+	@Override
+	protected void task(ScanData data) {
+		taskService.send(data);
+	}
+
 	private void setService(MSGData msg, EmassDoc doc) {
 		EmassDoc.Service service = new EmassDoc.Service();
 		char[] chars = msg.getSvc().toCharArray();

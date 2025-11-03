@@ -1,0 +1,48 @@
+package com.xcurenet.logvault.module.task.service;
+
+import com.xcurenet.logvault.conf.Config;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+
+@Configuration
+@EnableScheduling
+@RequiredArgsConstructor
+public class TaskExecutorsConfig {
+	private final Config conf;
+
+	@Bean
+	public BlockingQueue<TaskMessage> messageQueue() {
+		return new LinkedBlockingQueue<>(conf.getTaskQueueWorkersCapacity());
+	}
+
+	@Bean(name = "ocrExecutor")
+	public ThreadPoolTaskExecutor ocrExecutor() {
+		ThreadPoolTaskExecutor ex = new ThreadPoolTaskExecutor();
+		ex.setThreadNamePrefix("ocr-");
+		ex.setCorePoolSize(conf.getTaskQueueWorkersThreads());
+		ex.setMaxPoolSize(conf.getTaskQueueWorkersThreads());
+		ex.setQueueCapacity(1000);
+		ex.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+		ex.initialize();
+		return ex;
+	}
+
+	@Bean(name = "mlExecutor")
+	public ThreadPoolTaskExecutor mlExecutor() {
+		ThreadPoolTaskExecutor ex = new ThreadPoolTaskExecutor();
+		ex.setThreadNamePrefix("ml-");
+		ex.setCorePoolSize(conf.getTaskQueueWorkersThreads());
+		ex.setMaxPoolSize(conf.getTaskQueueWorkersThreads());
+		ex.setQueueCapacity(1000);
+		ex.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+		ex.initialize();
+		return ex;
+	}
+}

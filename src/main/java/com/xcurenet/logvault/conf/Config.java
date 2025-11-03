@@ -180,6 +180,15 @@ public class Config {
 	@Value("${filter.http.response.content.type:text/css,application/javascript,text/javascript,font/woff2}") //Response ContentType Filter
 	private String filterResponseContentType;
 
+	@Value("${task.queue.workers.capacity:100}") //후 처리 큐 capacity
+	private int taskQueueWorkersCapacity;
+
+	@Value("${task.queue.workers.threads:10}") //후 처리 쓰레드 수
+	private int taskQueueWorkersThreads;
+
+	@Value("${task.queue.scheduler.fetch-size:100}") //후 처리 시 한번에 MariaDB에서 불러올 건수
+	private int taskQueueSchedulerFetchSize;
+
 	public int getInterval() {
 		return fileWaitTime * 1000;
 	}

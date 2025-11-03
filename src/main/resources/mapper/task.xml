@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "../../dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xcurenet.logvault.module.task.service.TaskMessageRepository">
+
+	<insert id="insertMessage" parameterType="Message">
+		INSERT INTO AEGISAI.PROCESSING_QUEUE
+		(MSGID, TASK_TYPE, STATUS, `DATA`, ERROR_MESSAGE, RUN_AT, CREATE_DT)
+		VALUES(#{msgId}, #{taskType}, 'PENDING', #{data}, NULL, current_timestamp(), current_timestamp())
+	</insert>
+
+
+	<!-- 사용자 정보 -->
+	<select id="claimBatchByType" resultType="Message">
+		SELECT  MSGID AS msgId, TASK_TYPE AS taskType, STATUS AS status, DATA AS data, ERROR_MESSAGE as errorMessage, RUN_AT AS runAt, CREATE_DT as createDt
+		FROM	PROCESSING_QUEUE
+		WHERE	TASK_TYPE = #{taskType}
+		AND		STATUS = 'PENDING'
+		ORDER 	BY MSGID
+		LIMIT	#{limit}
+		FOR 	UPDATE SKIP LOCKED
+	</select>
+
+	<update id="markInProgressBatch">
+		UPDATE	PROCESSING_QUEUE
+		SET 	STATUS  = 'IN_PROGRESS',
+				RUN_AT  = NOW()
+		WHERE	MSGID IN
+		<foreach collection="msgIds" item="msgId" open="(" separator="," close=")">
+		  #{msgId}
+		</foreach>
+	</update>
+
+	<update id="updateStatusDone">
+		UPDATE	PROCESSING_QUEUE
+		SET		STATUS='DONE'  ,
+				ERROR_MESSAGE=NULL
+		WHERE	MSGID= #{msgId}
+	</update>
+
+	<update id="deleteById">
+		DELETE  FROM PROCESSING_QUEUE
+		WHERE 	MSGID = #{msgId}
+	</update>
+
+	<update id="updateStatusFailed">
+		UPDATE  PROCESSING_QUEUE
+		SET		STATUS = 'FAILED',
+				ERROR_MESSAGE = #{err}
+		WHERE 	MSGID = #{msgId}
+	</update>
+</mapper>

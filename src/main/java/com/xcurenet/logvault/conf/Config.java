@@ -88,6 +88,15 @@ public class Config {
 	@Value("${extract.text.timeout:5}") //첨부파일 텍스트 추출 TimeOut
 	private int extractTextTimeout;
 
+	@Value("${ocr.api.enable:true}") //OCR Rest API ENABLE
+	private boolean ocrApiEnable;
+
+	@Value("${ocr.api.url:http://10.200.10.49:62975/sdk/ocr}") //OCR Rest API URL
+	private String ocrApiUrl;
+
+	@Value("${ocr.api.key:SNOCR-834be64b6228442cac181eb08d84e56c}") //OCR Rest API KEY
+	private String ocrApiKey;
+
 	@Value("${ocr.target.ext:tiff,tif,png,gif,jpg,jpeg,bmp,pcx,dcx,jb2,jfif,jp2,jpc,j2k,pdf}") //OCR 대상 확장자
 	private String ocrTargetExt;
 
@@ -95,7 +104,8 @@ public class Config {
 		return new HashSet<>(Arrays.asList(ocrTargetExt.split(",")));
 	}
 
-	@Value("${ignore.extractor.ext:gul,mpeg,mp3,asf,ra,rm,tiff,tif,png,gif,jpg,bmp,pcx,mid,wav,avi,pds}") //텍스트 추출 예외 확장자
+	@Value("${ignore.extractor.ext:gul,mpeg,mp3,asf,ra,rm,tiff,tif,png,gif,jpg,bmp,pcx,mid,wav,avi,pds}")
+	//텍스트 추출 예외 확장자
 	private String ignoreExtractorExt;
 
 	public Set<String> getIgnoreExtractorExt() {
@@ -177,7 +187,8 @@ public class Config {
 	@Value("${data.store.usage:N}") //데이터 자동 삭제 임계치
 	private String dataStoreUsage;
 
-	@Value("${filter.http.response.content.type:text/css,application/javascript,text/javascript,font/woff2}") //Response ContentType Filter
+	@Value("${filter.http.response.content.type:text/css,application/javascript,text/javascript,font/woff2}")
+	//Response ContentType Filter
 	private String filterResponseContentType;
 
 	@Value("${task.queue.workers.capacity:100}") //후 처리 큐 capacity
@@ -204,5 +215,10 @@ public class Config {
 
 	public String getDestPath(final DateTime ctime, final String msgId, final String name) {
 		return Common.makeFilepath(getDestPath(ctime, msgId), name);
+	}
+
+	public static void main(String[] args) {
+		String fileName = "20251104151028-01e13165-d8ef2415-57793-443-00-462358-DEBDA8FBC3951135ED28B45CFD0FAB8B-VI01.http-2.hdr";
+		System.out.println(Common.makeFilepath("/users/las/msg/data", Long.toString(com.xcurenet.common.utils.Common.getSplitNum(fileName, 100)), fileName));
 	}
 }

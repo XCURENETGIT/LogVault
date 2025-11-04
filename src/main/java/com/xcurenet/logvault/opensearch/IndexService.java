@@ -23,7 +23,9 @@ import org.opensearch.index.query.QueryBuilders;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.document.Document;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
+import org.springframework.data.elasticsearch.core.query.UpdateQuery;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
 import org.springframework.util.StringUtils;
@@ -31,6 +33,7 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -55,6 +58,16 @@ public class IndexService {
 		} finally {
 			log.info("[MG_INDEX] {} | {} | {}", msgId, indexName, DateUtils.stop(sw));
 		}
+	}
+
+
+	public void updatePrivacyAndKeyword(final String indexName, final String id, final List<Map<String, Object>> privacyInfoDoc, final Map<String, Object> keywordInfoDoc) {
+		Map<String, Object> partial = new HashMap<>();
+		if (privacyInfoDoc != null) partial.put("privacy_info", privacyInfoDoc);
+		if (keywordInfoDoc != null) partial.put("keyword_info", keywordInfoDoc);
+
+		UpdateQuery uq = UpdateQuery.builder(id).withIndex("emass").withDocument(Document.from(partial)).withDocAsUpsert(false).build();
+		template.update(uq);
 	}
 
 	public SearchHits<EmassDoc> selectOldFiles() {

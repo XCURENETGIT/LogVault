@@ -20,20 +20,22 @@
 		LIMIT	#{limit}
 		FOR 	UPDATE SKIP LOCKED
 	</select>
+	<update id="updateStatusPending">
+		UPDATE  PROCESSING_QUEUE
+		SET		STATUS = 'PENDING'
+		WHERE	STATUS = 'RUNNING'
+	</update>
 
-	<update id="markInProgressBatch">
+	<update id="updateStatusRunning">
 		UPDATE	PROCESSING_QUEUE
-		SET 	STATUS  = 'IN_PROGRESS',
+		SET 	STATUS  = 'RUNNING',
 				RUN_AT  = NOW()
-		WHERE	MSGID IN
-		<foreach collection="msgIds" item="msgId" open="(" separator="," close=")">
-		  #{msgId}
-		</foreach>
+		WHERE	MSGID= #{msgId}
 	</update>
 
 	<update id="updateStatusDone">
 		UPDATE	PROCESSING_QUEUE
-		SET		STATUS='DONE'  ,
+		SET		STATUS='DONE',
 				ERROR_MESSAGE=NULL
 		WHERE	MSGID= #{msgId}
 	</update>

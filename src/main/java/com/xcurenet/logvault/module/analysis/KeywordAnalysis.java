@@ -22,18 +22,21 @@ public class KeywordAnalysis {
 	private final KeywordLoader keywordLoader;
 
 	public void detect(final ScanData scanData) {
-		EmassDoc doc = scanData.getEmassDoc();
+		detect(scanData.getEmassDoc());
+	}
+
+	public void detect(final EmassDoc doc) {
 		if (Common.isNotEquals(doc.getService().getSvc3(), "S")) return; // 발신 데이터만 처리
 
 		EmassDoc.Body body = doc.getBody();
 		EmassDoc.KeywordInfo keywordInfo = new EmassDoc.KeywordInfo();
 
-		// ✅ 본문 키워드 탐지
+		// 본문 키워드 탐지
 		if (body != null && Common.isNotEmpty(body.getText())) {
 			keywordInfo.setBody(checkKeyword(body.getText()));
 		}
 
-		// ✅ 첨부파일 키워드 탐지
+		// 첨부파일 키워드 탐지
 		if (doc.getAttach() != null && CollectionUtil.isNotEmpty(doc.getAttach())) {
 			List<EmassDoc.KeywordInfo.Keyword> attachNameKeywords = new ArrayList<>();
 			List<EmassDoc.KeywordInfo.Keyword> attachTextKeywords = new ArrayList<>();
@@ -51,17 +54,17 @@ public class KeywordAnalysis {
 			keywordInfo.setAttach(attachTextKeywords.isEmpty() ? null : attachTextKeywords);
 		}
 
-		// ✅ 전체 존재 여부
+		// 전체 존재 여부
 		keywordInfo.setExist(CollectionUtil.isNotEmpty(keywordInfo.getBody()) || CollectionUtil.isNotEmpty(keywordInfo.getAttachName()) || CollectionUtil.isNotEmpty(keywordInfo.getAttach()));
 
-		// ✅ 병합된 keywords 생성
+		// 병합된 keywords 생성
 		if (keywordInfo.isExist()) {
 			List<EmassDoc.KeywordInfo.Keyword> keywords = new ArrayList<>();
 			if (CollectionUtil.isNotEmpty(keywordInfo.getBody())) keywords.addAll(keywordInfo.getBody());
 			if (CollectionUtil.isNotEmpty(keywordInfo.getAttachName())) keywords.addAll(keywordInfo.getAttachName());
 			if (CollectionUtil.isNotEmpty(keywordInfo.getAttach())) keywords.addAll(keywordInfo.getAttach());
 
-			// ✅ 중복 키워드 count 합산
+			// 중복 키워드 count 합산
 			Map<String, Integer> merged = new LinkedHashMap<>();
 			for (EmassDoc.KeywordInfo.Keyword k : keywords) {
 				merged.merge(k.getName(), k.getCount(), Integer::sum);

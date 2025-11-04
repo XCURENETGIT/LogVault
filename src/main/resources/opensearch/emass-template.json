@@ -306,6 +306,12 @@
 							"doc_values": false,
 							"index": false
 						},
+						"ocr_target" : {
+							"type": "keyword"
+						},
+						"ocr_status" : {
+							"type": "keyword"
+						},
 						"path": {
 							"type": "keyword",
 							"doc_values": false,

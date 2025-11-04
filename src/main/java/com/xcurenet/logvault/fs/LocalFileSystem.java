@@ -3,6 +3,8 @@ package com.xcurenet.logvault.fs;
 import com.xcurenet.common.Constants;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
+import com.xcurenet.crypto.Crypto;
+import com.xcurenet.crypto.CryptoInputStream;
 import com.xcurenet.logvault.conf.Config;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -46,9 +48,15 @@ public class LocalFileSystem implements FileSystemService {
 	@Override
 	public InputStream open(String path) throws Exception {
 		StopWatch sw = DateUtils.start();
-		InputStream inputStream = new FileInputStream(path);
+		InputStream in;
+		if (conf.isEncryptEnable()) {
+			Crypto crypto = new Crypto(conf.getEncryptKey(), conf.getEncyptCipher());
+			in = new BufferedInputStream(new CryptoInputStream(crypto, new FileInputStream(path)));
+		} else {
+			in = new FileInputStream(path);
+		}
 		log.debug("[AT_OPEN] {} | {}", path, DateUtils.stop(sw));
-		return inputStream;
+		return in;
 	}
 
 	@Override

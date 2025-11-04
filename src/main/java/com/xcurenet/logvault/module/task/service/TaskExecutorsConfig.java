@@ -25,7 +25,7 @@ public class TaskExecutorsConfig {
 	@Bean(name = "ocrExecutor")
 	public ThreadPoolTaskExecutor ocrExecutor() {
 		ThreadPoolTaskExecutor ex = new ThreadPoolTaskExecutor();
-		ex.setThreadNamePrefix("ocr-");
+		ex.setThreadNamePrefix("TASK-OCR-");
 		ex.setCorePoolSize(conf.getTaskQueueWorkersThreads());
 		ex.setMaxPoolSize(conf.getTaskQueueWorkersThreads());
 		ex.setQueueCapacity(1000);
@@ -37,7 +37,7 @@ public class TaskExecutorsConfig {
 	@Bean(name = "mlExecutor")
 	public ThreadPoolTaskExecutor mlExecutor() {
 		ThreadPoolTaskExecutor ex = new ThreadPoolTaskExecutor();
-		ex.setThreadNamePrefix("ml-");
+		ex.setThreadNamePrefix("TASK-ML-");
 		ex.setCorePoolSize(conf.getTaskQueueWorkersThreads());
 		ex.setMaxPoolSize(conf.getTaskQueueWorkersThreads());
 		ex.setQueueCapacity(1000);

@@ -22,7 +22,6 @@ import com.xcurenet.logvault.module.util.InsaManager;
 import com.xcurenet.logvault.opensearch.IndexService;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
-import org.opensearch.data.client.orhlc.OpenSearchRestTemplate;
 import org.springframework.context.ApplicationContext;
 import org.springframework.util.StopWatch;
 
@@ -178,13 +177,13 @@ public abstract class AbstractLogVaultWorker implements Runnable {
 		for (String src : appPaths) {
 			if (src == null) continue;
 
-			File file = new File(src);
+			File file = new File(conf.getPath(src));
 			if (!file.exists()) continue;
 
 			try {
 				StopWatch sw = DateUtils.start();
 				String dest = conf.getDestPath(msg.getCtime(), msg.getMsgid(), new File(src).getName());
-				fileSystem.write(src, dest, file.getName());
+				fileSystem.write(file.getAbsolutePath(), dest, file.getName());
 				log.info("[ATT_SEND] {} | {} ({}) | {}", msg.getMsgid(), dest, Common.convertFileSize(file.length()), DateUtils.stop(sw));
 			} catch (Exception e) {
 				throw new FileSendException(e);

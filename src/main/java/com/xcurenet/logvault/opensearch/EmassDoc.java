@@ -1,5 +1,6 @@
 package com.xcurenet.logvault.opensearch;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import lombok.Data;
 import org.opensearch.common.geo.GeoPoint;
@@ -19,6 +20,7 @@ public class EmassDoc {
 	private String msgid;
 
 	@Field(name = "@timestamp", type = FieldType.Date, format = DateFormat.epoch_millis)
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
 	private Date timestamp;
 
 	@Field("ctime")
@@ -188,6 +190,10 @@ public class EmassDoc {
 		private Long size;
 		@Field("base64")
 		private String base64;
+		@Field("ocr_target")
+		private boolean ocrTarget;
+		@Field("ocr_status")
+		private String ocrStatus;
 		@Field("path")
 		private String path;
 		@Field("text")

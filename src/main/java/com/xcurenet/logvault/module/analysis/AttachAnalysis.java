@@ -9,6 +9,7 @@ import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -56,6 +57,7 @@ public class AttachAnalysis {
 		if (attaches == null) return;
 		for (EmassDoc.Attach attach : attaches) {
 			if (!attach.isExist()) continue;
+			attach.setOcrTarget(false);
 
 			StopWatch sw = DateUtils.start();
 			JSONObject text = getText(doc.getMsgid(), attach.getSrcPath(), attach.getName());
@@ -69,6 +71,12 @@ public class AttachAnalysis {
 				attach.setExpectedUnknown(data.getBoolean("unknownType"));
 				attach.setChangeExtension(data.getBoolean("changeExtension"));
 				attach.setEncrypted(data.getBoolean("encrypted"));
+
+				String ext = FilenameUtils.getExtension(attach.getName());
+				if (conf.getOcrTargetExt().contains(attach.getExpectedExtension()) || conf.getOcrTargetExt().contains(ext)) {
+					attach.setOcrStatus("R");
+					attach.setOcrTarget(true);
+				}
 				log.info("[ATT_TEXT] {} | {} | {} | {} | {}", doc.getMsgid(), attach.getSrcPath(), text.get("success"), DateUtils.stop(sw), Common.getSummaryText(attach.getText()));
 			} else {
 				log.warn("[ATT_TEXT] {} | {} | {} | {} | {}", doc.getMsgid(), attach.getSrcPath(), text, DateUtils.stop(sw), Common.getSummaryText(attach.getText()));
@@ -91,8 +99,10 @@ public class AttachAnalysis {
 
 				FileThumbnail fileThumbnail = new FileThumbnail();
 				String thumbnail = fileThumbnail.execute(attach.getExpectedExtension(), file, attach.getText());
-				attach.setBase64(thumbnail);
-				log.info("[THUMNAIL] {} | {} | {}", doc.getMsgid(), attach.getSrcPath(), DateUtils.stop(sw));
+				if (thumbnail != null) {
+					attach.setBase64(thumbnail);
+					log.info("[THUMNAIL] {} | {} | {}", doc.getMsgid(), attach.getSrcPath(), DateUtils.stop(sw));
+				}
 			}
 		} catch (Exception e) {
 			log.warn("[THUMNAIL] {} | {}", doc.getMsgid(), e.getMessage());

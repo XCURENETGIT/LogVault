@@ -13,7 +13,10 @@ public interface TaskMessageRepository {
 	List<TaskMessage> claimBatchByType(@Param("taskType") String taskType, @Param("limit") int limit);
 
 	@Transactional
-	void markInProgressBatch(@Param("msgIds") List<String> ids);
+	void updateStatusPending();
+
+	@Transactional
+	void updateStatusRunning(@Param("msgId") String id);
 
 	@Transactional
 	void deleteById(@Param("msgId") String id);

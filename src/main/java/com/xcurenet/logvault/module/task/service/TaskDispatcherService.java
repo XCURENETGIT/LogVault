@@ -1,6 +1,7 @@
 package com.xcurenet.logvault.module.task.service;
 
 import com.xcurenet.logvault.conf.Config;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -15,6 +16,11 @@ public class TaskDispatcherService {
 	private final Config conf;
 	private final TaskMessageRepository repo;
 	private final TaskDispatcher dispatcher;
+
+	@PostConstruct
+	public void init() {
+		repo.updateStatusPending();
+	}
 
 	@Scheduled(fixedDelayString = "${task.queue.scheduler.interval-ms:2000}")
 	public void dispatch() {
@@ -34,6 +40,7 @@ public class TaskDispatcherService {
 		if (batch.isEmpty()) return;
 
 		for (TaskMessage m : batch) {
+			repo.updateStatusRunning(m.getMsgId());
 			dispatcher.dispatch(m);
 		}
 		log.debug("[FEED] type={}, fetched={}", type, batch.size());

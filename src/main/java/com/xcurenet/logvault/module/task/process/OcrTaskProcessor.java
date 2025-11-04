@@ -1,24 +1,42 @@
 package com.xcurenet.logvault.module.task.process;
 
 import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xcurenet.common.utils.Common;
+import com.xcurenet.logvault.conf.Config;
+import com.xcurenet.logvault.fs.FileProcessor;
+import com.xcurenet.logvault.module.analysis.AnalysisService;
+import com.xcurenet.logvault.module.analysis.KeywordAnalysis;
+import com.xcurenet.logvault.module.analysis.PrivacyAnalysis;
 import com.xcurenet.logvault.module.task.service.TaskMessage;
 import com.xcurenet.logvault.module.task.service.TaskProcessor;
+import com.xcurenet.logvault.opensearch.EmassDoc;
+import com.xcurenet.logvault.opensearch.IndexService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.io.FilenameUtils;
+import org.jasypt.commons.CommonUtils;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
 
 /**
  * OCR 처리를 담당하는 Processor
  */
 @Log4j2
-@Component
+@Service
+@RequiredArgsConstructor
 public class OcrTaskProcessor implements TaskProcessor {
+	private final Config conf;
+	private final ObjectMapper mapper;
+	private final FileProcessor fileProcessor;
+	protected final IndexService indexService;
+	private final KeywordAnalysis keywordAnalysis;
+	private final PrivacyAnalysis privacyAnalysis;
 
 	@Override
 	public boolean supports(String taskType) {
@@ -27,34 +45,43 @@ public class OcrTaskProcessor implements TaskProcessor {
 
 	@Override
 	public void process(TaskMessage message) throws Exception {
-		log.info("[OCR] Processing message: {}", message.getMsgId());
-		try (FileInputStream in = new FileInputStream("/users/tmp/test_img1.jpg")) {
-			// 1️⃣ JSON 파싱
-			String json = message.getData();
-			JSONObject jsonObj = JSONObject.parseObject(json);
+		EmassDoc doc = mapper.readValue(message.getData(), EmassDoc.class);
+		log.debug("{}", doc);
+		List<EmassDoc.Attach> attaches = doc.getAttach();
+		if (attaches == null || attaches.isEmpty()) return;
 
-			log.debug("[OCR] Input JSON: {}", json);
-			// Jsoup Connection 생성
-			Connection connection = Jsoup.connect("http://10.200.10.49:62975/sdk/ocr")
-					.timeout(60_000)
-					.method(Connection.Method.POST)
-					.ignoreContentType(true)
-					.data("api_key", "SNOCR-834be64b6228442cac181eb08d84e56c")   // form-data 필드
-					.data("type", "upload")
-					.data("textout", "true")
-					.data("boxes_type", "line")
-					.data("image", "sample.png", in);
-
-			// 2️⃣ 실제 OCR 처리 로직 (예시)
-			// 실제로는 OCR 엔진 호출, 파일 읽기, 결과 저장 등의 작업 수행
-			//Thread.sleep(1000L); // 모의 처리 지연
-			log.info("[OCR] OCR 작업 완료: {} {}", message.getMsgId(), JSONObject.parseObject(String.valueOf(connection.post().body().text())));
-
-			// 3️⃣ 처리 결과 저장 또는 후속 Task enqueue
-			// ex) repository.updateStatus(message.getMsgId(), "DONE");
-		} catch (Exception e) {
-			log.error("[OCR] 처리 중 오류 발생: {}", e.getMessage(), e);
-			throw e;
+		boolean changed = false;
+		for (EmassDoc.Attach attach : attaches) {
+			String ext = FilenameUtils.getExtension(attach.getName());
+			if (attach.isExist() && (conf.getOcrTargetExt().contains(attach.getExpectedExtension()) || conf.getOcrTargetExt().contains(ext))) {
+				log.info("[OCR_START] {} | {} | {}", message.getMsgId(), attach.getId(), attach.getName());
+				try (InputStream in = fileProcessor.open(attach.getPath())) {
+					String text = ocrText(in, attach.getName());
+					log.info("[OCR_TEXT] {} | {} | {} | {}", message.getMsgId(), attach.getId(), attach.getName(), Common.getSummaryText(text));
+					attach.setText(Common.nvl(attach.getText()) + "\n" + text);
+					attach.setOcrStatus("S");
+					changed = true;
+				} catch (Exception e) {
+					log.warn("[OCR_WARN] {} | {} | {}", message.getMsgId(), attach.getId(), e.getMessage());
+					attach.setOcrStatus("E");
+				}
+			}
 		}
+
+		if (changed) {
+			keywordAnalysis.detect(doc);                // 키워드 탐지
+			privacyAnalysis.detect(doc);                // 개인정보 탐지
+		}
+
+		//키워드, 개인정보 탐지, OCR 처리 상태 색인용도
+		String index = conf.getIndexName() + doc.getCtime().substring(0, 8);
+		indexService.index(doc, doc.getMsgid(), index);
+	}
+
+	private String ocrText(final InputStream in, final String fileName) throws IOException {
+		Connection.Response res = Jsoup.connect(conf.getOcrApiUrl()).timeout(60_000).method(Connection.Method.POST).ignoreContentType(true).data("api_key", conf.getOcrApiKey())   // form-data 필드
+				.data("type", "upload").data("textout", "true").data("boxes_type", "line").data("image", fileName, in).execute();
+		JSONObject data = JSONObject.parseObject(res.body());
+		return data.getJSONObject("result").getString("full_text");
 	}
 }

@@ -34,8 +34,10 @@ public class PrivacyAnalysis {
 
 	public void detect(final ScanData scanData) {
 		if (scanData == null || scanData.getEmassDoc() == null) return;
+		detect(scanData.getEmassDoc());
+	}
 
-		EmassDoc doc = scanData.getEmassDoc();
+	public void detect(final EmassDoc doc) {
 		int total = processText(doc, doc.getBody() == null ? null : doc.getBody().getText(), "B", "-");
 		if (doc.getAttach() != null) {
 			for (EmassDoc.Attach a : doc.getAttach()) {

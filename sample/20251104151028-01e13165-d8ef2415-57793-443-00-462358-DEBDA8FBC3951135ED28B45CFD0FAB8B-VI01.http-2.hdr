@@ -1,0 +1,21 @@
+POST /api/chat/message/send HTTP/1.1
+Host: askaichat.app
+Connection: keep-alive
+Content-Length: 945
+sec-ch-ua-platform: "Windows"
+authorization: eyJhbGciOiJSUzI1NiIsImtpZCI6IjU0NTEzMjA5OWFkNmJmNjEzODJiNmI0Y2RlOWEyZGZlZDhjYjMwZjAiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoi7J207Iqs67mEIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0xxUEZwcG9rYk9kUXZRVlZGdWNNdnNZenZfTmdIejJ3aE92TVJqUmdvMW1VaW55Zz1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9jaGF0YXBwLWZmYjBjIiwiYXVkIjoiY2hhdGFwcC1mZmIwYyIsImF1dGhfdGltZSI6MTc2MDA4NjU1NSwidXNlcl9pZCI6IktDV2x5TE94U2xWRUdCdjZDSTVVMnRCekloVTIiLCJzdWIiOiJLQ1dseUxPeFNsVkVHQnY2Q0k1VTJ0QnpJaFUyIiwiaWF0IjoxNzYyMjM2MDg2LCJleHAiOjE3NjIyMzk2ODYsImVtYWlsIjoieGNucWF0ZXN0MUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJnb29nbGUuY29tIjpbIjExNjg1MTEwOTM4NDAyMjk0NDI2NSJdLCJlbWFpbCI6WyJ4Y25xYXRlc3QxQGdtYWlsLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.NV_1WfyzM3g-luBpzYSmELR7rVHIUzCFMHIXKMGsuCFty0nG0s1HzgAuUCx4xwyzsY0EVnkmtfW2tO4e5JmS7gFqA_T0F1l2YYYzEdxX3n0V6FJ_qRIwKbuF2phTXWkedG0Q_jiUkm4z0ROilB-3X5_SZCIhqkxLWMClLSiwIMpWMsb2pU89D4R_f5EKQ-HJksARqm4ILwK3GjVaYBWpyBEIWZxjmPfcMc9sPdWBVYtzwC1R0P_IGhNwE_OhFOe_W_xV0fKf7msWPVZL86_4q19Qxhyc5DBfx5lKk2OurLS_dMguEdvChU7AsqrFnaRDS67SWFDHb7cqb60wl8W8wQ
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36
+Accept: application/json, text/plain, */*
+sec-ch-ua: "Google Chrome";v="141", "Not?A_Brand";v="8", "Chromium";v="141"
+Content-Type: application/json
+sec-ch-ua-mobile: ?0
+Origin: https://askaichat.app
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: cors
+Sec-Fetch-Dest: empty
+Referer: https://askaichat.app/ko/chat/1762235435967
+Accept-Encoding: gzip, deflate, br, zstd
+Accept-Language: ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7
+Cookie: cookieyes-consent=consentid:OTkyMm8yTkxWZEo5WjJNNnIwRzllbmZtSVBXeERId04,consent:yes,action:no,necessary:yes,functional:yes,analytics:yes,performance:yes,advertisement:yes; _gcl_gs=2.1.k1$i1760086097$u158437290; _ga=GA1.1.1796904294.1760086102; _gcl_aw=GCL.1760086103.Cj0KCQjw3aLHBhDTARIsAIRij5-aQwGwmqWFtp-7TVloMMwGNi1M56bVHtu6Pr4AxTIebanuZobSpcAaAuwdEALw_wcB; _hjSessionUser_3913531=eyJpZCI6IjJmZWE2ZmJlLWY1M2EtNTZlYi05ZTFkLWE0NTg1MTViMjgyNiIsImNyZWF0ZWQiOjE3NjAwODYxMDMxMzUsImV4aXN0aW5nIjp0cnVlfQ==; _p2s_uvi=c498beeb.199053505175170.1760086104183; _p2s_gcl=Cj0KCQjw3aLHBhDTARIsAIRij5-aQwGwmqWFtp-7TVloMMwGNi1M56bVHtu6Pr4AxTIebanuZobSpcAaAuwdEALw_wcB; _tt_enable_cookie=1; _ttp=01K76MX6M827T053RQ8SK5Y3VM_.tt.1; _fbp=fb.1.1760086105144.731285636170963305; _gcl_au=1.1.1516505072.1760086102.1642705121.1760086124.1760086123; iuli=%22KCWlyLOxSlVEGBv6CI5U2tBzIhU2%22; SL_C_23361dd035530_SID={"5ae460e38b733f8948558239f052468762e964cd":{"sessionId":"QSM9tustIsvuEhTFyxZmm","visitorId":"o69oYPRGVg9ASlkmQpflk"}}; i18n_redirected=ko; cdw_cid=web_oWNPYXdW82; _hjSession_3913531=eyJpZCI6ImUwNzY1MDJkLWIwYjUtNDM2OC04NmNlLWNhNTI0NDVhY2Q2OSIsImMiOjE3NjIyMzU0MTE5MTQsInMiOjAsInIiOjAsInNiIjowLCJzciI6MCwic2UiOjAsImZzIjowLCJzcCI6MH0=; ttcsid_CKRNUT3C77UAIQIC3630=1762235412925::WE-U3UnqJzLTczKghthV.10.1762235435302.0; ttcsid=1762235412925::kMp7Kc8x5orDUPeIsoXf.10.1762235435302.0; _ga_7DRWKPMJYL=GS2.1.s1762235410$o11$g1$t1762235436$j34$l0$h0
+
+HTTP/1.1 200 OK

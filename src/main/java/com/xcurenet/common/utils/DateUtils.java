@@ -61,6 +61,11 @@ public class DateUtils {
 		return true;
 	}
 
+	public static String convertDateTimeYYYYMMDD(final String dt) {
+		if (dt == null || dt.isEmpty()) return null;
+		return LocalDateTime.parse(dt, Constants.YYYYMMDDHHMMSS).toString(DATETIME_CTIME);
+	}
+
 	public static String convertDateTime(final String dt, final DateTimeFormatter src, final DateTimeFormatter dst) {
 		return src.parseDateTime(dt).toString(dst);
 	}

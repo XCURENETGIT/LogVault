@@ -24,7 +24,7 @@ public class HoliDayLoader {
 
 	public void load() {
 		List<HoliDayInfo> datas = mapper.getHoliDay();
-		log.info("[INFO_LOAD] HoliDay Size: {}", datas.size());
+		log.info("INFO_LOAD | HoliDay Size: {}", datas.size());
 		data.clear();
 		for (HoliDayInfo item : datas) {
 			final String cocd = Common.nvl(item.coCd());

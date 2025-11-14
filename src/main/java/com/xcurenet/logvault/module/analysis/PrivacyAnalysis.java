@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.util.StopWatch;
 import org.springframework.web.client.RestClient;
 
@@ -34,7 +36,12 @@ public class PrivacyAnalysis {
 
 	public void detect(final ScanData scanData) {
 		if (scanData == null || scanData.getEmassDoc() == null) return;
-		detect(scanData.getEmassDoc());
+
+		try {
+			detect(scanData.getEmassDoc());
+		} catch (Exception e) {
+			log.warn("REG_ERROR | {}", e.getMessage(), e);
+		}
 	}
 
 	public void detect(final EmassDoc doc) {
@@ -62,10 +69,10 @@ public class PrivacyAnalysis {
 		int added = 0;
 		// 1) API 결과 처리 — detectCode 검사 적용
 		JSONObject api = callPrivacyApi(doc.getMsgid(), text);
+		log.debug("REG_DATA | {}", api);
 		if (api != null) {
 			JSONObject data = api.getJSONObject("data");
 			if (data != null && !data.isEmpty()) {
-
 				for (String key : data.keySet()) {
 					JSONArray arr = data.getJSONArray(key);
 					if (arr == null || arr.isEmpty()) continue;
@@ -77,7 +84,7 @@ public class PrivacyAnalysis {
 					sb.append(key).append(":").append(info.getCount()).append(" ");
 				}
 			}
-		}
+		} else log.warn("REG_DATA | API DATA IS NULL");
 
 		// 2) 로컬 패턴 결과 처리 — detectCode 검사 미적용
 		Map<String, List<MatchResult>> local = runLocalPatterns(text);
@@ -103,10 +110,10 @@ public class PrivacyAnalysis {
 				sb.append(key).append(":").append(info.getCount()).append(" ");
 			}
 		}
-		String duration = DateUtils.stop(sw);
 		if (Common.isNotEmpty(sb.toString())) {
-			log.info("[REG_DONE] {} | {} | {} | {}", doc.getMsgid(), type, sb.toString(), duration);
+			log.info("REG_DONE | {} | {} | {}", type, sb.toString(), DateUtils.stop(sw));
 		}
+		doc.setPrivacyInfo(bucket);
 		return added;
 	}
 
@@ -115,17 +122,20 @@ public class PrivacyAnalysis {
 			PatternDetector detector = PatternLoader.getUserCodeMap();
 			return detector.detectAll(text);
 		} catch (Exception e) {
-			log.warn("[LOCAL_PRIVACY] {} | {}", Common.getSummaryText(text), e.toString());
+			log.warn("LOCAL_PRIVACY | {} | {}", Common.getSummaryText(text), e.toString());
 			return Collections.emptyMap();
 		}
 	}
 
 	private JSONObject callPrivacyApi(final String msgId, final String text) {
+		MultiValueMap<String, Object> form = new LinkedMultiValueMap<>();
+		form.add("msgId", msgId);
+		form.add("text", text);
 		for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
 			try {
-				return restClient.post().uri(conf.getPrivacyAnalysisUrl()).contentType(TEXT_PLAIN_UTF8).body(text).retrieve().body(JSONObject.class);
+				return restClient.post().uri(conf.getPrivacyAnalysisUrl()).contentType(MediaType.MULTIPART_FORM_DATA).body(form).retrieve().body(JSONObject.class);
 			} catch (Exception e) {
-				log.warn("[PRIVACY_API] {} | {} | ({}/{}) | {}", msgId, Common.getSummaryText(text), attempt, MAX_RETRIES, e.getMessage());
+				log.warn("REG_DATA | {} | ({}/{}) | {}", Common.getSummaryText(text), attempt, MAX_RETRIES, e.getMessage());
 				if (attempt < MAX_RETRIES) Common.sleep(RETRY_SLEEP_MS);
 			}
 		}
@@ -140,11 +150,11 @@ public class PrivacyAnalysis {
 	private EmassDoc.PrivacyInfo toPrivacyInfo(String key, String type, String attachName, JSONArray arr, boolean enforceDetectCode) {
 		if (enforceDetectCode && !PatternLoader.isDetectCode(key)) return null;
 
-		List<EmassDoc.PrivacyData> items = new ArrayList<>(arr.size());
+		List<String> items = new ArrayList<>();
 		for (int i = 0; i < arr.size(); i++) {
 			JSONObject it = arr.getJSONObject(i);
-			if (it == null) continue;
-			items.add(EmassDoc.PrivacyData.builder().start(it.getInteger("start")).end(it.getInteger("end")).match(it.getString("matchString")).build());
+			if (it == null || it.get("matchString") == null) continue;
+			items.add(it.getString("matchString"));
 		}
 		if (items.isEmpty()) return null;
 
@@ -152,6 +162,7 @@ public class PrivacyAnalysis {
 		int threshold = PatternLoader.getCodeValueOrDefault(key, 1);
 		if (items.size() < threshold) return null;
 
+		log.debug("items : {}", items);
 		EmassDoc.PrivacyInfo info = new EmassDoc.PrivacyInfo();
 		info.setId(key);
 		info.setType(type);

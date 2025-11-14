@@ -44,7 +44,7 @@ public class SftpFileDownloader {
 			if (gzip) gzipDownload(remoteFilePath, localFilePath, channelSftp);
 			else download(remoteFilePath, localFilePath, channelSftp);
 
-			log.info("Download complete. {}", localFilePath);
+			log.info("SFTP | Download complete. {}", localFilePath);
 		} catch (JSchException | SftpException | IOException e) {
 			log.error("", e);
 		} finally {

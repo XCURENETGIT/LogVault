@@ -45,19 +45,19 @@ public class PropertySourceLoader implements EnvironmentPostProcessor, Ordered {
 						}
 					}
 				}
-				log.info("[LOAD_CONF] Loaded properties for app=" + appName + " from MariaDB.");
+				log.info("LOAD_CONF | Loaded properties for app=" + appName + " from MariaDB.");
 			} catch (Exception e) {
-				String msg = "[LOAD_CONF] Failed to load properties from MariaDB: " + e.getMessage();
+				String msg = "LOAD_CONF | Failed to load properties from MariaDB: " + e.getMessage();
 				log.warn(msg + " — using defaults only.");
 			}
 		} else {
-			log.warn("[LOAD_CONF] spring.datasource.url/username not set — using defaults only.");
+			log.warn("LOAD_CONF | spring.datasource.url/username not set — using defaults only.");
 		}
 
 		props.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(en -> log.debug("✅ " + en.getKey() + " = " + en.getValue()));
 		PropertySource<Map<String, Object>> dbSource = new MapPropertySource("dbConfig", props);
 		env.getPropertySources().addFirst(dbSource);
-		log.info("[LOAD_CONF] Complete Configuration Loading (DB + defaults).");
+		log.info("LOAD_CONF | Complete Configuration Loading (DB + defaults).");
 	}
 
 	@Override

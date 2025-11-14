@@ -154,7 +154,7 @@ public class KeywordMatcher implements Serializable {
 			}
 		}
 
-		log.debug("[CHECK_KEYWORD_COUNTS] {}", result);
+		log.debug("CHECK_KEYWORD_COUNTS | {}", result);
 		return result;
 	}
 

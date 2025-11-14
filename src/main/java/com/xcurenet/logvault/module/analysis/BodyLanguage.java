@@ -16,12 +16,16 @@ public class BodyLanguage {
 	private final LangDetectUtil langDetectUtil;
 
 	public void detect(final ScanData msg) {
-		EmassDoc doc = msg.getEmassDoc();
-		EmassDoc.Body body = doc.getBody();
-		if (body != null && body.getText() != null) {
-			int maxLen = Math.min(conf.getBodyLanguageDetectSize(), body.getText().length());
-			body.setLanguage(langDetectUtil.detectLanguage(body.getText().substring(0, maxLen)));
-			log.debug("[BODY_LANG] {} | {}", doc.getMsgid(), body.getLanguage());
+		try {
+			EmassDoc doc = msg.getEmassDoc();
+			EmassDoc.Body body = doc.getBody();
+			if (body != null && body.getText() != null) {
+				int maxLen = Math.min(conf.getBodyLanguageDetectSize(), body.getText().length());
+				body.setLanguage(langDetectUtil.detectLanguage(body.getText().substring(0, maxLen)));
+				log.debug("BODY_LANG | {}", body.getLanguage());
+			}
+		} catch (Exception e) {
+			log.warn("BODY_LANG | {}", e.getMessage());
 		}
 	}
 }

@@ -18,13 +18,13 @@ public class WaitForProperShutdown extends Thread {
 
 	@Override
 	public void run() {
-		log.info("Waiting for all active workers to complete ongoing tasks safely...");
+		log.info("APP_STOP | Waiting for all active workers to complete ongoing tasks safely...");
 		run.set(false);
 		try {
 			if (!shutdownLatch.await(120, TimeUnit.SECONDS)) {
-				log.warn("Shutdown latch timeout (120s) reached. Forcing shutdown.");
+				log.warn("APP_STOP | Shutdown latch timeout (120s) reached. Forcing shutdown.");
 			} else {
-				log.info("Shutdown latch released properly.");
+				log.info("APP_STOP | Shutdown latch released properly.");
 			}
 		} catch (final InterruptedException ignored) {
 			Thread.currentThread().interrupt();

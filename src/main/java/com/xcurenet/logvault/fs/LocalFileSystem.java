@@ -14,7 +14,6 @@ import org.springframework.util.StopWatch;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
 
@@ -26,7 +25,7 @@ public class LocalFileSystem implements FileSystemService {
 
 	@Override
 	public void init() {
-		log.info("[INIT_LOCAL] Local File System");
+		log.info("INIT_LOCAL | Local File System");
 	}
 
 	@Override
@@ -55,7 +54,7 @@ public class LocalFileSystem implements FileSystemService {
 		} else {
 			in = new FileInputStream(path);
 		}
-		log.debug("[AT_OPEN] {} | {}", path, DateUtils.stop(sw));
+		log.debug("AT_OPEN | {} | {}", path, DateUtils.stop(sw));
 		return in;
 	}
 
@@ -64,7 +63,7 @@ public class LocalFileSystem implements FileSystemService {
 		try {
 			return Files.deleteIfExists(new File(path).toPath());
 		} catch (Exception e) {
-			log.warn("[AT_DELETE] Error ", e);
+			log.warn("AT_DELETE | Error ", e);
 		}
 		return false;
 	}
@@ -75,7 +74,7 @@ public class LocalFileSystem implements FileSystemService {
 			FileUtils.deleteDirectory(new File(path));
 			return true;
 		} catch (Exception e) {
-			log.warn("[DIR_DELETE] Error ", e);
+			log.warn("DIR_DELETE | Error ", e);
 		}
 		return false;
 	}
@@ -93,7 +92,7 @@ public class LocalFileSystem implements FileSystemService {
 			} else {
 				fis.transferTo(fos);
 			}
-			log.debug("[AT_WRITE] | {} {} | {} | {} | {}", fileName, src, dst, Common.convertFileSize(srcFile.length()), DateUtils.stop(sw));
+			log.debug("AT_WRITE | {} {} | {} | {} | {}", fileName, src, dst, Common.convertFileSize(srcFile.length()), DateUtils.stop(sw));
 		}
 	}
 
@@ -101,7 +100,7 @@ public class LocalFileSystem implements FileSystemService {
 	public void writeText(final String path, final String text) throws Exception {
 		StopWatch sw = DateUtils.start();
 		Files.writeString(new File(path).toPath(), text, StandardCharsets.UTF_8);
-		log.debug("[AT_WRITE] {} | {} | {}", path, Common.convertFileSize(text.length()), DateUtils.stop(sw));
+		log.debug("AT_WRITE | {} | {} | {}", path, Common.convertFileSize(text.length()), DateUtils.stop(sw));
 	}
 
 	@Override
@@ -113,7 +112,7 @@ public class LocalFileSystem implements FileSystemService {
 			} else {
 				is.transferTo(fos);
 			}
-			log.debug("[AT_WRITE] {} | {} | {}", fileName, path, DateUtils.stop(sw));
+			log.debug("AT_WRITE | {} | {} | {}", fileName, path, DateUtils.stop(sw));
 		}
 	}
 
@@ -122,7 +121,7 @@ public class LocalFileSystem implements FileSystemService {
 		try {
 			return Files.getFileStore(new File(path).toPath()).getTotalSpace();
 		} catch (IOException e) {
-			log.warn("[AT_TOTAL] {}", e.getMessage());
+			log.warn("AT_TOTAL | {}", e.getMessage());
 		}
 		return 0L;
 	}
@@ -132,7 +131,7 @@ public class LocalFileSystem implements FileSystemService {
 		try {
 			return Files.getFileStore(new File(path).toPath()).getUsableSpace();
 		} catch (IOException e) {
-			log.warn("[AT_USABLE] {}", e.getMessage());
+			log.warn("AT_USABLE | {}", e.getMessage());
 		}
 		return 0L;
 	}
@@ -142,7 +141,7 @@ public class LocalFileSystem implements FileSystemService {
 		try {
 			return new File(path).length();
 		} catch (Exception e) {
-			log.warn("[FILE_SIZE]: {} | {}", path, e.getMessage());
+			log.warn("FILE_SIZE | {} | {}", path, e.getMessage());
 			return 0L;
 		}
 	}

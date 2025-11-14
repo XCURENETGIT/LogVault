@@ -20,10 +20,10 @@ public class TaskDispatcher {
 		Runnable job = () -> {
 			try {
 				processor.process(m);
-				repository.updateStatusDone(m.getMsgId()); // 성공 시 DONE
+				repository.deleteById(m.getMsgId());
 			} catch (Exception e) {
-				log.error("[DISPATCH] Task failed: {} - {}", m.getMsgId(), e.getMessage(), e);
-				repository.updateStatusFailed(m.getMsgId(), e.getMessage()); // 실패 시 FAILED + 에러 메시지
+				log.debug("DISPATCH | Task failed: {}", e.getMessage(), e);
+				repository.updateStatusFailed(m.getMsgId(), e.getMessage());
 			}
 		};
 
@@ -33,14 +33,12 @@ public class TaskDispatcher {
 		} else if ("ML_ANALYSIS".equalsIgnoreCase(type)) {
 			mlExecutor.execute(job);
 		} else {
-			// 기본: 현재는 ML풀로 보냄(원하면 타입별 풀 추가)
 			mlExecutor.execute(job);
 		}
 	}
 
 	public int remainingCapacityFor(String taskType) {
 		ThreadPoolTaskExecutor ex = "OCR".equalsIgnoreCase(taskType) ? ocrExecutor : mlExecutor;
-		// 남은 큐 용량 + (실행가능 스레드 여유) 정도로 추정
 		int queueCap = ex.getThreadPoolExecutor().getQueue().remainingCapacity();
 		int size = ex.getActiveCount();
 		int headroom = Math.max(0, ex.getMaxPoolSize() - size);

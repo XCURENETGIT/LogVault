@@ -23,7 +23,7 @@ public class WorkDayLoader {
 
 	public void load() {
 		List<WorkDayInfo> datas = mapper.getWorkDay();
-		log.info("[INFO_LOAD] WorkDay Size: {}", datas.size());
+		log.info("INFO_LOAD | WorkDay Size: {}", datas.size());
 		workday.clear();
 		for (WorkDayInfo item : datas) {
 			final String cocd = Common.nvl(item.getCoCd());

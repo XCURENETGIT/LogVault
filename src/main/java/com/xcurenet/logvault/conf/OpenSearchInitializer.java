@@ -30,19 +30,21 @@ public class OpenSearchInitializer {
 	@PostConstruct
 	public void init() throws IOException {
 		StopWatch sw = DateUtils.start();
-		log.info("[INIT_OPENSEARCH] START");
-		if (existsPolicy()) log.info("[CONF_OPENSEARCH] ISM POLICY [{}] already exists. Skipping creation.", OpenSearchInitializer.POLICY_NAME);
+		log.info("INIT_OPENSEARCH | START");
+		if (existsPolicy())
+			log.info("CONF_OPENSEARCH | ISM POLICY [{}] already exists. Skipping creation.", OpenSearchInitializer.POLICY_NAME);
 		else {
 			createPolicy(loadJson(OpenSearchInitializer.POLICY_PATH));
 			Common.sleep(2000);
 		}
 
-		if (existsTemplate()) log.info("[CONF_OPENSEARCH] INDEX TEMPLATE [{}] already exists. Skipping creation.", OpenSearchInitializer.TEMPLATE_NAME);
+		if (existsTemplate())
+			log.info("CONF_OPENSEARCH | INDEX TEMPLATE [{}] already exists. Skipping creation.", OpenSearchInitializer.TEMPLATE_NAME);
 		else {
 			createTemplate(loadJson(OpenSearchInitializer.TEMPLATE_PATH));
 			Common.sleep(2000);
 		}
-		log.info("[INIT_OPENSEARCH] END | {}\n", DateUtils.stop(sw));
+		log.info("INIT_OPENSEARCH | END | {}\n", DateUtils.stop(sw));
 	}
 
 	/**
@@ -67,7 +69,7 @@ public class OpenSearchInitializer {
 		Request request = new Request("PUT", "/_index_template/" + OpenSearchInitializer.TEMPLATE_NAME);
 		request.setJsonEntity(json);
 		Response response = client.getLowLevelClient().performRequest(request);
-		log.info("[CONF_OPENSEARCH] INDEX TEMPLATE [{}] created. Response: {}", OpenSearchInitializer.TEMPLATE_NAME, response.getStatusLine());
+		log.info("CONF_OPENSEARCH | INDEX TEMPLATE [{}] created. Response: {}", OpenSearchInitializer.TEMPLATE_NAME, response.getStatusLine());
 	}
 
 	/**
@@ -92,7 +94,7 @@ public class OpenSearchInitializer {
 		Request request = new Request("PUT", "/_plugins/_ism/policies/" + OpenSearchInitializer.POLICY_NAME);
 		request.setJsonEntity(json);
 		Response response = client.getLowLevelClient().performRequest(request);
-		log.info("[CONF_OPENSEARCH] ISM POLICY [{}] created. Response: {}", OpenSearchInitializer.POLICY_NAME, response.getStatusLine());
+		log.info("CONF_OPENSEARCH | ISM POLICY [{}] created. Response: {}", OpenSearchInitializer.POLICY_NAME, response.getStatusLine());
 	}
 
 	/**

@@ -17,9 +17,9 @@ public class AlertService {
 		StopWatch sw = DateUtils.start();
 		EmassDoc doc = data.getEmassDoc();
 		try {
-			log.info("[ALT_SEND] {} | {}", doc.getMsgid(), DateUtils.stop(sw));
+			log.info("ALT_SEND | {}", DateUtils.stop(sw));
 		} catch (Exception e) {
-			log.warn("[ALERT] {} | {}", doc.getMsgid(), e.getMessage());
+			log.warn("ALT_SEND | {}", e.getMessage());
 			log.error("", e);
 		}
 	}

@@ -95,7 +95,7 @@ public class OpenSearchConfig {
 				.setFailureListener(new RestClient.FailureListener() {
 					@Override
 					public void onFailure(Node node) {
-						log.warn("[OpenSearch] node failure: {}", node);
+						log.debug("OPENSEARCH | node failure: {}", node);
 					}
 				});
 		return new RestHighLevelClient(builder);

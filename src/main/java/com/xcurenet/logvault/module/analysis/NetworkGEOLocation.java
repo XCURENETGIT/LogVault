@@ -20,21 +20,25 @@ public class NetworkGEOLocation {
 	private final GeoASNLocation geoASNLocation;
 
 	public void networkGEO(final ScanData msg) {
-		EmassDoc doc = msg.getEmassDoc();
-		MSGData data = msg.getMsgData();
-		EmassDoc.Network network = doc.getNetwork();
-		if (network != null) {
-			FileNameInfo fileNameInfo = msg.getFileNameInfo();
-			Location srcLocation = geoLocation.getLocation(fileNameInfo.getSrcIP(), GeoLocation.KR_LATITUDE, com.xcurenet.common.geo.GeoLocation.KR_LONGITUDE);
-			Location dstLocation = geoLocation.getLocation(fileNameInfo.getDstIP(), com.xcurenet.common.geo.GeoLocation.EN_LATITUDE, com.xcurenet.common.geo.GeoLocation.EN_LONGITUDE);
+		try {
+			EmassDoc doc = msg.getEmassDoc();
+			MSGData data = msg.getMsgData();
+			EmassDoc.Network network = doc.getNetwork();
+			if (network != null) {
+				FileNameInfo fileNameInfo = msg.getFileNameInfo();
+				Location srcLocation = geoLocation.getLocation(fileNameInfo.getSrcIP(), GeoLocation.KR_LATITUDE, com.xcurenet.common.geo.GeoLocation.KR_LONGITUDE);
+				Location dstLocation = geoLocation.getLocation(fileNameInfo.getDstIP(), com.xcurenet.common.geo.GeoLocation.EN_LATITUDE, com.xcurenet.common.geo.GeoLocation.EN_LONGITUDE);
 
-			network.setSrcCountry(geoLocation.getCountryCode(data.getSourceIp()));
-			network.setSrcAsn(geoASNLocation.getASNCode(data.getSourceIp()));
-			network.setSrcLocation(new GeoPoint(srcLocation.getLatitude(), srcLocation.getLongitude()));
-			network.setDstCountry(geoLocation.getCountryCode(data.getDestinationIp()));
-			network.setDstAsn(geoASNLocation.getASNCode(data.getDestinationIp()));
-			network.setDstLocation(new GeoPoint(dstLocation.getLatitude(), dstLocation.getLongitude()));
-			log.debug("[GEO_LOCATION] {} | {}", doc.getMsgid(), network);
+				network.setSrcCountry(geoLocation.getCountryCode(data.getSourceIp()));
+				network.setSrcAsn(geoASNLocation.getASNCode(data.getSourceIp()));
+				network.setSrcLocation(new GeoPoint(srcLocation.getLatitude(), srcLocation.getLongitude()));
+				network.setDstCountry(geoLocation.getCountryCode(data.getDestinationIp()));
+				network.setDstAsn(geoASNLocation.getASNCode(data.getDestinationIp()));
+				network.setDstLocation(new GeoPoint(dstLocation.getLatitude(), dstLocation.getLongitude()));
+				log.debug("GEO_LOCATION | {}", network);
+			}
+		} catch (Exception e) {
+			log.warn("GEO_LOCATION | {}", e.getMessage());
 		}
 	}
 }

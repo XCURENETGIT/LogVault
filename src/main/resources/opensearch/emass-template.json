@@ -5,7 +5,8 @@
 	"priority": 9999999,
 	"template": {
 		"settings": {
-			"max_result_window": 50000,
+			"max_result_window": 5000,
+			"index.codec": "best_compression",
 			"index": {
 				"number_of_shards": 1,
 				"number_of_replicas": 0,
@@ -278,6 +279,9 @@
 						"has_name": {
 							"type": "boolean"
 						},
+						"extension": {
+							"type": "keyword"
+						},
 						"expected_extension": {
 							"type": "keyword"
 						},
@@ -301,16 +305,14 @@
 						"size": {
 							"type": "long"
 						},
-						"base64": {
-							"type": "keyword",
-							"doc_values": false,
-							"index": false
-						},
 						"ocr_target" : {
-							"type": "keyword"
+							"type": "boolean"
 						},
 						"ocr_status" : {
 							"type": "keyword"
+						},
+						"ocr_rate" : {
+							"type": "long"
 						},
 						"path": {
 							"type": "keyword",
@@ -340,18 +342,7 @@
 							"type": "keyword"
 						},
 						"privacy_data": {
-							"type": "nested",
-							"properties": {
-								"start": {
-									"type": "integer"
-								},
-								"end": {
-									"type": "integer"
-								},
-								"match": {
-									"type": "keyword"
-								}
-							}
+							"type": "keyword"
 						},
 						"count": {
 							"type": "integer"

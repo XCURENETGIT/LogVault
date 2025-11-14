@@ -1,4 +1,4 @@
-package com.xcurenet.logvault.tool.delete;
+package com.xcurenet.logvault.job.delete;
 
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.logvault.conf.Config;
@@ -28,7 +28,7 @@ public class DeletePolicyManager {
 	private void cleanupExpiredData() {
 		if (Common.isWindow()) return;
 
-		log.info("[RM_EXPIRE] {} | {}", conf.getDataStoreTerm(), conf.getAttachRoot());
+		log.info("RM_EXPIRE | {} | {}", conf.getDataStoreTerm(), conf.getAttachRoot());
 		if (isInvalidPath(conf.getAttachRoot())) return;
 
 		cleanupService.runCleanup(conf.getDataStoreTerm());
@@ -73,7 +73,7 @@ public class DeletePolicyManager {
 		String totalStr = Common.convertFileSize(totalSpace);
 		String usedStr = Common.convertFileSize(usedSpace);
 		String usagePercent = String.format("%.2f", usageRatio * 100);
-		log.info("[DISK_INFO] {} Path:{} | Total:{} | Used:{} | Usage:{}% | Threshold:{}{}%", prefix, path, totalStr, usedStr, usagePercent, String.format("%.2f", usageThreshold * 100), prefix.equals("START") ? "" : "\n");
+		log.info("DISK_INFO | {} Path:{} | Total:{} | Used:{} | Usage:{}% | Threshold:{}{}%", prefix, path, totalStr, usedStr, usagePercent, String.format("%.2f", usageThreshold * 100), prefix.equals("START") ? "" : "\n");
 	}
 
 	private void deleteDirectory(final String rootPath) throws IOException {

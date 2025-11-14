@@ -7,6 +7,4 @@ JAVA        : ${java.runtime.name} ${java.version}
 OS          : ${os.name}.${os.version}
 PID         : ${PID}
 Port        : ${server.port}
-Log Level   : ${logging.level.root}
-Log History : ${logging.logback.rollingpolicy.max-history} day
 ---------------------------------------------------------------------------------------------------------------------------------------------

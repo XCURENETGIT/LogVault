@@ -18,12 +18,12 @@ public class FilterService {
 			MSGData msg = data.getMsgData();
 			rs = !Common.nvl(msg.getSvc()).startsWith("I");
 			if (rs) {
-				log.info("[FILT_SVC] {} | {}", msg.getMsgid(), msg.getSvc());
+				log.info("FILT_SVC | {}", msg.getSvc());
 				return true;
 			}
 			rs = Common.isEquals(msg.getSvc(), "IUKU");
 			if (rs) {
-				log.info("[FILT_SVC] {} | {}", msg.getMsgid(), msg.getSvc());
+				log.info("FILT_SVC | {}", msg.getSvc());
 				return true;
 			}
 		} catch (Exception e) {

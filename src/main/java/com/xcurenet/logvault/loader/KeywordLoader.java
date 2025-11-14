@@ -27,6 +27,6 @@ public class KeywordLoader {
 		}
 		keywordMatcher.prepare();
 		KEYWORD_MATCHER_REF.set(keywordMatcher);
-		log.info("[INFO_LOAD] Keyword Size: {}", keywords.size());
+		log.info("INFO_LOAD | Keyword Size: {}", keywords.size());
 	}
 }

@@ -1,4 +1,4 @@
-package com.xcurenet.logvault.tool.delete;
+package com.xcurenet.logvault.job.delete;
 
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
@@ -25,10 +25,21 @@ public class FileCleanupService {
 	private final FileProcessor fileProcessor;
 	private final Config conf;
 
+	public static void main(String[] args) {
+		int term = 365;
+		DateTime today = DateTime.now();
+		String date = "20241110";
+		if (!DateUtils.validDate(date, DateUtils.YYYYMMDD)) return;
+
+		DateTime dateTime = DateUtils.parseDateTimeYYYYMMDD(date);
+		int daysDiff = Days.daysBetween(dateTime.withTimeAtStartOfDay(), today.withTimeAtStartOfDay()).getDays();
+		System.out.println(term + " < " + daysDiff);
+	}
+
 	public void runCleanup(final int term) {
 		List<Map<String, String>> indices = indexService.getIndices();
 		if (indices == null || indices.isEmpty()) {
-			log.info("[END_EMPTY] No more index to delete.");
+			log.info("END_EMPTY | No more index to delete.");
 			return;
 		}
 
@@ -39,7 +50,7 @@ public class FileCleanupService {
 
 			DateTime dateTime = DateUtils.parseDateTimeYYYYMMDD(date);
 			int daysDiff = Days.daysBetween(dateTime.withTimeAtStartOfDay(), today.withTimeAtStartOfDay()).getDays();
-			if (term > daysDiff) {
+			if (term < daysDiff) {
 				delete(date, Common.nvl(item.get("index")));
 			}
 		}
@@ -47,12 +58,12 @@ public class FileCleanupService {
 
 	private void delete(String date, String index) {
 		boolean attachDeleted = fileProcessor.deleteDirectory(Common.makeFilepath(conf.getAttachRoot(), date));
-		log.info("[DEL_FILES] Path:{} | AttachDeleted:{}", Common.makeFilepath(conf.getAttachRoot(), date), attachDeleted);
+		log.info("DEL_FILES | Path:{} | AttachDeleted:{}", Common.makeFilepath(conf.getAttachRoot(), date), attachDeleted);
 		if (attachDeleted) {
 			if (indexService.deleteIndices(index)) { //인덱스 삭제
-				log.info("[DEL_INDEX] Index:{} | Date:{}", index, DateUtils.parseDateTimeYYYYMMDD(date));
+				log.info("DEL_INDEX | Index:{} | Date:{}", index, DateUtils.parseDateTimeYYYYMMDD(date));
 			} else {
-				log.warn("[DEL_INDEX] Index:{} | Date:{}", index, DateUtils.parseDateTimeYYYYMMDD(date));
+				log.warn("DEL_INDEX | Index:{} | Date:{}", index, DateUtils.parseDateTimeYYYYMMDD(date));
 			}
 		}
 	}
@@ -69,7 +80,7 @@ public class FileCleanupService {
 
 		List<Map<String, String>> indices = indexService.getIndices();
 		if (indices == null || indices.isEmpty()) {
-			log.info("[END_EMPTY] No more index to delete. Target: {}", fmt(targetUsageFraction));
+			log.info("END_EMPTY | No more index to delete. Target: {}", fmt(targetUsageFraction));
 			return;
 		}
 
@@ -77,7 +88,7 @@ public class FileCleanupService {
 		for (Map<String, String> item : indices) {
 			double before = currentUsageFraction(dir);
 			if (before <= targetUsageFraction) {
-				log.info("[OK_USAGE] Disk Usage {} <= Target {}. Stop cleanup.", fmt(before), fmt(targetUsageFraction));
+				log.info("OK_USAGE | Disk Usage {} <= Target {}. Stop cleanup.", fmt(before), fmt(targetUsageFraction));
 				return;
 			}
 

@@ -32,7 +32,7 @@ public class PatternLoader {
 
 	public void load() {
 		List<PatternInfo> datas = mapper.getPatternInfo();
-		log.info("[INFO_LOAD] Pattern Size: {}", datas.size());
+		log.info("INFO_LOAD | Pattern Size: {}", datas.size());
 
 		Map<String, Integer> fresh = new LinkedHashMap<>();
 		Map<String, DetectOptions> user = new LinkedHashMap<>();
@@ -41,10 +41,11 @@ public class PatternLoader {
 
 			if (Common.isEquals(item.getPatternType(), "N")) fresh.put(item.getPatternCd(), item.getMinCount());
 			else {
+				if (item.getRegex() == null) continue;
 				String pattern = StringEscapeUtils.unescapeJava(item.getRegex());
 				Pattern p = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.UNIX_LINES);
 				user.put(item.getPatternCd(), DetectOptions.builder().key(item.getPatternCd()).pattern(item.getRegex()).compile(p).minCount(item.getMinCount()).build());
-				log.info("[INFO_LOAD] ADD Custom Pattern: {} | {} | {}", item.getPatternCd(), pattern, item.getMinCount());
+				log.info("INFO_LOAD | ADD Custom Pattern: {} | {} | {}", item.getPatternCd(), pattern, item.getMinCount());
 			}
 		}
 		DETECT_CODE_MAP_REF.set(Collections.unmodifiableMap(fresh));

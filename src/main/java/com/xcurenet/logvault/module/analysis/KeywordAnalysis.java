@@ -47,8 +47,8 @@ public class KeywordAnalysis {
 				List<EmassDoc.KeywordInfo.Keyword> text = checkKeyword(attach.getText());
 				if (text != null) attachTextKeywords.addAll(text);
 			}
-			log.debug("[KEYWORD_ATT_NAME] {}", attachNameKeywords);
-			log.debug("[KEYWORD_ATT] {}", attachTextKeywords);
+			log.debug("KEYWORD_ATT_NAME | {}", attachNameKeywords);
+			log.debug("KEYWORD_ATT | {}", attachTextKeywords);
 
 			keywordInfo.setAttachName(attachNameKeywords.isEmpty() ? null : attachNameKeywords);
 			keywordInfo.setAttach(attachTextKeywords.isEmpty() ? null : attachTextKeywords);

@@ -21,9 +21,9 @@ public class LogService {
 			String attSize = Common.convertFileSize(msg.getAttachTotalSize());
 
 			EmassDoc.User user = msg.getUser();
-			String deptName = user.getDeptName() != null ? user.getDeptName() : "unknown dept";
-			String userId = user.getId() != null ? user.getId() : "unknown userId";
-			String userName = (user.getName() != null ? user.getName() : "unknown userName") + " " + user.getJikgubName();
+			//String deptName = user.getDeptName() != null ? user.getDeptName() : "unknown dept";
+			String userId = user.getId() != null ? user.getId() : "unknown user";
+			//String userName = (user.getName() != null ? user.getName() : "unknown userName") + " " + user.getJikgubName();
 
 			EmassDoc.Network net = msg.getNetwork();
 			String sIp = net != null ? net.getSrcIp() : "";
@@ -32,11 +32,11 @@ public class LogService {
 			int dPort = net != null ? net.getDstPort() : 0;
 
 			EmassDoc.Http http = msg.getHttp();
-			String url = http != null ? http.getUrl() : "";
+			//String url = http != null ? http.getUrl() : "";
 			String agent = getUserAgent(http);
-			log.info("[MSG_DONE] {} | {} | BODY:{} ({}) {} | AT_CNT:{} | EXIST_CNT:{} ({}) | {} | {} | {} | {}:{} > {}:{} | {} | {} | {}", msg.getMsgid(), msg.getService().getSvc(), isBody, bodySize, bodyLang, attachCnt, attachExistCnt, attSize, deptName, userId, userName, sIp, sPort, dIp, dPort, url, agent, DateUtils.stop(data.getStopWatch()));
+			log.info("MSG_DONE | {} | BODY:{} ({}) {} | AT_CNT:{} | EXIST_CNT:{} ({}) | {} | {}:{} > {}:{} | {} | {}\n", msg.getService().getSvc(), isBody, bodySize, bodyLang, attachCnt, attachExistCnt, attSize, userId, sIp, sPort, dIp, dPort, agent, DateUtils.stop(data.getStopWatch()));
 		} catch (Exception e) {
-			log.warn("[DEBUG_LOG] {} | {}", msg.getMsgid(), e.getMessage());
+			log.warn("DEBUG_LOG | {}", e.getMessage());
 			log.error("", e);
 		}
 	}

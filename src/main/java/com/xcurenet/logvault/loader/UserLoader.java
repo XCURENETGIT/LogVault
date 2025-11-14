@@ -27,11 +27,11 @@ public class UserLoader {
 
 	public void loadUser() {
 		List<UserInfo> users = mapper.getUserInfo();
-		log.info("[INFO_LOAD] User Info Size: {}", users.size());
+		log.info("INFO_LOAD | User Info Size: {}", users.size());
 		data.clear();
 		for (UserInfo user : users) {
 			data.putUserID(user.getUserId(), user);
-			log.debug("[INFO_LOAD] User Info: {}", user);
+			log.debug("INFO_LOAD | User Info: {}", user);
 			String[] ips = Common.toArray(user.getIp(), ",");
 			for (String ipStr : ips) {
 				if (ipStr == null || Common.isEmpty(ipStr)) continue; //사용자가 없는 IP 혹은 IP 정보가 없으면 무시
@@ -39,9 +39,9 @@ public class UserLoader {
 					IP ip = new IP(ipStr.trim());
 					user.addIp(ip);
 					data.putIp(ip, user);
-					log.debug("[INFO_LOAD] IP: {}", ip);
+					log.debug("INFO_LOAD | IP: {}", ip);
 				} catch (IOException e) {
-					log.warn("ip error: user:{}, input:{} message:{}", user.getName(), ipStr, e.getMessage());
+					log.warn("INFO_LOAD | ip error: user:{}, input:{} message:{}", user.getName(), ipStr, e.getMessage());
 				}
 			}
 		}

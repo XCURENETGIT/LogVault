@@ -27,7 +27,7 @@ public class PdfThumbnail {
 	 */
 	public String execute(final File file, final int width, final int height) {
 		if (file == null || !file.exists()) {
-			log.warn("[THUMNAIL] FILE NOTFOUND : {}", (file != null ? file.getAbsolutePath() : null));
+			log.warn("THUMNAIL | FILE NOTFOUND : {}", (file != null ? file.getAbsolutePath() : null));
 			return null;
 		}
 
@@ -37,7 +37,7 @@ public class PdfThumbnail {
 			Thumbnails.of(pageImage).forceSize(width, height).crop(Positions.CENTER).outputFormat("jpg").toOutputStream(out);
 			return Common.toBase64(out.toByteArray());
 		} catch (IOException e) {
-			log.warn("[THUMNAIL] {} | {}", file.getPath(), e.getMessage());
+			log.warn("THUMNAIL | {} | {}", file.getPath(), e.getMessage());
 		}
 		return null;
 	}

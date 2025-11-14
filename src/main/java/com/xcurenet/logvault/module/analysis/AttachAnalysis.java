@@ -9,7 +9,6 @@ import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -26,6 +25,7 @@ import java.util.List;
 public class AttachAnalysis {
 	private final RestClient restClient = RestClient.create();
 	private final Config conf;
+	private final FileThumbnail fileThumbnail;
 
 	private JSONObject getText(final String msgId, final String filePath, final String fileName) {
 		LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
@@ -44,7 +44,7 @@ public class AttachAnalysis {
 				attempt++;
 				return restClient.post().uri(conf.getFileAnalysisUrl()).contentType(MediaType.MULTIPART_FORM_DATA).body(body).retrieve().body(JSONObject.class);
 			} catch (Exception e) {
-				log.warn("[GET_TEXT] {} | ({}/{}) | {}", filePath, attempt, maxRetries, e.getMessage());
+				log.warn("GET_TEXT | {} | ({}/{}) | {}", filePath, attempt, maxRetries, e.getMessage());
 				if (attempt < maxRetries) Common.sleep(1000);
 			}
 		}
@@ -72,14 +72,14 @@ public class AttachAnalysis {
 				attach.setChangeExtension(data.getBoolean("changeExtension"));
 				attach.setEncrypted(data.getBoolean("encrypted"));
 
-				String ext = FilenameUtils.getExtension(attach.getName());
+				String ext = Common.nvl(attach.getExtension());
 				if (conf.getOcrTargetExt().contains(attach.getExpectedExtension()) || conf.getOcrTargetExt().contains(ext)) {
-					attach.setOcrStatus("R");
+					attach.setOcrStatus("P"); //PENDING
 					attach.setOcrTarget(true);
 				}
-				log.info("[ATT_TEXT] {} | {} | {} | {} | {}", doc.getMsgid(), attach.getSrcPath(), text.get("success"), DateUtils.stop(sw), Common.getSummaryText(attach.getText()));
+				log.info("ATT_TEXT | {} | RESULT:{} | TXT_LEN:{} | {}", conf.getDataPathSmall(attach.getSrcPath()), text.get("success"), Common.nvl(attach.getText()).length(), DateUtils.stop(sw));
 			} else {
-				log.warn("[ATT_TEXT] {} | {} | {} | {} | {}", doc.getMsgid(), attach.getSrcPath(), text, DateUtils.stop(sw), Common.getSummaryText(attach.getText()));
+				log.warn("ATT_TEXT | {} | {} | TXT_LEN:{} | {}", conf.getDataPathSmall(attach.getSrcPath()), text, Common.nvl(attach.getText()).length(), DateUtils.stop(sw));
 			}
 		}
 	}
@@ -95,17 +95,17 @@ public class AttachAnalysis {
 				File file = new File(attach.getSrcPath());
 				if (!file.exists()) continue;
 
-				StopWatch sw = DateUtils.start();
-
-				FileThumbnail fileThumbnail = new FileThumbnail();
-				String thumbnail = fileThumbnail.execute(attach.getExpectedExtension(), file, attach.getText());
-				if (thumbnail != null) {
-					attach.setBase64(thumbnail);
-					log.info("[THUMNAIL] {} | {} | {}", doc.getMsgid(), attach.getSrcPath(), DateUtils.stop(sw));
+				if (!fileThumbnail.isExistThumbnail(attach.getHash())) {
+					StopWatch sw = DateUtils.start();
+					String thumbnail = fileThumbnail.execute(attach.getExpectedExtension(), file, attach.getText());
+					if (thumbnail != null) {
+						fileThumbnail.insertThumbnail(attach.getHash(), thumbnail);
+						log.info("THUMNAIL | {} | {}", conf.getDataPathSmall(attach.getSrcPath()), DateUtils.stop(sw));
+					}
 				}
 			}
 		} catch (Exception e) {
-			log.warn("[THUMNAIL] {} | {}", doc.getMsgid(), e.getMessage());
+			log.warn("THUMNAIL | {}", e.getMessage());
 		}
 	}
 

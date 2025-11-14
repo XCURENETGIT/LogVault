@@ -14,18 +14,17 @@ import com.xcurenet.logvault.loader.type.UserInfo;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Log4j2
-public class MSGWorker extends AbstractLogVaultWorker {
+public class MSGWorker extends AbstractWorker {
 
 	public MSGWorker(final ApplicationContext context, PriorityBlockingQueue<ScanData> queue, final AtomicBoolean run) {
 		super(context, queue, run);
@@ -67,7 +66,7 @@ public class MSGWorker extends AbstractLogVaultWorker {
 			}
 			data.getEmassDoc().setUser(user);
 		} catch (Exception e) {
-			log.warn("[MGG_INSA] {} | {}", data, e.getMessage());
+			log.warn("MGG_INSA | {} | {}", data, e.getMessage());
 		}
 	}
 
@@ -75,7 +74,7 @@ public class MSGWorker extends AbstractLogVaultWorker {
 	protected void index(ScanData data) throws IndexerException {
 		EmassDoc doc = data.getEmassDoc();
 		String index = conf.getIndexName() + doc.getCtime().substring(0, 8);
-		indexService.index(doc, doc.getMsgid(), index);
+		indexService.index(doc, index);
 	}
 
 	@Override
@@ -129,7 +128,7 @@ public class MSGWorker extends AbstractLogVaultWorker {
 		String text = Common.limitLength(FileUtil.getText(file.getAbsolutePath()), conf.getTextLimitLength());
 		text = Common.limitTokenLengthWithSpace(text, conf.getTextLimitToken());
 		text = Common.unescapeJava(text);
-		log.debug("[BDY_TEXT] {}", text);
+		log.debug("BDY_TEXT | {}", text);
 
 		body.setPath(conf.getDestPath(msg.getCtime(), msg.getMsgid(), msg.getMsgid() + ".body"));
 		body.setSize(file.length());
@@ -161,7 +160,7 @@ public class MSGWorker extends AbstractLogVaultWorker {
 
 			if (Common.isNotEmpty(name)) {
 				if (StringUtils.containsAny(name, MSGParser.ERROR_CHAR)) {
-					log.warn("[ERR_NAME] {} {}", doc.getMsgid(), name);
+					log.warn("ERR_NAME | {} {}", doc.getMsgid(), name);
 					name = Common.sanitizeFileName(name, MSGParser.ERROR_CHAR);
 				}
 				at.setName(name);
@@ -177,12 +176,14 @@ public class MSGWorker extends AbstractLogVaultWorker {
 				size = (srcFile.exists() ? srcFile.length() : 0L);
 				if (exists) {
 					at.setPath(conf.getDestPath(msg.getCtime(), msg.getMsgid(), srcFile.getName()));
+					at.setHash(Common.digest(Constants.SHA256, srcFile.getAbsolutePath()));
 				}
 			}
 			at.setExist(exists);
 			at.setSize(size);
-			at.setHash(Common.digest(Constants.SHA256, srcPath));
 			at.setHasName(getFileNameExist(i, extensions));
+			String ext = Optional.ofNullable(at.getName()).map(FilenameUtils::getExtension).map(String::toLowerCase).orElse(null);
+			at.setExtension(ext);
 
 			String id = Common.get(appFiles, i);
 			if (id == null) {
@@ -206,7 +207,7 @@ public class MSGWorker extends AbstractLogVaultWorker {
 		try {
 			return extensions.get(i).isFileNameExist();
 		} catch (Exception e) {
-			log.warn("[NAME_EXIST] {}", e.getMessage());
+			log.warn("NAME_EXIST | {}", e.getMessage());
 		}
 		return false;
 	}

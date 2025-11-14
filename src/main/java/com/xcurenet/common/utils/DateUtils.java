@@ -30,6 +30,7 @@ public class DateUtils {
 	public static final java.time.format.DateTimeFormatter RESPONSE_DATETIME = java.time.format.DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH);
 	public static final DateTimeFormatter YYYYMMDDHHMMSS = DateTimeFormat.forPattern("yyyyMMddHHmmss");
 	public static final DateTimeFormatter DATETIME_CTIME = DateTimeFormat.forPattern("yyyy/MM/dd HH:mm:ss");
+	public static final DateTimeFormatter F_YYYYMMDD = DateTimeFormat.forPattern("yyyyMMdd");
 
 	public static final String YYYYMMDD = "yyyyMMdd";
 	public static final String YYYYMMDDHHMMSSSSS = "yyyyMMddHHmmssSSS";

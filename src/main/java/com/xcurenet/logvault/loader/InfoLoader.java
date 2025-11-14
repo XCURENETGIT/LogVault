@@ -20,31 +20,31 @@ public class InfoLoader {
 	@PostConstruct
 	public void init() {
 		StopWatch sw = DateUtils.start();
-		log.info("[INFO_LOAD] START");
+		log.info("INFO_LOAD | START");
 
 		userLoad();
 		keywordLoad();
 		patternLoad();
 
-		log.info("[INFO_LOAD] END | {}\n", DateUtils.stop(sw));
+		log.info("INFO_LOAD | END | {}\n", DateUtils.stop(sw));
 	}
 
 	public void userLoad() {
-		log.debug("[INFO_LOAD] UserInfo START");
+		log.debug("INFO_LOAD | UserInfo START");
 		synchronized (this) {
 			userLoader.load();
 		}
 	}
 
 	public void keywordLoad() {
-		log.debug("[INFO_LOAD] Keyword START");
+		log.debug("INFO_LOAD | Keyword START");
 		synchronized (this) {
 			keywordLoader.load();
 		}
 	}
 
 	public void patternLoad() {
-		log.debug("[INFO_LOAD] Pattern START");
+		log.debug("INFO_LOAD | Pattern START");
 		synchronized (this) {
 			patternLoader.load();
 		}

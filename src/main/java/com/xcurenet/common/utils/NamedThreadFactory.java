@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class NamedThreadFactory implements ThreadFactory {
 	private final String namePrefix;
-	private final AtomicInteger threadNumber = new AtomicInteger(1);
+	private final AtomicInteger threadNumber = new AtomicInteger(0);
 
 	public NamedThreadFactory(String namePrefix) {
 		this.namePrefix = namePrefix;

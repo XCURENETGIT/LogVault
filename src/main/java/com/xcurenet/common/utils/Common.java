@@ -2,8 +2,10 @@ package com.xcurenet.common.utils;
 
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.github.luben.zstd.ZstdInputStreamNoFinalizer;
 import com.google.common.base.Preconditions;
 import com.xcurenet.common.Constants;
+import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.io.LimitedBufferedReader;
 import com.xcurenet.common.types.EMail;
 import com.xcurenet.common.types.IP;
@@ -11,6 +13,7 @@ import com.xcurenet.crypto.Crypto;
 import com.xcurenet.crypto.Crypto.CIPHER;
 import com.xcurenet.crypto.CryptoInputStream;
 import com.xcurenet.crypto.CryptoOutputStream;
+import com.xcurenet.logvault.exception.ProcessDataException;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.binary.Base64;
@@ -31,7 +34,9 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
@@ -41,6 +46,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 @Log4j2
@@ -102,6 +108,12 @@ public final class Common {
 			hash = (hash * PRIME) ^ str.charAt(i);
 		}
 		return hash & 0xFFFFFFFFL;
+	}
+
+	public static void main(String[] args) throws IOException {
+		String ipStr = "1.225.49.101";
+		IP ip = new IP(ipStr);
+		System.out.println(ip.toHexString());
 	}
 
 	public static long fnvHash(final String str) {
@@ -1072,7 +1084,7 @@ public final class Common {
 			boolean finished = process.waitFor(Math.max(0, limitMillis - (System.currentTimeMillis() - startTime)), TimeUnit.MILLISECONDS);
 			if (!finished) process.destroyForcibly();
 
-			log.debug("[PROCESS] {}", DateUtils.stop(sw));
+			log.debug("PROCESS | {}", DateUtils.stop(sw));
 		} catch (IOException | InterruptedException e) {
 			throw new RuntimeException(e);
 		}
@@ -1091,7 +1103,7 @@ public final class Common {
 		try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
 			return reader.readLine();
 		} catch (IOException e) {
-			log.warn("[TXT_READ] {} | {}", filePath, e.getMessage());
+			log.warn("TXT_READ | {} | {}", filePath, e.getMessage());
 			log.error("", e);
 		}
 		return null;
@@ -1112,7 +1124,7 @@ public final class Common {
 	}
 
 	public static String getSummaryText(final String text) {
-		return getSummaryText(text, 20);
+		return getSummaryText(text, 10);
 	}
 
 	/**
@@ -1142,7 +1154,7 @@ public final class Common {
 			}
 			return sb.toString();
 		} catch (Exception e) {
-			log.warn("[TXT_LIMIT] {}", e.getMessage());
+			log.warn("TXT_LIMIT | {}", e.getMessage());
 		}
 		return input;
 	}
@@ -1171,9 +1183,103 @@ public final class Common {
 		try {
 			Set<PosixFilePermission> perms = EnumSet.noneOf(PosixFilePermission.class);
 			Files.setPosixFilePermissions(file.toPath(), perms);
-			log.info("[PERMISSION_CHANGE] {}", file);
+			log.debug("PERMISSION_CHANGE | {}", file);
 		} catch (Exception e) {
-			log.info("[PERMISSION_CHANGE_ERROR] ", e);
+			log.warn("PERMISSION_CHANGE_ERROR | ", e);
 		}
+	}
+
+	public static void setAllPermissions(File file) {
+		if (Common.isWindow()) return;
+
+		try {
+			Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwxrwxrwx");
+			Files.setPosixFilePermissions(file.toPath(), perms);
+			log.debug("PERMISSION | {}", file);
+		} catch (Exception e) {
+			log.warn("PERMISSION_CHANGE_ERROR | ", e);
+		}
+	}
+
+	/**
+	 * .ndjson/.ndjson.gz/.ndjson.zst 자동 감지 (확장자+매직넘버)
+	 */
+	public static InputStream zipOpen(Path p) throws IOException {
+		BufferedInputStream raw = new BufferedInputStream(Files.newInputStream(p), 1 << 20);
+		String name = p.getFileName().toString().toLowerCase();
+
+		if (name.endsWith(".zst") || name.endsWith(".zstd")) {
+			return new ZstdInputStreamNoFinalizer(raw);
+		}
+		if (name.endsWith(".gz")) {
+			return new GZIPInputStream(raw);
+		}
+
+		raw.mark(4);
+		byte[] hdr = new byte[4];
+		int n = raw.read(hdr);
+		raw.reset();
+
+		if (n == 4 && (hdr[0] == 0x28 && (hdr[1] & 0xFF) == 0xB5 && hdr[2] == 0x2F && (hdr[3] & 0xFF) == 0xFD)) {
+			return new ZstdInputStreamNoFinalizer(raw);
+		}
+		if (n >= 2 && (hdr[0] == (byte) 0x1F) && (hdr[1] == (byte) 0x8B)) {
+			return new GZIPInputStream(raw);
+		}
+		return raw;
+	}
+
+	public static String extractOrigin(Throwable t) {
+		if (t == null) return "unknown";
+		final String[] preferPkgs = {"com.xcurenet"};
+
+		Throwable cur = t;
+		StackTraceElement chosen = null;
+		while (cur != null) {
+			StackTraceElement cand = pickDeepestFrame(cur.getStackTrace(), preferPkgs);
+			if (cand != null) {
+				chosen = cand;
+				break;
+			}
+			cur = cur.getCause();
+		}
+
+		if (chosen == null) {
+			Throwable root = t;
+			while (root.getCause() != null) root = root.getCause();
+			StackTraceElement[] st = root.getStackTrace();
+			if (st != null && st.length > 0) chosen = st[0];
+		}
+
+		if (chosen == null) return "unknown";
+		return chosen.getFileName() + ":" + chosen.getLineNumber();
+	}
+
+	private static StackTraceElement pickDeepestFrame(StackTraceElement[] st, String[] preferPkgs) {
+		if (st == null || st.length == 0) return null;
+		for (int i = st.length - 1; i >= 0; i--) {
+			String cn = st[i].getClassName();
+			for (String p : preferPkgs) {
+				if (cn.startsWith(p)) return st[i];
+			}
+		}
+		return null;
+	}
+
+	public static String formattedMessage(final String message, final Map<String, Object> context) {
+		String msg = message;
+		if (msg == null) return null;
+		for (Map.Entry<String, Object> e : context.entrySet()) {
+			msg = msg.replace("{" + e.getKey() + "}", String.valueOf(e.getValue()));
+		}
+		return msg;
+	}
+
+	public static ProcessDataException ex(ErrorCode ec, String context) {
+		return new ProcessDataException(ec).with("context", context).log();
+	}
+
+	public static ProcessDataException ex(ErrorCode ec, String context, Throwable cause) {
+		return new ProcessDataException(ec, cause).with("context", context).log();
 	}
 }

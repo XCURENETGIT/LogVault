@@ -9,7 +9,9 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Configuration
 @EnableScheduling
@@ -25,10 +27,16 @@ public class TaskExecutorsConfig {
 	@Bean(name = "ocrExecutor")
 	public ThreadPoolTaskExecutor ocrExecutor() {
 		ThreadPoolTaskExecutor ex = new ThreadPoolTaskExecutor();
-		ex.setThreadNamePrefix("TASK-OCR-");
+		AtomicInteger threadIndex = new AtomicInteger(0);
+		ThreadFactory threadFactory = runnable -> {
+			Thread t = new Thread(runnable);
+			t.setName("TASK-OCR-" + threadIndex.getAndIncrement());
+			return t;
+		};
+		ex.setThreadFactory(threadFactory);
 		ex.setCorePoolSize(conf.getTaskQueueWorkersThreads());
 		ex.setMaxPoolSize(conf.getTaskQueueWorkersThreads());
-		ex.setQueueCapacity(1000);
+		ex.setQueueCapacity(50);
 		ex.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
 		ex.initialize();
 		return ex;
@@ -40,7 +48,7 @@ public class TaskExecutorsConfig {
 		ex.setThreadNamePrefix("TASK-ML-");
 		ex.setCorePoolSize(conf.getTaskQueueWorkersThreads());
 		ex.setMaxPoolSize(conf.getTaskQueueWorkersThreads());
-		ex.setQueueCapacity(1000);
+		ex.setQueueCapacity(50);
 		ex.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
 		ex.initialize();
 		return ex;

@@ -174,6 +174,8 @@ public class EmassDoc {
 		private String name;
 		@Field("has_name")
 		private boolean hasName;
+		@Field("extension")
+		private String extension;
 		@Field("expected_extension")
 		private String expectedExtension;
 		@Field("expected_unknown")
@@ -188,12 +190,12 @@ public class EmassDoc {
 		private boolean exist;
 		@Field("size")
 		private Long size;
-		@Field("base64")
-		private String base64;
 		@Field("ocr_target")
 		private boolean ocrTarget;
 		@Field("ocr_status")
 		private String ocrStatus;
+		@Field("ocr_rate")
+		private Long ocrRate;
 		@Field("path")
 		private String path;
 		@Field("text")
@@ -214,21 +216,10 @@ public class EmassDoc {
 		private String attachName;
 
 		@Field("privacy_data") //탐지 키워드 정보
-		private List<PrivacyData> privacyData;
+		private List<String> privacyData;
 
 		@Field("count")
 		private int count;
-	}
-
-	@Data
-	@Builder
-	public static class PrivacyData {
-		@Field("start")
-		private int start;
-		@Field("end")
-		private int end;
-		@Field("match")
-		private String match;
 	}
 
 	@Data

@@ -23,29 +23,27 @@ public class TaskService {
 		StopWatch sw = DateUtils.start();
 		EmassDoc doc = data.getEmassDoc();
 		try {
-			boolean ocrTarget = false;
+			int ocrTargetCount = 0;
 			if (conf.isOcrApiEnable()) {
 				List<EmassDoc.Attach> attaches = doc.getAttach();
 				if (attaches == null || attaches.isEmpty()) return;
 				for (EmassDoc.Attach attach : attaches) { // 첨부파일 중 하나라도 OCR 대상이라면 처리.
 					if (attach.isOcrTarget()) {
-						ocrTarget = true;
-						break;
+						ocrTargetCount++;
 					}
 				}
 			}
 
-			if (ocrTarget) {
+			if (ocrTargetCount > 0) {
 				TaskMessage message = new TaskMessage();
 				message.setMsgId(doc.getMsgid());
 				message.setTaskType("OCR");
 				message.setData(JSON.toJSONString(doc));
 				repository.insertMessage(message);
+				log.info("OCR_READY | CNT:{} | {}", ocrTargetCount, DateUtils.stop(sw));
 			}
-
-			log.info("[OCR_SEND] {} | {}", doc.getMsgid(), DateUtils.stop(sw));
 		} catch (Exception e) {
-			log.warn("[OCR_SEND] {} | {}", doc.getMsgid(), e.getMessage());
+			log.warn("OCR_READY | {}", e.getMessage());
 			log.error("", e);
 		}
 	}

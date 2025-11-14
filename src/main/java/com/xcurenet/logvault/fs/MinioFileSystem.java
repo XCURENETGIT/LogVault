@@ -29,7 +29,7 @@ public class MinioFileSystem implements FileSystemService {
 
 	@Override
 	public void init() {
-		log.info("[INIT_MINIO] {} | {}", conf.getMinioBucket(), conf.getMinioUrl());
+		log.info("INIT_MINIO | {} | {}", conf.getMinioBucket(), conf.getMinioUrl());
 
 		ConnectionPool connectionPool = new ConnectionPool(100, 300, TimeUnit.SECONDS);
 		OkHttpClient client = new OkHttpClient.Builder().connectionPool(connectionPool).build();
@@ -63,7 +63,7 @@ public class MinioFileSystem implements FileSystemService {
 	public InputStream open(String path) throws Exception {
 		StopWatch sw = DateUtils.start();
 		InputStream inputStream = minioClient.getObject(GetObjectArgs.builder().bucket(conf.getMinioBucket()).object(path).build());
-		log.debug("[AT_OPEN] {} | {}", path, DateUtils.stop(sw));
+		log.debug("AT_OPEN | {} | {}", path, DateUtils.stop(sw));
 		return inputStream;
 	}
 
@@ -75,7 +75,7 @@ public class MinioFileSystem implements FileSystemService {
 			minioClient.removeObject(RemoveObjectArgs.builder().bucket(conf.getMinioBucket()).object(path).extraHeaders(header).build());
 			return true;
 		} catch (Exception e) {
-			log.warn("[AT_DELETE] Error ", e);
+			log.warn("AT_DELETE | Error ", e);
 		}
 		return false;
 	}
@@ -90,7 +90,7 @@ public class MinioFileSystem implements FileSystemService {
 			}
 			return true;
 		} catch (Exception e) {
-			log.warn("[AT_DELETE] Error deleting directory {}", path, e);
+			log.warn("AT_DELETE | Error deleting directory {}", path, e);
 			return false;
 		}
 	}
@@ -114,7 +114,7 @@ public class MinioFileSystem implements FileSystemService {
 		StopWatch sw = DateUtils.start();
 		try {
 			minioClient.putObject(PutObjectArgs.builder().bucket(conf.getMinioBucket()).object(path).stream(is, -1, 10485760).build());
-			log.debug("[AT_WRITE] {} | {} | {}", fileName, path, DateUtils.stop(sw));
+			log.debug("AT_WRITE | {} | {} | {}", fileName, path, DateUtils.stop(sw));
 		} catch (Exception e) {
 			log.error("", e);
 			throw new IOException(e);
@@ -140,7 +140,7 @@ public class MinioFileSystem implements FileSystemService {
 		try {
 			return getStatObject(path).size();
 		} catch (Exception e) {
-			log.warn("[FILE_SIZE]: {} | {}", path, e.getMessage());
+			log.warn("FILE_SIZE | {} | {}", path, e.getMessage());
 			return 0L;
 		}
 	}

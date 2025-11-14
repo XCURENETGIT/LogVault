@@ -26,7 +26,7 @@ public class AnalysisService {
 			privacyAnalysis.detect(data);                // 개인정보 탐지
 			userAgentAnalysis.detect(data);              // 사용자의 OS, Agent 정보를 탐지 및 추가
 		} catch (Exception e) {
-			log.warn("[ANALYSE] {} | {}", data.getEmassDoc().getMsgid(), e.getMessage());
+			log.warn("ANALYSE | {}", e.getMessage());
 			log.error("", e);
 		}
 	}

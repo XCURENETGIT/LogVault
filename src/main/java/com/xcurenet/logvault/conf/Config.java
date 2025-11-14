@@ -48,13 +48,16 @@ public class Config {
 	@Value("${spring.profiles.active:prod}")
 	private String activeProfile;
 
+	@Value("${spring.opensearch.rest.uris}")
+	private String opensearchRestUris;
+
 	@Value("${file.system.type:local}") //파일 시스템 유형 - 운영중 설정 변경 불가 (재시작필요)
 	private String fileSystemType;
 
-	@Value("${attach.root:/data01/attach/}") //첨부 저장경로 - 운영중 설정 변경 불가 (재시작필요)
+	@Value("${attach.root:/data01/attach}") //첨부 저장경로 - 운영중 설정 변경 불가 (재시작필요)
 	private String attachRoot;
 
-	@Value("${index.root:/indexdata/}") //색인 저장경로 - 운영중 설정 변경 불가 (재시작필요)
+	@Value("${index.root:/indexdata}") //색인 저장경로 - 운영중 설정 변경 불가 (재시작필요)
 	private String indexRoot;
 
 	@Value("${decoder.split.dir:100}") //디코더 디렉토리 분산 - 운영중 설정 변경 불가 (재시작필요)
@@ -62,6 +65,12 @@ public class Config {
 
 	@Value("${data.path:/users/las/msg/data}") //디코더 데이터 경로 - 운영중 설정 변경 불가 (재시작필요)
 	private String dataPath;
+
+	@Value("${data.backup.enable:true}") //데이터 백업 (첨부, 본문, OpenSearch Index)
+	private boolean backupEnable;
+
+	@Value("${data.backup.path:/data01/backup/}") //데이터 백업 (첨부, 본문, OpenSearch Index)
+	private String backupPath;
 
 
 	@Value("${scan.directory.scanning.waiting.sec:5}") //디코더 디렉토리 스캔 대기시간 - 운영중 설정 변경 불가 (재시작필요)
@@ -96,6 +105,9 @@ public class Config {
 
 	@Value("${ocr.api.key:SNOCR-834be64b6228442cac181eb08d84e56c}") //OCR Rest API KEY
 	private String ocrApiKey;
+
+	@Value("${ocr.api.timeout:60000}") //OCR Rest API KEY
+	private int ocrTimeout;
 
 	@Value("${ocr.target.ext:tiff,tif,png,gif,jpg,jpeg,bmp,pcx,dcx,jb2,jfif,jp2,jpc,j2k,pdf}") //OCR 대상 확장자
 	private String ocrTargetExt;
@@ -191,13 +203,13 @@ public class Config {
 	//Response ContentType Filter
 	private String filterResponseContentType;
 
-	@Value("${task.queue.workers.capacity:100}") //후 처리 큐 capacity
+	@Value("${task.queue.workers.capacity:50}") //후 처리 큐 capacity
 	private int taskQueueWorkersCapacity;
 
 	@Value("${task.queue.workers.threads:10}") //후 처리 쓰레드 수
 	private int taskQueueWorkersThreads;
 
-	@Value("${task.queue.scheduler.fetch-size:100}") //후 처리 시 한번에 MariaDB에서 불러올 건수
+	@Value("${task.queue.scheduler.fetch-size:50}") //후 처리 시 한번에 MariaDB에서 불러올 건수
 	private int taskQueueSchedulerFetchSize;
 
 	public int getInterval() {
@@ -215,6 +227,33 @@ public class Config {
 
 	public String getDestPath(final DateTime ctime, final String msgId, final String name) {
 		return Common.makeFilepath(getDestPath(ctime, msgId), name);
+	}
+
+	public String getWmailPathSmall(final String path) {
+		try {
+			int idx = path.indexOf(getDirWmail());
+			return (idx != -1) ? path.substring(idx + getDirWmail().length()) : path;
+		} catch (Exception e) {
+			return path;
+		}
+	}
+
+	public String getDataPathSmall(final String path) {
+		try {
+			int idx = path.indexOf(getDataPath());
+			return (idx != -1) ? path.substring(idx + getDataPath().length()) : path;
+		} catch (Exception e) {
+			return path;
+		}
+	}
+
+	public String getDestPathSmall(final String path) {
+		try {
+			int idx = path.indexOf(getAttachRoot());
+			return (idx != -1) ? path.substring(idx + getAttachRoot().length()) : path;
+		} catch (Exception e) {
+			return path;
+		}
 	}
 
 	public static void main(String[] args) {

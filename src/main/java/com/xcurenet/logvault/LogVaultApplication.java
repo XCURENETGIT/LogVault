@@ -7,13 +7,14 @@ import com.xcurenet.crypto.Crypto;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.module.scanner.Scanner;
-import com.xcurenet.logvault.module.worker.AbstractLogVaultWorker;
+import com.xcurenet.logvault.module.worker.AbstractWorker;
 import com.xcurenet.logvault.module.worker.MSGWorker;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -40,7 +41,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SpringBootApplication
 @RequiredArgsConstructor
 @EnableTransactionManagement
-@ComponentScan(basePackages = "com.xcurenet.*")
+@ComponentScan(basePackages = "com.xcurenet")
+@MapperScan("com.xcurenet")
 public class LogVaultApplication implements CommandLineRunner {
 
 	private final ApplicationContext context;
@@ -52,6 +54,8 @@ public class LogVaultApplication implements CommandLineRunner {
 	@Getter
 	protected static final AtomicInteger minuteBy1Count = new AtomicInteger();
 
+	private final AtomicInteger scannerCount = new AtomicInteger();
+
 	public static final int QUEUE_CAPACITY = 1000;
 	private final AtomicBoolean run = new AtomicBoolean(true);
 	private final PriorityBlockingQueue<ScanData> wmailQueue = new PriorityBlockingQueue<>(QUEUE_CAPACITY, new FileTimeComparator());
@@ -60,7 +64,6 @@ public class LogVaultApplication implements CommandLineRunner {
 		SpringApplication application = new SpringApplication(LogVaultApplication.class);
 		application.setRegisterShutdownHook(false);
 		application.addListeners(new ApplicationPidFileWriter(new File(Config.PID_FILE)));
-		application.run(args);
 
 		ConfigurableApplicationContext ctx = application.run(args);
 		Runtime.getRuntime().addShutdownHook(new Thread(ctx::close));
@@ -69,7 +72,7 @@ public class LogVaultApplication implements CommandLineRunner {
 	@Override
 	public void run(String... args) throws Exception {
 		final CountDownLatch shutdownLatch = new CountDownLatch(1);
-		final List<AbstractLogVaultWorker> workers = new ArrayList<>();
+		final List<AbstractWorker> workers = new ArrayList<>();
 		try {
 			Runtime.getRuntime().addShutdownHook(new WaitForProperShutdown(shutdownLatch, run));
 			startScanner();
@@ -86,8 +89,8 @@ public class LogVaultApplication implements CommandLineRunner {
 		}
 	}
 
-	private boolean isCompleteWorkers(final List<AbstractLogVaultWorker> workers) {
-		for (final AbstractLogVaultWorker worker : workers) {
+	private boolean isCompleteWorkers(final List<AbstractWorker> workers) {
+		for (final AbstractWorker worker : workers) {
 			if (worker.getProgress()) return false;
 		}
 		return true;
@@ -100,7 +103,7 @@ public class LogVaultApplication implements CommandLineRunner {
 
 	private void startScanner() {
 		if (conf.isEnableWmail()) startScanner(conf.getDirWmail(), wmailQueue);
-		log.info("[START_SCAN] LOAD END\n");
+		log.info("START_SCAN | LOAD END\n");
 	}
 
 	private void startScanner(final String dir, final PriorityBlockingQueue<ScanData> queue) {
@@ -109,22 +112,27 @@ public class LogVaultApplication implements CommandLineRunner {
 		ExecutorService executor = Executors.newFixedThreadPool(1);
 		executor.execute(new Scanner(dir, queue, run, conf.getScanDirectoryScanningWaitingSec()));
 		executor.shutdown();
-		log.info("[START_SCAN] {}", dir);
+
+//		WatchServiceScanner scanner = WatchServiceScanner.ofDefault(dir, queue, run, scannerCount, false);
+//		ExecutorService es = Executors.newSingleThreadExecutor();
+//		es.submit(scanner);
+
+		log.info("START_SCAN | {}", dir);
 	}
 
-	private void startWorker(final List<AbstractLogVaultWorker> workers) throws Exception {
+	private void startWorker(final List<AbstractWorker> workers) throws Exception {
 		if (conf.isEnableWmail()) startWorker(workers, wmailQueue, conf.getWorkerSizeWmail(), MSGWorker.class);
-		log.info("[START_WORKER] LOAD END\n");
+		log.info("START_WORKER | LOAD END\n");
 	}
 
-	private void startWorker(final List<AbstractLogVaultWorker> workers, final PriorityBlockingQueue<ScanData> queue, int workerSize, Class<? extends AbstractLogVaultWorker> workerClass) throws Exception {
+	private void startWorker(final List<AbstractWorker> workers, final PriorityBlockingQueue<ScanData> queue, int workerSize, Class<? extends AbstractWorker> workerClass) throws Exception {
 		ExecutorService executor = Executors.newFixedThreadPool(workerSize, new NamedThreadFactory(workerClass.getSimpleName()));
 		for (int i = 0; i < workerSize; i++) {
-			AbstractLogVaultWorker worker = workerClass.getDeclaredConstructor(ApplicationContext.class, PriorityBlockingQueue.class, AtomicBoolean.class).newInstance(context, queue, run);
+			AbstractWorker worker = workerClass.getDeclaredConstructor(ApplicationContext.class, PriorityBlockingQueue.class, AtomicBoolean.class).newInstance(context, queue, run);
 			workers.add(worker);
 			executor.execute(worker);
 		}
-		log.info("[START_WORKER] {}", workerClass.getName());
+		log.info("START_WORKER | {}", workerClass.getName());
 		executor.shutdown();
 	}
 
@@ -132,22 +140,22 @@ public class LogVaultApplication implements CommandLineRunner {
 	private void loadEncryptKey() {
 		if (conf.isEncryptEnable()) {
 			if (!new File(conf.getEncryptKeyFile()).exists()) {
-				log.warn("The file encryption setting is enabled, but no key file is available.");
+				log.warn("LOAD_ENCRYPT | The file encryption setting is enabled, but no key file is available.");
 				if (!Common.isWindow()) System.exit(1);
 
 				//아래 key 생성은 실전에서는 필요없음. (모듈 실행 전 키 파일이 필요함)
 				if (!makeKey()) {
-					log.error("Failed to generate the encryption key file: {}", conf.getEncryptKey());
+					log.error("LOAD_ENCRYPT | Failed to generate the encryption key file: {}", conf.getEncryptKey());
 					loadEncryptKey();
 				}
 			}
 
 			final String key = Common.toHexString(Crypto.loadKeyFile(conf.getEncryptKeyFile()));
 			if (Common.isNotEmpty(key)) {
-				log.info("[LOAD_ENCRYPT] {} | {}", conf.getEncryptKeyFile(), conf.getEncryptCipher());
+				log.info("LOAD_ENCRYPT | {} | {}", conf.getEncryptKeyFile(), conf.getEncryptCipher());
 				conf.setEncryptKey(key);
 			} else {
-				log.error("Invalid Key File: {}", conf.getEncryptKey());
+				log.error("LOAD_ENCRYPT | Invalid Key File: {}", conf.getEncryptKey());
 				System.exit(1);
 			}
 		}

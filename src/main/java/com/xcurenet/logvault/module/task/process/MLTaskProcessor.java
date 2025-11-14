@@ -20,22 +20,22 @@ public class MLTaskProcessor implements TaskProcessor {
 
 	@Override
 	public void process(TaskMessage message) throws Exception {
-		log.info("[ML_ANALYSIS] Processing message: {}", message.getMsgId());
+		log.info("ML_ANALYSIS | Processing message: {}", message.getMsgId());
 		try {
 			// 1️⃣ JSON 파싱
 			String json = message.getData();
-			log.debug("[ML_ANALYSIS] Input JSON: {}", json);
+			log.debug("ML_ANALYSIS | Input JSON: {}", json);
 			Common.sleep(1000L);
 
 			// 2️⃣ 실제 ML_ANALYSIS 처리 로직 (예시)
 			// 실제로는 ML_ANALYSIS 엔진 호출, 파일 읽기, 결과 저장 등의 작업 수행
 			//Thread.sleep(1000L); // 모의 처리 지연
-			log.info("[ML_ANALYSIS] ML_ANALYSIS 작업 완료: {}", message.getMsgId());
+			log.info("ML_ANALYSIS | ML_ANALYSIS 작업 완료: {}", message.getMsgId());
 
 			// 3️⃣ 처리 결과 저장 또는 후속 Task enqueue
 			// ex) repository.updateStatus(message.getMsgId(), "DONE");
 		} catch (Exception e) {
-			log.error("[ML_ANALYSIS] 처리 중 오류 발생: {}", e.getMessage(), e);
+			log.error("ML_ANALYSIS | 처리 중 오류 발생: {}", e.getMessage(), e);
 			throw e;
 		}
 	}

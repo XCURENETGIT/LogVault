@@ -19,7 +19,7 @@ public class TaskDispatcherService {
 
 	@PostConstruct
 	public void init() {
-		repo.updateStatusPending();
+		repo.updateStatusPending(); //OCR 요청 후 RUNNING상태인 상태에서 모듈이 종료될 경우 남아있는 RUNNING 데이터를 초기화 한다.
 	}
 
 	@Scheduled(fixedDelayString = "${task.queue.scheduler.interval-ms:2000}")
@@ -43,6 +43,6 @@ public class TaskDispatcherService {
 			repo.updateStatusRunning(m.getMsgId());
 			dispatcher.dispatch(m);
 		}
-		log.debug("[FEED] type={}, fetched={}", type, batch.size());
+		log.debug("FEED | type={}, fetched={}", type, batch.size());
 	}
 }

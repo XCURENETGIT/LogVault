@@ -69,10 +69,10 @@ public class TextThumbnail {
 		try (InputStream in = new ClassPathResource(FONT_RESOURCE_PATH).getInputStream()) {
 			Font f = Font.createFont(Font.TRUETYPE_FONT, in);
 			GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(f);
-			log.debug("[FONT] Loaded resource font: {}", FONT_RESOURCE_PATH);
+			log.debug("FONT | Loaded resource font: {}", FONT_RESOURCE_PATH);
 			return f.deriveFont(Font.PLAIN, FONT_SIZE);
 		} catch (Exception e) {
-			log.error("[FONT] Failed to load resource font: {}", e.getMessage());
+			log.error("FONT | Failed to load resource font: {}", e.getMessage());
 			return new Font("Dialog", Font.PLAIN, (int) FONT_SIZE);
 		}
 	}
@@ -117,7 +117,7 @@ public class TextThumbnail {
 			ImageIO.write(img, "jpg", out);
 			return out.toByteArray();
 		} catch (IOException e) {
-			log.warn("[THUMNAIL] ImageIO write failed: {}", e.getMessage());
+			log.warn("THUMNAIL | ImageIO write failed: {}", e.getMessage());
 			return null;
 		}
 	}

@@ -53,4 +53,9 @@
 				ERROR_MESSAGE = #{err}
 		WHERE 	MSGID = #{msgId}
 	</update>
+
+	<delete id="deleteOldFailed">
+		DELETE FROM AI_PROCESSING_QUEUE
+		WHERE  CREATE_DT <![CDATA[ < ]]> DATE_SUB(NOW(), INTERVAL 90 DAY)
+	</delete>
 </mapper>

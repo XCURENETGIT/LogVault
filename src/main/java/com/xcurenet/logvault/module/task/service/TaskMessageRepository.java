@@ -29,4 +29,7 @@ public interface TaskMessageRepository {
 
 	@Transactional
 	void insertMessage(TaskMessage message);
+
+	@Transactional
+	void deleteOldFailed();
 }

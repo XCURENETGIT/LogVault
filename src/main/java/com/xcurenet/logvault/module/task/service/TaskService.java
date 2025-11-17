@@ -1,12 +1,14 @@
 package com.xcurenet.logvault.module.task.service;
 
 import com.alibaba.fastjson2.JSON;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
 
@@ -18,6 +20,15 @@ import java.util.List;
 public class TaskService {
 	private final Config conf;
 	private final TaskMessageRepository repository;
+
+	@Scheduled(cron = "0 0 3 * * *")
+	private void cleanup() {
+		if (Common.isWindow()) return;
+
+		StopWatch sw = DateUtils.start();
+		repository.deleteOldFailed();
+		log.info("RM_OCR_FAILED | {}", DateUtils.stop(sw));
+	}
 
 	public void send(final ScanData data) {
 		StopWatch sw = DateUtils.start();

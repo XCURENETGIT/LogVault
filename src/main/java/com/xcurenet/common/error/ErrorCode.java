@@ -25,7 +25,8 @@ public enum ErrorCode {
 
 
 	PARSER_FILENAME_FAIL("LVT-1014", "MSG File Name Parsing Failed"),
-	PARSER_INVALID("LVT-1999", "Invalid parser"),
+	PARSER_INVALID("LVT-1998", "Invalid parser"),
+	PARSER_MSG_FAIL("LVT-1999", "EDCDoc Parsing Failed"),
 
 
 	INDEX_NAME_NULL("LVT-2002", "Index name is null"),
@@ -45,6 +46,9 @@ public enum ErrorCode {
 
 	FILE_SEND_FAIL("LVT-3999", "Failed to send file"),
 
+	INSA_MSG_NULL("LVT-4001", "ScanData.getMsgData is null"),
+	INSA_SIP_NULL("LVT-4002", "source IP is null"),
+	INSA_MAPPING_FAIL("LVT-4999", "INSA Mapping Failed"),
 
 
 	UNKNOWN_ERROR("LVT-9999", "Unknown error");

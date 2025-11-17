@@ -1,14 +1,18 @@
 package com.xcurenet.logvault.module.worker;
 
 import com.xcurenet.common.Constants;
+import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.msg.MSGData;
 import com.xcurenet.common.msg.MSGParser;
 import com.xcurenet.common.types.AttachExtension;
 import com.xcurenet.common.types.FileNameInfo;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
+import com.xcurenet.common.utils.ExFactory;
 import com.xcurenet.common.utils.FileUtil;
+import com.xcurenet.logvault.exception.FileSendException;
 import com.xcurenet.logvault.exception.IndexerException;
+import com.xcurenet.logvault.exception.InsaMappingException;
 import com.xcurenet.logvault.exception.ParsingException;
 import com.xcurenet.logvault.loader.type.UserInfo;
 import com.xcurenet.logvault.module.ScanData;
@@ -34,27 +38,38 @@ public class MSGWorker extends AbstractWorker {
 	protected void parse(ScanData data) throws ParsingException {
 		MSGData msg = data.getMsgData();
 
-		EmassDoc doc = new EmassDoc();
-		doc.setMsgid(msg.getMsgid());
-		doc.setTimestamp(new Date(msg.getCtime().getMillis()));
-		doc.setCtime(msg.getCtime().toString(DateUtils.YYYYMMDDHHMMSS));
-		doc.setLtime(DateUtils.formatToYYYYMMDDHHMMSS(data.getStart()));
-		setService(msg, doc);
-		setNetwork(msg, doc);
-		setHttp(msg, doc);
-		setBody(msg, doc);
-		setAttach(msg, doc);
-		setSize(doc);
+		try {
+			EmassDoc doc = new EmassDoc();
+			doc.setMsgid(msg.getMsgid());
+			doc.setTimestamp(new Date(msg.getCtime().getMillis()));
+			doc.setCtime(msg.getCtime().toString(DateUtils.YYYYMMDDHHMMSS));
+			doc.setLtime(DateUtils.formatToYYYYMMDDHHMMSS(data.getStart()));
+			setService(msg, doc);
+			setNetwork(msg, doc);
+			setHttp(msg, doc);
+			setBody(msg, doc);
+			setAttach(msg, doc);
+			setSize(doc);
 
-		data.setEmassDoc(doc);
+			data.setEmassDoc(doc);
+		} catch (Exception e) {
+			throw ExFactory.ex(ParsingException::new, ErrorCode.PARSER_MSG_FAIL, Map.of("info", msg.getInfoText()), e);
+		}
 	}
 
 	@Override
-	protected void insaMapping(final ScanData data) {
+	protected void insaMapping(final ScanData data) throws InsaMappingException {
+		if (data.getMsgData() == null) {
+			throw ExFactory.ex(InsaMappingException::new, ErrorCode.INSA_MSG_NULL, Map.of("info", data));
+		}
+		if (data.getMsgData().getSourceIp() == null) {
+			throw ExFactory.ex(InsaMappingException::new, ErrorCode.INSA_SIP_NULL, Map.of("info", data.getMsgData().getInfoText()));
+		}
+
+		EmassDoc.User user = new EmassDoc.User();
+		user.setIp(data.getMsgData().getSourceIp().toCanonicalAddr());
 		try {
 			UserInfo info = insaManager.getUser(data);
-			EmassDoc.User user = new EmassDoc.User();
-			user.setIp(data.getMsgData().getSourceIp().toCanonicalAddr());
 			if (info != null) {
 				user.setId(info.getUserId());
 				user.setName(info.getName());
@@ -66,7 +81,8 @@ public class MSGWorker extends AbstractWorker {
 			}
 			data.getEmassDoc().setUser(user);
 		} catch (Exception e) {
-			log.warn("MGG_INSA | {} | {}", data, e.getMessage());
+			//필수 srcip값이 있는 상황의 로직의 오류는 기본 처리는 하도록 한다.
+			log.warn("{} | {} | SRCIP={} err={}", ErrorCode.INSA_MAPPING_FAIL, ErrorCode.fromCode(ErrorCode.INSA_MAPPING_FAIL), data.getMsgData().getSourceIp(), e.toString());
 		}
 	}
 

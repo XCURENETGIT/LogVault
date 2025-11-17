@@ -212,6 +212,9 @@ public class Config {
 	@Value("${task.queue.scheduler.fetch-size:50}") //후 처리 시 한번에 MariaDB에서 불러올 건수
 	private int taskQueueSchedulerFetchSize;
 
+	@Value("${thumbnail.retention.days:30}") //썸네일 이미지 보관 (MariaDB)
+	private int thumbnailRetentionDays;
+
 	public int getInterval() {
 		return fileWaitTime * 1000;
 	}

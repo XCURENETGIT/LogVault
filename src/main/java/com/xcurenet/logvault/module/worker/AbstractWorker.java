@@ -100,7 +100,6 @@ public abstract class AbstractWorker implements Runnable {
 					int retryCnt = 1;
 					while (retryCnt <= 3) {
 						try {
-
 							transToBody(data);      // 본문 전송     (Error 발생 시 해당 로직 3회 재처리 후 지속 에러 발생 시 처음부터 재 처리)
 							transToAttach(data);    // 첨부파일 전송  (Error 발생 시 해당 로직 3회 재처리 후 지속 에러 발생 시 처음부터 재 처리)
 							index(data);            // Elastic 색인 (Error 발생 시 해당 로직 3회 재처리 후 지속 에러 발생 시 처음부터 재 처리)
@@ -124,7 +123,7 @@ public abstract class AbstractWorker implements Runnable {
 				LogVaultApplication.getSecBy10Count().incrementAndGet();    // 10초 통계 증가
 			} catch (final SkipFileException e) { // 첨부 파일이 늦게 들어오는 경우 대기 용도
 				log.info("WAIT_SEC | {} | {} seconds until the file is available.\n", e.getMessage(), this.conf.getInterval() / 1000);
-			} catch (final ProcessDataException | ParsingException e) {
+			} catch (final ProcessDataException | ParsingException | InsaMappingException e) {
 				log.debug("{}", data.getFilePath(), e);
 				// 기본 파싱이 되지 않는 다면 권한을 제거하여 재 처리 되는 오류를 방지한다.
 				Common.removeAllPermissions(new File(data.getFilePath()));

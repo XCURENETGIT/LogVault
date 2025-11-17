@@ -50,7 +50,7 @@
 				PATTERN_TYPE AS patternType,
 				REGEX AS regex,
 				MIN_CNT AS minCount
-		FROM	AEGISAI.UI_PATTERN
+		FROM	UI_PATTERN
 		WHERE	ENABLE = 'Y'
 	</select>
 </mapper>

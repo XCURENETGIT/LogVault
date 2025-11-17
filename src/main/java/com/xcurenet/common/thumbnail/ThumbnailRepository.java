@@ -1,15 +1,12 @@
 package com.xcurenet.common.thumbnail;
 
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
 
 @Mapper
 public interface ThumbnailRepository {
 
 	@Select("""
-			SELECT 	COUNT(1) AS count
+			SELECT 	COUNT(1) AS COUNT
 			FROM 	AI_THUMBNAIL_STORE
 			WHERE 	HASH = #{hash}
 			""")
@@ -20,4 +17,12 @@ public interface ThumbnailRepository {
 			VALUES(#{hash}, #{base64}, current_timestamp())
 			""")
 	void insertThumbnail(@Param("hash") String hash, @Param("base64") String base64);
+
+
+	@Delete("""
+			DELETE
+			FROM	AI_THUMBNAIL_STORE
+			WHERE 	CREATE_DT < DATE_SUB(NOW(), INTERVAL #{day} DAY);
+			""")
+	void deleteThumbnail(@Param("day") int hash);
 }

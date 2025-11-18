@@ -2,6 +2,7 @@ package com.xcurenet.common.utils;
 
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,6 +17,14 @@ public class FileUtil {
 			return FileUtils.readFileToString(new File(path), StandardCharsets.UTF_8);
 		} catch (IOException e) {
 			log.warn("Failed to read file text: {}", path, e);
+			return null;
+		}
+	}
+
+	public static String getExtention(final String name) {
+		try {
+			return FilenameUtils.getExtension(name);
+		} catch (Exception e) {
 			return null;
 		}
 	}

@@ -162,6 +162,8 @@ public class EmassDoc {
 		private String language;
 		@Field("path")
 		private String path;
+		@Field("extension")
+		private String extension;
 		@Field("text")
 		private String text;
 	}

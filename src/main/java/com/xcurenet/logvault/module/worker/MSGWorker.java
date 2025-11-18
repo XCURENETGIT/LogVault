@@ -146,7 +146,8 @@ public class MSGWorker extends AbstractWorker {
 		text = Common.unescapeJava(text);
 		log.debug("BDY_TEXT | {}", text);
 
-		body.setPath(conf.getDestPath(msg.getCtime(), msg.getMsgid(), msg.getMsgid() + ".body"));
+		body.setExtension(FileUtil.getExtention(file.getName()));
+		body.setPath(conf.getDestPath(msg.getCtime(), msg.getMsgid(), file.getName()));
 		body.setSize(file.length());
 		body.setText(text);
 		doc.setBody(body);

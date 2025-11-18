@@ -23,7 +23,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class AttachAnalysis {
-	private final RestClient restClient = RestClient.create();
+	private final RestClient restClient;
 	private final Config conf;
 	private final FileThumbnail fileThumbnail;
 
@@ -32,10 +32,10 @@ public class AttachAnalysis {
 		body.add("msgId", msgId);
 		body.add("filePath", filePath);
 		body.add("fileName", fileName);
-		body.add("extractImage", "false");
+		body.add("extractImage", conf.isExtractImage());
 		body.add("checkArchiveImage", "false");
-		body.add("checkArchiveDepth", "5");
-		body.add("checkExcelHiddenSheet", "false");
+		body.add("checkArchiveDepth", conf.getDecompressDepth());
+		body.add("checkExcelHiddenSheet", conf.isCheckExcelHiddenSheet());
 
 		int maxRetries = 3;
 		int attempt = 0;

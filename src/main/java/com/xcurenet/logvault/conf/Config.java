@@ -66,7 +66,7 @@ public class Config {
 	@Value("${data.path:/users/las/msg/data}") //디코더 데이터 경로 - 운영중 설정 변경 불가 (재시작필요)
 	private String dataPath;
 
-	@Value("${data.backup.enable:true}") //데이터 백업 (첨부, 본문, OpenSearch Index)
+	@Value("${data.backup.enable:false}") //데이터 백업 (첨부, 본문, OpenSearch Index)
 	private boolean backupEnable;
 
 	@Value("${data.backup.path:/data01/backup/}") //데이터 백업 (첨부, 본문, OpenSearch Index)
@@ -85,17 +85,23 @@ public class Config {
 	@Value("${scan.dir.wmail:/users/las/msg/info/wmail}") //WMAIL 스캔 경로 - 운영중 설정 변경 불가 (재시작필요)
 	private String dirWmail;
 
-	@Value("${worker.size.wmail:1}") //WORKER 동시 처리 수 - 운영중 설정 변경 불가 (재시작필요)
+	@Value("${worker.size.wmail:5}") //WORKER 동시 처리 수 - 운영중 설정 변경 불가 (재시작필요)
 	private int workerSizeWmail;
 
 	@Value("${body.language.detect.size:2000}") //본문 국가탐지 시 본문 길이 제한
 	private int bodyLanguageDetectSize;
 
-	@Value("${decompress.depth:2000}") //첨부파일 텍스트 추출 시 압축 파일 DEPTH
+	@Value("${decompress.depth:3}") //첨부파일 텍스트 추출 시 압축 파일 DEPTH
 	private int decompressDepth;
 
-	@Value("${extract.text.timeout:5}") //첨부파일 텍스트 추출 TimeOut
-	private int extractTextTimeout;
+	@Value("${extract.text.timeout.sec:60}") //첨부파일 텍스트 추출 TimeOut (초)
+	private int extractTextTimeoutSec;
+
+	@Value("${extract.image.enable:false}") //첨부파일의 이미지 추출 여부
+	private boolean extractImage;
+
+	@Value("${check.excel.hidden.sheet.enable:false}") //엑셀 숨김 시트 탐지 여부
+	private boolean checkExcelHiddenSheet;
 
 	@Value("${ocr.api.enable:true}") //OCR Rest API ENABLE
 	private boolean ocrApiEnable;
@@ -193,11 +199,11 @@ public class Config {
 	@Value("${data.store.term:365}") //데이터 보관 기간
 	private int dataStoreTerm;
 
-	@Value("${data.store.usage.limit:90}") //데이터 자동 삭제 임계치 사용여부 (사용:Y,미사용:N)
+	@Value("${data.store.usage.limit:90}") //데이터 자동 삭제 임계치
 	private int dataStoreUsageLimit;
 
-	@Value("${data.store.usage:N}") //데이터 자동 삭제 임계치
-	private String dataStoreUsage;
+	@Value("${data.store.usage:true}") //데이터 자동 삭제 임계치 사용여부
+	private boolean dataStoreUsage;
 
 	@Value("${filter.http.response.content.type:text/css,application/javascript,text/javascript,font/woff2}")
 	//Response ContentType Filter

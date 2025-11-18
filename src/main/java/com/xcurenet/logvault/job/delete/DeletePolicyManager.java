@@ -42,7 +42,7 @@ public class DeletePolicyManager {
 	}
 
 	private void execute(final String path) throws IOException {
-		if (isInvalidPath(path) || Common.isEquals(conf.getDataStoreUsage(), "N")) return;
+		if (isInvalidPath(path) || !conf.isDataStoreUsage()) return;
 
 		double usageThreshold = ((double) Common.nvz(conf.getDataStoreUsageLimit(), 90) / 100.0); // 예: 0.80
 		long totalSpace = fileProcessor.getTotalSpace(path);

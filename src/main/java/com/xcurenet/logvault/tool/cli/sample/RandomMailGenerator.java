@@ -1,8 +1,15 @@
 package com.xcurenet.logvault.tool.cli.sample;
 
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+
+import java.io.IOException;
 import java.util.*;
 
 public class RandomMailGenerator {
+	private static final String ES_URL = "http://10.10.20.6:9200/edc_w_202511/_search";
 
 	private static final Random RANDOM = new Random();
 
@@ -40,34 +47,74 @@ public class RandomMailGenerator {
 	 * @param minSentences 최소 문장수
 	 * @param maxSentences 최대 문장수
 	 */
-	public static String generateMail(int minSentences, int maxSentences) {
+	public static String generateMail(int minSentences, int maxSentences) throws IOException {
 		int count = RANDOM.nextInt(maxSentences - minSentences + 1) + minSentences;
 		return generateMail(count);
+	}
+
+	public static void main(String[] args) throws IOException {
+		generateMail(1);
 	}
 
 	/**
 	 * 기존 방식
 	 */
-	public static String generateMail(int sentenceCount) {
-		StringBuilder sb = new StringBuilder();
+	public static String generateMail(int sentenceCount) throws IOException {
+		String requestJson = """
+				{
+					"track_total_hits": true,
+					"stored_fields": [
+						"body",
+						"attach"
+					],
+					"_source": {
+						"includes": ["ctime","msgid","subject","svc","srcip","sport","dstip","dport","protocol","host","path","query","attachname","attach","body"]
+					},
+					"size": 1,
+					"query": {
+						"function_score": {
+							"query": {
+								"query_string": {
+									"query": "+svc1:I +body_size: [1 TO *]"
+								}
+							},
+							"random_score": {}
+						}
+					}
+				}
+				""";
+		Connection.Response response = Jsoup.connect(ES_URL).header("Content-Type", "application/json").ignoreContentType(true)           // JSON 응답 파싱 허용
+				.method(Connection.Method.POST).requestBody(requestJson).execute();
 
-		sb.append(random(OPENING)).append("\n\n");
+		System.out.println(response.body());
+		JSONObject obj = JSONObject.parseObject(response.body());
+		JSONArray list = obj.getJSONObject("hits").getJSONArray("hits");
+		if (list.isEmpty()) return null;
 
-		for (int i = 0; i < sentenceCount; i++) {
-			sb.append("- ").append(random(BODY_SENTENCES)).append("\n");
-		}
+		return list.getJSONObject(0).getJSONObject("fields").getJSONArray("body").getString(0);
 
-		sb.append("\n").append(random(CLOSING)).append("\n\n");
-		sb.append(random(SIGNATURE));
+/*		for (int i = 0; true; i++) {
+			//JSONObject source = list.getJSONObject(i).getJSONObject("_source");
 
-		return sb.toString();
+		}*/
+
+//
+//		StringBuilder sb = new StringBuilder();
+//
+//		sb.append(random(OPENING)).append("\n\n");
+//
+//		for (int i = 0; i < sentenceCount; i++) {
+//			sb.append("- ").append(random(BODY_SENTENCES)).append("\n");
+//		}
+//
+//		sb.append("\n").append(random(CLOSING)).append("\n\n");
+//		sb.append(random(SIGNATURE));
+//
+//		return sb.toString();
 	}
 
 	private static String random(String[] arr) {
 		return arr[RANDOM.nextInt(arr.length)];
 	}
 
-	public static void main(String[] args) {
-		System.out.println(generateMail(5, 10)); // 5~10개 문장 랜덤
-	}
 }

@@ -73,7 +73,7 @@ public class SampleData implements Callable<Integer> {
 		File bodyDest = new File(getDataPath(data.getMsgFile(), oldIp, ip.toHexString()));
 
 
-		FileUtils.writeStringToFile(body, RandomMailGenerator.generateMail(5, 10), StandardCharsets.UTF_8);
+		FileUtils.writeStringToFile(body, RandomMailGenerator.generateMail(1), StandardCharsets.UTF_8);
 		copyFile(body, bodyDest);
 		log.info("BODY WRITE : {}", bodyDest);
 

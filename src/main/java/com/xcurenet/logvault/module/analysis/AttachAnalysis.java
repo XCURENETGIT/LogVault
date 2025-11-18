@@ -1,5 +1,6 @@
 package com.xcurenet.logvault.module.analysis;
 
+import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.xcurenet.common.thumbnail.FileThumbnail;
 import com.xcurenet.common.utils.Common;
@@ -17,6 +18,7 @@ import org.springframework.util.StopWatch;
 import org.springframework.web.client.RestClient;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 @Log4j2
@@ -76,8 +78,20 @@ public class AttachAnalysis {
 					if (data.get("imagesCount") != null && data.get("imagesBase64") != null) {
 						EmassDoc.ImageExtractorInfo imageExtractorInfo = new EmassDoc.ImageExtractorInfo();
 						imageExtractorInfo.setImageCount(data.getInteger("imagesCount"));
-						imageExtractorInfo.setImageBase64(data.getJSONArray("imagesBase64").toJavaList(String.class));
+
+						List<String> hashList = new ArrayList<>();
+						JSONArray array = data.getJSONArray("imagesBase64");
+						for (int i = 0; i < array.size(); i++) {
+							String base64 = array.getString(i);
+							if (base64 == null) continue;
+
+							String hash = Common.toHexString(Common.sha256(array.getString(i)));
+							hashList.add(hash);
+							fileThumbnail.insertThumbnail(hash, base64);
+						}
+						imageExtractorInfo.setImageHash(hashList);
 						attach.setImageExtractorInfo(imageExtractorInfo);
+
 					}
 				} catch (Exception e) {
 					log.warn("ATT_OLE_IMG | {} | {}", conf.getDataPathSmall(attach.getSrcPath()), e.getMessage());
@@ -85,10 +99,11 @@ public class AttachAnalysis {
 
 				try {
 					if (data.get("sheetInfo") != null) {
+						JSONObject sheet = data.getJSONObject("sheetInfo");
 						EmassDoc.SheetInfo sheetInfo = new EmassDoc.SheetInfo();
-						sheetInfo.setSheetTotal(data.getInteger("sheetTotal"));
-						sheetInfo.setSheetHiddenTotal(data.getInteger("sheetHiddenTotal"));
-						sheetInfo.setHiddenSheetNames(data.getJSONArray("hiddenSheetNames").toJavaList(String.class));
+						sheetInfo.setSheetTotal(sheet.getInteger("sheetTotal"));
+						sheetInfo.setSheetHiddenTotal(sheet.getInteger("sheetHiddenTotal"));
+						sheetInfo.setHiddenSheetNames(sheet.getJSONArray("hiddenSheetNames").toJavaList(String.class));
 						attach.setSheetInfo(sheetInfo);
 					}
 				} catch (Exception e) {

@@ -334,7 +334,7 @@
 								"image_count": {
 									"type": "integer"
 								},
-								"image_base64": {
+								"image_hash": {
 									"type": "keyword",
 									"doc_values": false,
 									"index": false

@@ -313,8 +313,8 @@ public class EmassDoc {
 		@Field("image_count")
 		private int imageCount;
 
-		@Field("image_base64")
-		private List<String> imageBase64;
+		@Field("image_hash")
+		private List<String> imageHash;
 	}
 
 	@Data

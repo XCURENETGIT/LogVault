@@ -17,6 +17,7 @@ import com.xcurenet.logvault.module.analysis.AnalysisService;
 import com.xcurenet.logvault.module.clear.ClearService;
 import com.xcurenet.logvault.module.filter.FilterService;
 import com.xcurenet.logvault.module.log.LogService;
+import com.xcurenet.logvault.module.scanner.Scanner;
 import com.xcurenet.logvault.module.statics.ThroughputMetrics;
 import com.xcurenet.logvault.module.task.service.TaskService;
 import com.xcurenet.logvault.module.util.InsaManager;
@@ -77,9 +78,17 @@ public abstract class AbstractWorker implements Runnable {
 		while (run.get()) {
 			ScanData data = poll();
 			if (data == null) continue;
+
+			String absPath = null;
 			try {
 				inprogress.set(true);
-				if (data.getFilePath() == null || !new File(data.getFilePath()).exists()) continue;
+				if (data.getFilePath() == null) continue;
+
+				absPath = new File(data.getFilePath()).getCanonicalPath();
+				if (!new File(data.getFilePath()).exists()) {
+					Scanner.removeFromQueue(absPath);
+					continue;
+				}
 
 				data.setStopWatch(DateUtils.start());
 				data.setStart(System.currentTimeMillis());
@@ -87,7 +96,6 @@ public abstract class AbstractWorker implements Runnable {
 				process(data);                 // INFO 파일 파싱
 				checkAttachments(data);        // 첨부파일 체크  (각 Worker 에서 파일 대기에 대한 기준을 재 정립, 첨부가 없으면 대기)
 				parse(data);                   // 서비스별 추가 내용 파싱 (Error 발생 시 처음부터 재 처리)
-				insaMapping(data);             // 인사 정보 연동 (Error 발생 시 처음부터 재 처리)
 
 				boolean rs = filterService.filter(data); // 필터 처리     (Error 발생 시 처음부터 재 처리)
 				if (!rs) { // 필터링 되는 파일의 경우 아래 내용은 처리하지 않음.
@@ -97,6 +105,8 @@ public abstract class AbstractWorker implements Runnable {
 					int retryCnt = 1;
 					while (retryCnt <= 3) {
 						try {
+							//에러 발생시 3회 재처리 할 경우 중복 발생...(대비 코드 추가 해야함)
+							insaMapping(data);      // 인사 정보 연동 (Error 발생 시 해당 로직 3회 재처리)
 							transToBody(data);      // 본문 전송     (Error 발생 시 해당 로직 3회 재처리 후 지속 에러 발생 시 처음부터 재 처리)
 							transToAttach(data);    // 첨부파일 전송  (Error 발생 시 해당 로직 3회 재처리 후 지속 에러 발생 시 처음부터 재 처리)
 							index(data);            // Elastic 색인 (Error 발생 시 해당 로직 3회 재처리 후 지속 에러 발생 시 처음부터 재 처리)
@@ -104,7 +114,7 @@ public abstract class AbstractWorker implements Runnable {
 							task(data);             // OCR 사용이면, OCR 처리
 							success = true;
 							break;
-						} catch (final FileSendException | IndexerException e) {
+						} catch (final FileSendException | IndexerException | InsaMappingException e) {
 							log.debug("ERROR | {} | {}", data.getMsgData().getMsgid(), e.getMessage(), e);
 							retryCnt++;
 							Common.sleep(2000);
@@ -120,14 +130,16 @@ public abstract class AbstractWorker implements Runnable {
 				LogVaultApplication.getSecBy10Count().incrementAndGet();    // 10초 통계 증가
 			} catch (final SkipFileException e) { // 첨부 파일이 늦게 들어오는 경우 대기 용도
 				log.info("WAIT_SEC | {} | {} seconds until the file is available.\n", e.getMessage(), this.conf.getInterval() / 1000);
-			} catch (final ProcessDataException | ParsingException | InsaMappingException e) {
+			} catch (final ProcessDataException | ParsingException e) {
 				log.debug("{}", data.getFilePath(), e);
 				// 기본 파싱이 되지 않는 다면 권한을 제거하여 재 처리 되는 오류를 방지한다.
 				Common.removeAllPermissions(new File(data.getFilePath()));
 			} catch (final Exception e) {
 				log.warn("{} | {} | filePath={} err={}", ErrorCode.UNKNOWN_ERROR, ErrorCode.fromCode(ErrorCode.UNKNOWN_ERROR), data.getFilePath(), e.toString());
+				Common.removeAllPermissions(new File(data.getFilePath())); //다른 오류 발생 시 동일 오류 발생하지 않도록 재 처리 방지
 				Common.sleep(10000);
 			} finally {
+				if (absPath != null) Scanner.removeFromQueue(absPath);
 				MDC.remove("msgId");
 				data.decrementCount(); // 처리 건수 감소
 				inprogress.set(false);

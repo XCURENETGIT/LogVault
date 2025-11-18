@@ -312,6 +312,10 @@ public final class Scanner extends DirectoryWalker<File> implements Runnable {
 		});
 	}
 
+	public static void removeFromQueue(final String absPath) {
+		ENQUEUED.remove(absPath);
+	}
+
 	private static String safeAbsPath(File f) {
 		try {
 			return f.getCanonicalPath();

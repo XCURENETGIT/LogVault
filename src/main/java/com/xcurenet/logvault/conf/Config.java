@@ -76,7 +76,7 @@ public class Config {
 	@Value("${scan.directory.scanning.waiting.sec:5}") //디코더 디렉토리 스캔 대기시간 - 운영중 설정 변경 불가 (재시작필요)
 	private int scanDirectoryScanningWaitingSec;
 
-	@Value("${file.wait.time.sec:1800}") // 헤더, 본문, 첨부 파일 최대 대기 시간 - 운영중 설정 변경 불가 (재시작필요)
+	@Value("${file.wait.time.sec:600}") // 헤더, 본문, 첨부 파일 최대 대기 시간 - 운영중 설정 변경 불가 (재시작필요)
 	private int fileWaitTime;
 
 	@Value("${scan.dir.enable.wmail:true}") //WMAIL 경로 스캔 여부 - 운영중 설정 변경 불가 (재시작필요)

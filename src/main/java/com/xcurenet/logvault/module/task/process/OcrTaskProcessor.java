@@ -6,6 +6,7 @@ import com.alibaba.fastjson2.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
+import com.xcurenet.common.utils.FileUtil;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.fs.FileProcessor;
 import com.xcurenet.logvault.module.analysis.KeywordAnalysis;
@@ -69,7 +70,7 @@ public class OcrTaskProcessor implements TaskProcessor {
 			int fail = 0;
 			int target = 0;
 			for (EmassDoc.Attach attach : attaches) {
-				String ext = FilenameUtils.getExtension(attach.getName());
+				String ext = FileUtil.getExtention(attach.getName());
 				if (attach.isExist() && (conf.getOcrTargetExt().contains(attach.getExpectedExtension()) || conf.getOcrTargetExt().contains(ext))) {
 					target++;
 					StopWatch sw = DateUtils.start();

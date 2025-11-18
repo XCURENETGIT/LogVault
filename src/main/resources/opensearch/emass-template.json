@@ -353,7 +353,9 @@
 							"type": "keyword"
 						},
 						"privacy_data": {
-							"type": "keyword"
+							"type": "keyword",
+							"doc_values": false,
+							"index": false
 						},
 						"count": {
 							"type": "integer"

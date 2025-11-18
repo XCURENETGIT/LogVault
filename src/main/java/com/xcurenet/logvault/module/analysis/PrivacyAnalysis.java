@@ -8,7 +8,6 @@ import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.crypto.Crypto;
 import com.xcurenet.logvault.conf.Config;
-import com.xcurenet.logvault.conf.JasyptConfig;
 import com.xcurenet.logvault.loader.PatternLoader;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
@@ -35,7 +34,6 @@ public class PrivacyAnalysis {
 
 	private final Config conf;
 	private final RestClient restClient;
-	private final JasyptConfig jasyptConfig = new JasyptConfig();
 
 	public void detect(final ScanData scanData) {
 		if (scanData == null || scanData.getEmassDoc() == null) return;

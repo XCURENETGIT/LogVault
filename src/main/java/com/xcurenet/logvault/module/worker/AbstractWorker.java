@@ -2,7 +2,6 @@ package com.xcurenet.logvault.module.worker;
 
 
 import com.xcurenet.common.error.ErrorCode;
-import com.xcurenet.common.geo.GeoLocation;
 import com.xcurenet.common.msg.MSGData;
 import com.xcurenet.common.msg.MSGParser;
 import com.xcurenet.common.utils.Common;
@@ -48,7 +47,6 @@ public abstract class AbstractWorker implements Runnable {
 	protected final AnalysisService analysisService;
 	protected final ClearService clearService;
 	protected final LogService logService;
-	protected final GeoLocation geoLocation;
 	protected final IndexService indexService;
 	protected final FilterService filterService;
 	protected final AlertService alertService;
@@ -66,7 +64,6 @@ public abstract class AbstractWorker implements Runnable {
 		this.logService = context.getBean(LogService.class);
 		this.clearService = context.getBean(ClearService.class);
 		this.metrics = context.getBean(ThroughputMetrics.class);
-		this.geoLocation = context.getBean(GeoLocation.class);
 		this.filterService = context.getBean(FilterService.class);
 		this.alertService = context.getBean(AlertService.class);
 		this.taskService = context.getBean(TaskService.class);
@@ -161,7 +158,6 @@ public abstract class AbstractWorker implements Runnable {
 
 	protected void checkAttachments(ScanData data) throws SkipFileException {
 		MSGData msg = data.getMsgData();
-		if (msg.getHeader() != null) checkFiles(data, conf.getPath(msg.getHeader()), msg.getMsgid());
 		if (msg.getMsgFile() != null) checkFiles(data, conf.getPath(msg.getMsgFile()), msg.getMsgid());
 		if (msg.getAppFile() != null) {
 			for (String appFile : msg.getAppFile()) {

@@ -17,7 +17,6 @@ public class LogService {
 			int attachCnt = msg.getAttachCount();
 			int attachExistCnt = msg.getAttachExistCount();
 			String bodySize = msg.getBody() != null ? Common.convertFileSize(msg.getBody().getSize()) : "0";
-			String bodyLang = msg.getBody() != null ? msg.getBody().getLanguage() : "";
 			String attSize = Common.convertFileSize(msg.getAttachTotalSize());
 
 			EmassDoc.User user = msg.getUser();
@@ -34,7 +33,7 @@ public class LogService {
 			EmassDoc.Http http = msg.getHttp();
 			//String url = http != null ? http.getUrl() : "";
 			String agent = getUserAgent(http);
-			log.info("MSG_DONE | {} | BODY:{} ({}) {} | AT_CNT:{} | EXIST_CNT:{} ({}) | {} | {}:{} > {}:{} | {} | {}\n", msg.getService().getSvc(), isBody, bodySize, bodyLang, attachCnt, attachExistCnt, attSize, userId, sIp, sPort, dIp, dPort, agent, DateUtils.stop(data.getStopWatch()));
+			log.info("MSG_DONE | {} | BODY:{} ({}) | AT_CNT:{} | EXIST_CNT:{} ({}) | {} | {}:{} > {}:{} | {} | {}\n", msg.getService().getSvc(), isBody, bodySize, attachCnt, attachExistCnt, attSize, userId, sIp, sPort, dIp, dPort, agent, DateUtils.stop(data.getStopWatch()));
 		} catch (Exception e) {
 			log.warn("DEBUG_LOG | {}", e.getMessage());
 			log.error("", e);

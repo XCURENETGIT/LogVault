@@ -40,7 +40,7 @@
 	<select id="getKeyword" resultType="KeywordVO">
 		SELECT	MAX(KEYWORD_NM) AS keywordNm, MIN(MIN_CNT) AS minCnt
 		FROM	UI_KEYWORD
-		WHERE	ENABLE = 'Y'
+		WHERE	USE_YN = 'Y'
 		GROUP	BY KEYWORD_NM
 	</select>
 
@@ -51,6 +51,6 @@
 				REGEX AS regex,
 				MIN_CNT AS minCount
 		FROM	UI_PATTERN
-		WHERE	ENABLE = 'Y'
+		WHERE	USE_YN = 'Y'
 	</select>
 </mapper>

@@ -86,8 +86,6 @@ public class MSGParser {
 		if (Common.isNotEmpty(data.getQuery()) && data.getQuery().length() > 4000) {
 			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_QUERY_TOO_LONG, Map.of("context", Common.nvl(data.getQuery().length())));
 		}
-		if (Common.isEmpty(data.getHeader()))
-			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_HEADER_NULL, Map.of("context", input));
 		if (Common.isEmpty(data.getSvc()))
 			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_STYPE_NULL, Map.of("context", input));
 	}

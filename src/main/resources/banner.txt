@@ -1,7 +1,7 @@
 
 ---------------------------------------------------------------------------------------------------------------------------------------------
 Application : ${spring.application.name}
-Description : ✅ File Ingestion and Metadata Persistence 1. Storing Uploaded Files 2. Extracting and Saving Metadata 3. Optional Features
+Description : ✅ A module that processes and stores usage records of the generative AI service, handling tasks such as file analysis, PII detection
 Version     : ${server.version}.${release.version}
 JAVA        : ${java.runtime.name} ${java.version}
 OS          : ${os.name}.${os.version}

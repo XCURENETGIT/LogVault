@@ -19,7 +19,6 @@ public enum ErrorCode {
 	PARSER_QUERY_NULL("LVT-1010", "MSG Query is null"),
 
 	PARSER_QUERY_TOO_LONG("LVT-1010", "MSG URL query is too long"),
-	PARSER_HEADER_NULL("LVT-1011", "MSG HDRFILE is null"),
 	PARSER_MSGFILE_NULL("LVT-1012", "MSG MSGFILE (body) is null"),
 	PARSER_STYPE_NULL("LVT-1013", "MSG STYPE is null or cannot be derived"),
 

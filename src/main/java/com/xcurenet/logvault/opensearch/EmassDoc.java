@@ -146,8 +146,6 @@ public class EmassDoc {
 	public static class Body {
 		@Field("size")
 		private long size;
-		@Field("language")
-		private String language;
 		@Field("path")
 		private String path;
 		@Field("extension")

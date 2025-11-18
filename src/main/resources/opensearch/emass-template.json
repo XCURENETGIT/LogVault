@@ -100,29 +100,11 @@
 						"src_ip": {
 							"type": "ip"
 						},
-						"src_asn": {
-							"type": "keyword"
-						},
-						"src_country": {
-							"type": "keyword"
-						},
-						"src_location": {
-							"type": "geo_point"
-						},
 						"dst_port": {
 							"type": "integer"
 						},
 						"dst_ip": {
 							"type": "ip"
-						},
-						"dst_asn": {
-							"type": "keyword"
-						},
-						"dst_country": {
-							"type": "keyword"
-						},
-						"dst_location": {
-							"type": "geo_point"
 						}
 					}
 				},
@@ -240,9 +222,6 @@
 					"properties": {
 						"size": {
 							"type": "long"
-						},
-						"language": {
-							"type": "keyword"
 						},
 						"path": {
 							"type": "keyword",

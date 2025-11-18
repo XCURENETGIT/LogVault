@@ -105,23 +105,11 @@ public class EmassDoc {
 		private int srcPort;
 		@Field("src_ip")
 		private String srcIp;
-		@Field("src_asn")
-		private String srcAsn;
-		@Field("src_country")
-		private String srcCountry;
-		@Field("src_location")
-		private GeoPoint srcLocation;
 
 		@Field("dst_port")
 		private int dstPort;
 		@Field("dst_ip")
 		private String dstIp;
-		@Field("dst_asn")
-		private String dstAsn;
-		@Field("dst_country")
-		private String dstCountry;
-		@Field("dst_location")
-		private GeoPoint dstLocation;
 	}
 
 	@Data

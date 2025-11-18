@@ -75,7 +75,7 @@ public class AttachAnalysis {
 				attach.setEncrypted(data.getBoolean("encrypted"));
 
 				try {
-					if (data.get("imagesCount") != null && data.get("imagesBase64") != null) {
+					if (data.get("imagesCount") != null && data.get("imagesBase64") != null && data.getInteger("imagesCount") > 0) {
 						EmassDoc.ImageExtractorInfo imageExtractorInfo = new EmassDoc.ImageExtractorInfo();
 						imageExtractorInfo.setImageCount(data.getInteger("imagesCount"));
 
@@ -91,7 +91,6 @@ public class AttachAnalysis {
 						}
 						imageExtractorInfo.setImageHash(hashList);
 						attach.setImageExtractorInfo(imageExtractorInfo);
-
 					}
 				} catch (Exception e) {
 					log.warn("ATT_OLE_IMG | {} | {}", conf.getDataPathSmall(attach.getSrcPath()), e.getMessage());

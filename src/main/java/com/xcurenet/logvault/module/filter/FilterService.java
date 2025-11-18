@@ -4,6 +4,7 @@ import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.msg.MSGData;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.ExFactory;
+import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.exception.FilterException;
 import com.xcurenet.logvault.exception.IndexerException;
 import com.xcurenet.logvault.module.ScanData;
@@ -18,6 +19,8 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class FilterService {
+	private final Config config;
+
 	public boolean filter(final ScanData data) throws FilterException {
 		MSGData msg = data.getMsgData();
 		boolean rs;
@@ -27,10 +30,12 @@ public class FilterService {
 				log.info("FILT_SVC | {}", msg.getSvc());
 				return true;
 			}
-			rs = Common.isEquals(msg.getSvc(), "IUKU");
-			if (rs) {
-				log.info("FILT_SVC | {}", msg.getSvc());
-				return true;
+			if (config.isFilterServiceUnknown()) {
+				rs = Common.isEquals(msg.getSvc(), "IUKU");
+				if (rs) {
+					log.info("FILT_SVC | {}", msg.getSvc());
+					return true;
+				}
 			}
 		} catch (Exception e) {
 			throw ExFactory.ex(IndexerException::new, ErrorCode.INDEX_SAVE_FAIL, Map.of("svc", msg.getSvc()), e);

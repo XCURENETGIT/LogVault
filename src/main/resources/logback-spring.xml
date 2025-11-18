@@ -2,7 +2,7 @@
 <configuration scan="true">
 
 	<property name="PATTERN" value="%d{HH:mm:ss.SSS} | %-5level | %47X{msgId} | %23.23F{1}%4L | %msg%n"/>
-	<property name="CONSOLE_PATTERN" value="%d{HH:mm:ss.SSS} | %-5level | %18.18thread | %47X{msgId} | %23.23F{1}%4L | %msg%n"/>
+	<property name="CONSOLE_PATTERN" value="%d{HH:mm:ss.SSS} | %-5level | %18.18thread | %47X{msgId} | %24.24F{1}%4L | %msg%n"/>
 
 	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>

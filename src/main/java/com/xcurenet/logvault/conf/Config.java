@@ -209,6 +209,9 @@ public class Config {
 	//Response ContentType Filter
 	private String filterResponseContentType;
 
+	@Value("${filter.service.unknown:true}")
+	private boolean filterServiceUnknown;
+
 	@Value("${task.queue.workers.capacity:50}") //후 처리 큐 capacity
 	private int taskQueueWorkersCapacity;
 
@@ -218,7 +221,7 @@ public class Config {
 	@Value("${task.queue.scheduler.fetch-size:50}") //후 처리 시 한번에 MariaDB에서 불러올 건수
 	private int taskQueueSchedulerFetchSize;
 
-	@Value("${thumbnail.retention.days:30}") //썸네일 이미지 보관 (MariaDB)
+	@Value("${thumbnail.retention.days:90}") //썸네일 이미지 보관 (MariaDB)
 	private int thumbnailRetentionDays;
 
 	public int getInterval() {

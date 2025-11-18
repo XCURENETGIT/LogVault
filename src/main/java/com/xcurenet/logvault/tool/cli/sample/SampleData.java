@@ -7,11 +7,13 @@ import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import picocli.CommandLine;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -69,6 +71,9 @@ public class SampleData implements Callable<Integer> {
 
 		MSGData data = MSGParser.parse(newMsg.getAbsolutePath());
 		File bodyDest = new File(getDataPath(data.getMsgFile(), oldIp, ip.toHexString()));
+
+
+		FileUtils.writeStringToFile(body, RandomMailGenerator.generateMail(5, 10), StandardCharsets.UTF_8);
 		copyFile(body, bodyDest);
 		log.info("BODY WRITE : {}", bodyDest);
 

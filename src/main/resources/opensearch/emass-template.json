@@ -328,6 +328,33 @@
 							"type": "text",
 							"analyzer": "index_analyzer",
 							"search_analyzer": "search_analyzer"
+						},
+						"image_extractor_info": {
+							"properties": {
+								"image_count": {
+									"type": "integer"
+								},
+								"image_base64": {
+									"type": "keyword",
+									"doc_values": false,
+									"index": false
+								}
+							}
+						},
+						"sheet_info": {
+							"properties": {
+								"sheet_total": {
+									"type": "integer"
+								},
+								"sheet_hidden_total": {
+									"type": "integer"
+								},
+								"hidden_sheet_names": {
+									"type": "keyword",
+									"doc_values": false,
+									"index": false
+								}
+							}
 						}
 					}
 				},

@@ -33,7 +33,7 @@ public class AttachAnalysis {
 		body.add("filePath", filePath);
 		body.add("fileName", fileName);
 		body.add("extractImage", conf.isExtractImage());
-		body.add("checkArchiveImage", "false");
+		body.add("checkArchiveImage", conf.isExtractImage());
 		body.add("checkArchiveDepth", conf.getDecompressDepth());
 		body.add("checkExcelHiddenSheet", conf.isCheckExcelHiddenSheet());
 
@@ -71,6 +71,29 @@ public class AttachAnalysis {
 				attach.setExpectedUnknown(data.getBoolean("unknownType"));
 				attach.setChangeExtension(data.getBoolean("changeExtension"));
 				attach.setEncrypted(data.getBoolean("encrypted"));
+
+				try {
+					if (data.get("imagesCount") != null && data.get("imagesBase64") != null) {
+						EmassDoc.ImageExtractorInfo imageExtractorInfo = new EmassDoc.ImageExtractorInfo();
+						imageExtractorInfo.setImageCount(data.getInteger("imagesCount"));
+						imageExtractorInfo.setImageBase64(data.getJSONArray("imagesBase64").toJavaList(String.class));
+						attach.setImageExtractorInfo(imageExtractorInfo);
+					}
+				} catch (Exception e) {
+					log.warn("ATT_OLE_IMG | {} | {}", conf.getDataPathSmall(attach.getSrcPath()), e.getMessage());
+				}
+
+				try {
+					if (data.get("sheetInfo") != null) {
+						EmassDoc.SheetInfo sheetInfo = new EmassDoc.SheetInfo();
+						sheetInfo.setSheetTotal(data.getInteger("sheetTotal"));
+						sheetInfo.setSheetHiddenTotal(data.getInteger("sheetHiddenTotal"));
+						sheetInfo.setHiddenSheetNames(data.getJSONArray("hiddenSheetNames").toJavaList(String.class));
+						attach.setSheetInfo(sheetInfo);
+					}
+				} catch (Exception e) {
+					log.warn("ATT_SHEET | {} | {}", conf.getDataPathSmall(attach.getSrcPath()), e.getMessage());
+				}
 
 				String ext = Common.nvl(attach.getExtension());
 				if (conf.getOcrTargetExt().contains(attach.getExpectedExtension()) || conf.getOcrTargetExt().contains(ext)) {

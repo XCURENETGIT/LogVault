@@ -204,6 +204,17 @@ public class EmassDoc {
 		private String text;
 		@Transient
 		private String srcPath;
+
+		@Field("image_count")
+		private String imageCount;
+		@Field("image_base64")
+		private List<String> imageBase64;
+
+		@Field("image_extractor_info")
+		private ImageExtractorInfo imageExtractorInfo;
+
+		@Field("sheet_info")
+		private SheetInfo sheetInfo;
 	}
 
 	@Data
@@ -295,5 +306,26 @@ public class EmassDoc {
 			@Field("content-type")
 			private String contentType;
 		}
+	}
+
+	@Data
+	public static class ImageExtractorInfo {
+		@Field("image_count")
+		private int imageCount;
+
+		@Field("image_base64")
+		private List<String> imageBase64;
+	}
+
+	@Data
+	public static class SheetInfo {
+		@Field("sheet_total")
+		private int sheetTotal;
+
+		@Field("sheet_hidden_total")
+		private int sheetHiddenTotal;
+
+		@Field("hidden_sheet_names")
+		private List<String> hiddenSheetNames;
 	}
 }

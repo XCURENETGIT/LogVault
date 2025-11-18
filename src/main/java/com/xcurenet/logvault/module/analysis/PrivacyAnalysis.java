@@ -6,7 +6,9 @@ import com.xcurenet.common.regex.MatchResult;
 import com.xcurenet.common.regex.PatternDetector;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
+import com.xcurenet.crypto.Crypto;
 import com.xcurenet.logvault.conf.Config;
+import com.xcurenet.logvault.conf.JasyptConfig;
 import com.xcurenet.logvault.loader.PatternLoader;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
@@ -32,7 +34,8 @@ public class PrivacyAnalysis {
 	private static final MediaType TEXT_PLAIN_UTF8 = new MediaType("text", "plain", StandardCharsets.UTF_8);
 
 	private final Config conf;
-	private final RestClient restClient = RestClient.create();
+	private final RestClient restClient;
+	private final JasyptConfig jasyptConfig = new JasyptConfig();
 
 	public void detect(final ScanData scanData) {
 		if (scanData == null || scanData.getEmassDoc() == null) return;
@@ -154,7 +157,11 @@ public class PrivacyAnalysis {
 		for (int i = 0; i < arr.size(); i++) {
 			JSONObject it = arr.getJSONObject(i);
 			if (it == null || it.get("matchString") == null) continue;
-			items.add(it.getString("matchString"));
+
+			String matchString = it.getString("matchString");
+			//개인 정보 탐지 텍스트는 암호화 처리
+			if (enforceDetectCode) matchString = encString(matchString.getBytes(StandardCharsets.UTF_8));
+			items.add(matchString);
 		}
 		if (items.isEmpty()) return null;
 
@@ -175,5 +182,16 @@ public class PrivacyAnalysis {
 	private static List<EmassDoc.PrivacyInfo> ensurePrivacyInfoList(EmassDoc doc) {
 		if (doc.getPrivacyInfo() == null) doc.setPrivacyInfo(new ArrayList<>());
 		return doc.getPrivacyInfo();
+	}
+
+	private String encString(byte[] text) {
+		try {
+			Crypto crypto = new Crypto(conf.getEncryptKey(), conf.getEncyptCipher());
+			byte[] cipherTextBytes = crypto.encrypt(text, 0, text.length);
+			return Base64.getEncoder().encodeToString(cipherTextBytes);
+		} catch (Exception e) {
+			log.warn("ENC_ERROR | {}", e.getMessage(), e);
+		}
+		return null;
 	}
 }

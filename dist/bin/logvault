@@ -25,7 +25,7 @@ JAVA_OPTS="-server -Xms$XMS -Xmx$XMX \
 PROGRAM_OPTS="--spring.config.location=file:$CONF_FILE"
 
 
-JAVA=/users/logvault/jdk/bin/java
+JAVA="$PROGRAM_HOME/jdk/bin/java"
 
 function get_pid() {
   STR=$1

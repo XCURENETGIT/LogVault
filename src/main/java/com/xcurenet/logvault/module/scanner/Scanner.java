@@ -300,13 +300,13 @@ public final class Scanner extends DirectoryWalker<File> implements Runnable {
 		ENQUEUED.forEach((absPath, ts) -> {
 			File f = new File(absPath);
 			if (!f.exists()) {
-				ENQUEUED.remove(absPath);
+				removeFromQueue(absPath);
 				log.debug("DEDUP | cleared (not exists): {}", absPath);
 				return;
 			}
-			// 보수적 청소: 너무 오래된 항목은 한번 풀어주고 다시 잡히게 함
+			// 너무 오래된 항목은 한번 풀어주고 다시 잡히게 함
 			if (now - ts > DEFAULT_DELETE_TMP_DELAY.toMillis()) {
-				ENQUEUED.remove(absPath);
+				removeFromQueue(absPath);
 				log.debug("DEDUP | cleared (stale): {}", absPath);
 			}
 		});

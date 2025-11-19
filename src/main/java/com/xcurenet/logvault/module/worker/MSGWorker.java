@@ -10,7 +10,6 @@ import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.common.utils.ExFactory;
 import com.xcurenet.common.utils.FileUtil;
-import com.xcurenet.logvault.exception.FileSendException;
 import com.xcurenet.logvault.exception.IndexerException;
 import com.xcurenet.logvault.exception.InsaMappingException;
 import com.xcurenet.logvault.exception.ParsingException;
@@ -23,6 +22,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,13 +39,20 @@ public class MSGWorker extends AbstractWorker {
 	@Override
 	protected void parse(ScanData data) throws ParsingException {
 		MSGData msg = data.getMsgData();
+		if (msg == null) throw ExFactory.ex(ParsingException::new, ErrorCode.PARSER_MSG_FAIL, Map.of("info", data.getFilePath()));
 
 		try {
 			EmassDoc doc = new EmassDoc();
 			doc.setMsgid(msg.getMsgid());
+
+			if (msg.getCtime() == null) throw ExFactory.ex(ParsingException::new, ErrorCode.PARSER_CTIME_NULL, Map.of("info", msg.getInfoText()));
 			doc.setTimestamp(new Date(msg.getCtime().getMillis()));
 			doc.setCtime(msg.getCtime().toString(DateUtils.YYYYMMDDHHMMSS));
 			doc.setLtime(DateUtils.formatToYYYYMMDDHHMMSS(data.getStart()));
+
+			if (msg.getSvc() == null) throw ExFactory.ex(ParsingException::new, ErrorCode.PARSER_SVC_NULL, Map.of("info", msg.getInfoText()));
+			if (msg.getSvc().length() != 4) throw ExFactory.ex(ParsingException::new, ErrorCode.PARSER_SVC_INVALID, Map.of("info", msg.getInfoText()));
+
 			setService(msg, doc);
 			setNetwork(msg, doc);
 			setHttp(msg, doc);
@@ -82,7 +91,7 @@ public class MSGWorker extends AbstractWorker {
 			data.getEmassDoc().setUser(user);
 		} catch (Exception e) {
 			//필수 srcip값이 있는 상황의 로직의 오류는 기본 처리는 하도록 한다.
-			log.warn("{} | {} | SRCIP={} err={}", ErrorCode.INSA_MAPPING_FAIL, ErrorCode.fromCode(ErrorCode.INSA_MAPPING_FAIL), data.getMsgData().getSourceIp(), e.toString());
+			log.warn("{} | {} | SRCIP={} err={}", ErrorCode.INSA_MAPPING_FAIL, ErrorCode.fromCode(ErrorCode.INSA_MAPPING_FAIL), data.getMsgData().getSourceIp(), e.toString(), e);
 		}
 	}
 
@@ -129,35 +138,40 @@ public class MSGWorker extends AbstractWorker {
 		if (msg.getHost() == null) return;
 
 		EmassDoc.Http http = new EmassDoc.Http();
-		String port = doc.getNetwork().getDstPort() == 443 ? "" : ":" + Common.nvl(doc.getNetwork().getDstPort());
-		http.setUrl(String.join("", "https://", Common.nvl(msg.getHost()), port, Common.nvl(msg.getUrl()), Common.nvl(msg.getQuery())));
+		http.setUrl(String.join("", "https://", Common.nvl(msg.getHost()), Common.nvl(doc.getNetwork().getDstPort()), Common.nvl(msg.getUrl()), Common.nvl(msg.getQuery())));
 		doc.setHttp(http);
 	}
 
 	private void setBody(MSGData msg, EmassDoc doc) {
-		EmassDoc.Body body = new EmassDoc.Body();
 		if (msg.getMsgFile() == null) return;
 
-		File file = new File(conf.getPath(msg.getMsgFile()));
-		if (!file.exists()) return;
+		Path filePath = Path.of(conf.getPath(msg.getMsgFile()));
+		if (!Files.exists(filePath)) return;
 
-		String text = Common.limitLength(FileUtil.getText(file.getAbsolutePath()), conf.getTextLimitLength());
-		text = Common.limitTokenLengthWithSpace(text, conf.getTextLimitToken());
-		text = Common.unescapeJava(text);
-		log.debug("BDY_TEXT | {}", text);
+		try {
+			String text = Common.limitLength(FileUtil.getText(filePath.toString()), conf.getTextLimitLength());
+			text = Common.limitTokenLengthWithSpace(text, conf.getTextLimitToken());
+			text = Common.unescapeJava(text);
+			log.debug("BDY_TEXT | {}", Common.getSummaryText(text));
 
-		body.setExtension(FileUtil.getExtention(file.getName()));
-		body.setPath(conf.getDestPath(msg.getCtime(), msg.getMsgid(), file.getName()));
-		body.setSize(file.length());
-		body.setText(text);
-		doc.setBody(body);
+			EmassDoc.Body body = new EmassDoc.Body();
+			body.setExtension(FileUtil.getExtension(filePath.getFileName().toString()));
+			body.setPath(conf.getDestPath(msg.getCtime(), msg.getMsgid(), filePath.getFileName().toString()));
+			body.setSize(Files.size(filePath));
+			body.setText(text);
+
+			doc.setBody(body);
+		} catch (Exception e) {
+			log.error("BODY_PARSE_FAIL | {} | {}", msg.getMsgid(), e.getMessage(), e);
+		}
 	}
 
-	private void setAttach(MSGData msg, EmassDoc doc) {
-		final List<String> appFiles = Common.nvl(msg.getAppFile()); // 원본 파일
-		final List<String> pcFiles = Common.nvl(msg.getPcFile()); //원본 파일명
+	private void setAttach(MSGData msg, EmassDoc doc) throws IOException {
+		final List<String> appFiles = Common.nvl(msg.getAppFile());
+		final List<String> pcFiles = Common.nvl(msg.getPcFile());
 		final List<AttachExtension> extensions = Common.nvl(msg.getExtension());
 		final int count = Math.max(appFiles.size(), pcFiles.size());
+
 		if (count == 0) {
 			doc.setAttach(null);
 			doc.setAttachCount(0);
@@ -171,10 +185,8 @@ public class MSGWorker extends AbstractWorker {
 		List<EmassDoc.Attach> attaches = new ArrayList<>(count);
 		for (int i = 0; i < count; i++) {
 			EmassDoc.Attach at = new EmassDoc.Attach();
-
 			String name = Common.get(pcFiles, i);
 			if (name == null) name = Common.get(appFiles, i);
-
 			if (Common.isNotEmpty(name)) {
 				if (StringUtils.containsAny(name, MSGParser.ERROR_CHAR)) {
 					log.warn("ERR_NAME | {} {}", doc.getMsgid(), name);
@@ -183,22 +195,29 @@ public class MSGWorker extends AbstractWorker {
 				at.setName(name);
 			}
 
-			long size = 0L;
+			long size = 0;
 			boolean exists = false;
-			final String srcPath = Common.get(appFiles, i);
-			if (srcPath != null) {
-				File srcFile = new File(conf.getPath(srcPath));
-				at.setSrcPath(srcFile.getAbsolutePath());
-				exists = srcFile.exists();
-				size = (srcFile.exists() ? srcFile.length() : 0L);
+
+			String srcPathStr = Common.get(appFiles, i);
+			if (srcPathStr != null) {
+				Path srcPath = Path.of(conf.getPath(srcPathStr));
+				at.setSrcPath(srcPath.toAbsolutePath().toString());
+
+				exists = Files.exists(srcPath);
 				if (exists) {
-					at.setPath(conf.getDestPath(msg.getCtime(), msg.getMsgid(), srcFile.getName()));
-					at.setHash(Common.digest(Constants.SHA256, srcFile.getAbsolutePath()));
+					size = Files.size(srcPath);
+					String hash = Common.digest(Constants.SHA256, srcPath.toAbsolutePath().toString());
+					at.setHash(hash);
+					at.setPath(conf.getDestPath(msg.getCtime(), msg.getMsgid(), srcPath.getFileName().toString()));
 				}
 			}
-			at.setExist(exists);
+
 			at.setSize(size);
-			at.setHasName(getFileNameExist(i, extensions));
+			at.setExist(exists);
+
+			boolean hasName = getFileNameExist(i, extensions);
+			at.setHasName(hasName);
+
 			String ext = Optional.ofNullable(at.getName()).map(FilenameUtils::getExtension).map(String::toLowerCase).orElse(null);
 			at.setExtension(ext);
 
@@ -210,23 +229,21 @@ public class MSGWorker extends AbstractWorker {
 			at.setId(id);
 
 			if (exists) existCnt++;
-			sizeSum += at.getSize();
+			sizeSum += size;
 			attaches.add(at);
 		}
 
-		doc.setAttach(attaches.isEmpty() ? null : attaches);
+		doc.setAttach(attaches);
 		doc.setAttachCount(attaches.size());
 		doc.setAttachExistCount(existCnt);
 		doc.setAttachTotalSize(sizeSum);
 	}
 
+
 	private boolean getFileNameExist(int i, List<AttachExtension> extensions) {
-		try {
-			return extensions.get(i).isFileNameExist();
-		} catch (Exception e) {
-			log.warn("NAME_EXIST | {}", e.getMessage());
-		}
-		return false;
+		if (extensions == null || i < 0 || i >= extensions.size()) return false;
+		AttachExtension ae = extensions.get(i);
+		return ae != null && ae.isFileNameExist();
 	}
 
 	private void setSize(EmassDoc doc) {

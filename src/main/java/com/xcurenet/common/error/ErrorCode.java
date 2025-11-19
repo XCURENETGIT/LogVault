@@ -19,11 +19,12 @@ public enum ErrorCode {
 	PARSER_QUERY_NULL("LVT-1010", "MSG Query is null"),
 
 	PARSER_QUERY_TOO_LONG("LVT-1010", "MSG URL query is too long"),
-	PARSER_MSGFILE_NULL("LVT-1012", "MSG MSGFILE (body) is null"),
+	PARSER_MSGFILE_NULL("LVT-1012", "MSG MSG FILE (body) is null"),
 	PARSER_STYPE_NULL("LVT-1013", "MSG STYPE is null or cannot be derived"),
 
-
 	PARSER_FILENAME_FAIL("LVT-1014", "MSG File Name Parsing Failed"),
+	PARSER_SVC_NULL("LVT-1015", "MSG File SVC is null"),
+	PARSER_SVC_INVALID("LVT-1016", "MSG File SVC is invalid"),
 	PARSER_INVALID("LVT-1998", "Invalid parser"),
 	PARSER_MSG_FAIL("LVT-1999", "EDCDoc Parsing Failed"),
 

@@ -70,7 +70,7 @@ public class OcrTaskProcessor implements TaskProcessor {
 			int fail = 0;
 			int target = 0;
 			for (EmassDoc.Attach attach : attaches) {
-				String ext = FileUtil.getExtention(attach.getName());
+				String ext = FileUtil.getExtension(attach.getName());
 				if (attach.isExist() && (conf.getOcrTargetExt().contains(attach.getExpectedExtension()) || conf.getOcrTargetExt().contains(ext))) {
 					target++;
 					StopWatch sw = DateUtils.start();

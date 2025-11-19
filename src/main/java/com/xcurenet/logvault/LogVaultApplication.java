@@ -26,7 +26,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.io.Console;
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -63,7 +65,7 @@ public class LogVaultApplication implements CommandLineRunner {
 	public static void main(String[] args) {
 		SpringApplication application = new SpringApplication(LogVaultApplication.class);
 		application.setRegisterShutdownHook(false);
-		application.addListeners(new ApplicationPidFileWriter(new File(Config.PID_FILE)));
+		application.addListeners(new ApplicationPidFileWriter(Paths.get(Config.PID_FILE).toFile()));
 
 		ConfigurableApplicationContext ctx = application.run(args);
 		Runtime.getRuntime().addShutdownHook(new Thread(ctx::close));
@@ -139,20 +141,21 @@ public class LogVaultApplication implements CommandLineRunner {
 	@PostConstruct
 	private void loadEncryptKey() {
 		if (conf.isEncryptEnable()) {
-			if (!new File(conf.getEncryptKeyFile()).exists()) {
+			Path keyFile = Paths.get(conf.getEncryptKeyFile());
+			if (!Files.exists(keyFile)) {
 				log.warn("LOAD_ENCRYPT | The file encryption setting is enabled, but no key file is available.");
 				if (!Common.isWindow()) System.exit(1);
 
-				//아래 key 생성은 실전에서는 필요없음. (모듈 실행 전 키 파일이 필요함)
+				// 아래 key 생성은 실전에서는 필요없음. (모듈 실행 전 키 파일이 필요함)
 				if (!makeKey()) {
 					log.error("LOAD_ENCRYPT | Failed to generate the encryption key file: {}", conf.getEncryptKey());
 					loadEncryptKey();
 				}
 			}
 
-			final String key = Common.toHexString(Crypto.loadKeyFile(conf.getEncryptKeyFile()));
+			final String key = Common.toHexString(Crypto.loadKeyFile(keyFile.toString()));
 			if (Common.isNotEmpty(key)) {
-				log.info("LOAD_ENCRYPT | {} | {}", conf.getEncryptKeyFile(), conf.getEncryptCipher());
+				log.info("LOAD_ENCRYPT | {} | {}", keyFile, conf.getEncryptCipher());
 				conf.setEncryptKey(key);
 			} else {
 				log.error("LOAD_ENCRYPT | Invalid Key File: {}", conf.getEncryptKey());
@@ -162,7 +165,9 @@ public class LogVaultApplication implements CommandLineRunner {
 	}
 
 	private boolean makeKey() {
-		return Crypto.makeKeyFile(conf.getEncryptKeyFile(), inputPassword());
+		// File → Path/Files 변경
+		Path keyPath = Paths.get(conf.getEncryptKeyFile());
+		return Crypto.makeKeyFile(keyPath.toString(), inputPassword());
 	}
 
 	private String inputPassword() {

@@ -17,7 +17,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.StopWatch;
 import org.springframework.web.client.RestClient;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,6 +59,7 @@ public class AttachAnalysis {
 		EmassDoc doc = msg.getEmassDoc();
 		List<EmassDoc.Attach> attaches = doc.getAttach();
 		if (attaches == null) return;
+
 		for (EmassDoc.Attach attach : attaches) {
 			if (!attach.isExist()) continue;
 			attach.setOcrTarget(false);
@@ -74,8 +77,10 @@ public class AttachAnalysis {
 				attach.setChangeExtension(data.getBoolean("changeExtension"));
 				attach.setEncrypted(data.getBoolean("encrypted"));
 
+				// 이미지 추출 정보
 				try {
 					if (data.get("imagesCount") != null && data.get("imagesBase64") != null && data.getInteger("imagesCount") > 0) {
+
 						EmassDoc.ImageExtractorInfo imageExtractorInfo = new EmassDoc.ImageExtractorInfo();
 						imageExtractorInfo.setImageCount(data.getInteger("imagesCount"));
 
@@ -85,7 +90,7 @@ public class AttachAnalysis {
 							String base64 = array.getString(i);
 							if (base64 == null) continue;
 
-							String hash = Common.toHexString(Common.sha256(array.getString(i)));
+							String hash = Common.toHexString(Common.sha256(base64));
 							hashList.add(hash);
 							fileThumbnail.insertThumbnail(hash, base64);
 						}
@@ -96,6 +101,7 @@ public class AttachAnalysis {
 					log.warn("ATT_OLE_IMG | {} | {}", conf.getDataPathSmall(attach.getSrcPath()), e.getMessage());
 				}
 
+				// 엑셀 Hidden Sheet 정보
 				try {
 					if (data.get("sheetInfo") != null) {
 						JSONObject sheet = data.getJSONObject("sheetInfo");
@@ -109,9 +115,10 @@ public class AttachAnalysis {
 					log.warn("ATT_SHEET | {} | {}", conf.getDataPathSmall(attach.getSrcPath()), e.getMessage());
 				}
 
+				// OCR 대상 여부
 				String ext = Common.nvl(attach.getExtension());
 				if (conf.getOcrTargetExt().contains(attach.getExpectedExtension()) || conf.getOcrTargetExt().contains(ext)) {
-					attach.setOcrStatus("P"); //PENDING
+					attach.setOcrStatus("P"); // PENDING
 					attach.setOcrTarget(true);
 				}
 				log.info("ATT_TEXT | {} | RESULT:{} | TXT_LEN:{} | {}", conf.getDataPathSmall(attach.getSrcPath()), text.get("success"), Common.nvl(attach.getText()).length(), DateUtils.stop(sw));
@@ -126,15 +133,16 @@ public class AttachAnalysis {
 		try {
 			List<EmassDoc.Attach> attaches = doc.getAttach();
 			if (attaches == null) return;
+
 			for (EmassDoc.Attach attach : attaches) {
 				if (!attach.isExist()) continue;
 
-				File file = new File(attach.getSrcPath());
-				if (!file.exists()) continue;
+				Path path = Paths.get(attach.getSrcPath());
+				if (!Files.exists(path)) continue;
 
 				if (!fileThumbnail.isExistThumbnail(attach.getHash())) {
 					StopWatch sw = DateUtils.start();
-					String thumbnail = fileThumbnail.execute(attach.getExpectedExtension(), file, attach.getText());
+					String thumbnail = fileThumbnail.execute(attach.getExpectedExtension(), path, attach.getText());
 					if (thumbnail != null) {
 						fileThumbnail.insertThumbnail(attach.getHash(), thumbnail);
 						log.info("THUMNAIL | {} | {}", conf.getDataPathSmall(attach.getSrcPath()), DateUtils.stop(sw));

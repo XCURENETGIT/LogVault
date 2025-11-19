@@ -10,10 +10,13 @@ import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import okio.Path;
 import org.springframework.stereotype.Service;
 import ua_parser.Client;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 
 @Log4j2
@@ -25,7 +28,8 @@ public class UserAgentAnalysis {
 	public void detect(final ScanData scanData) {
 		try {
 			MSGData msg = scanData.getMsgData();
-			if (msg.getHeader() == null || !new File(conf.getPath(msg.getHeader())).exists()) return;
+			if (msg.getHeader() == null) return;
+			if (!Files.exists(Paths.get(conf.getPath(msg.getHeader())))) return;
 
 			final String raw = FileUtil.getText(conf.getPath(msg.getHeader()));
 			HttpHeaderUtil.HttpHeader httpHeader = HttpHeaderUtil.parserHeader(raw);

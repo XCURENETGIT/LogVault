@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.Set;
 
 @Log4j2
@@ -40,12 +40,21 @@ public class FileThumbnail {
 		thumbnailRepository.insertThumbnail(hash, base64);
 	}
 
-	public String execute(final String ext, final File file, final String text) {
+	/**
+	 * 파일 썸네일 생성 (Path 기반)
+	 *
+	 * @param ext  파일 확장자 (예: "pdf", "jpg"...)
+	 * @param path 파일 Path
+	 * @param text 텍스트 썸네일용 내용
+	 * @return base64 썸네일 문자열, 실패/대상 아님이면 null
+	 */
+	public String execute(final String ext, final Path path, final String text) {
 		final String lowerExt = ext == null ? "" : ext.toLowerCase();
+
 		if (IMAGE_EXTENSIONS.contains(lowerExt)) {
-			return generateImage(file);
+			return generateImage(path);
 		} else if (PDF_EXTENSIONS.contains(lowerExt)) {
-			return generatePdf(file);
+			return generatePdf(path);
 		} else {
 			if (text == null) return null;
 			return generateText(text);
@@ -56,11 +65,11 @@ public class FileThumbnail {
 		return new TextThumbnail().execute(text, width, height);
 	}
 
-	private String generatePdf(final File file) {
-		return new PdfThumbnail().execute(file, width, height);
+	private String generatePdf(final Path path) {
+		return new PdfThumbnail().execute(path, width, height);
 	}
 
-	private String generateImage(final File file) {
-		return new ImageThumbnail().execute(file, width, height);
+	private String generateImage(final Path path) {
+		return new ImageThumbnail().execute(path, width, height);
 	}
 }

@@ -59,11 +59,16 @@ public class TextThumbnail {
 		drawWrappedText(g, target, width, height);
 
 		g.dispose();
-		return Common.toBase64(toJpegBytes(img));
+
+		byte[] jpeg = toJpegBytes(img);
+		if (jpeg == null) {
+			return null;
+		}
+		return Common.toBase64(jpeg);
 	}
 
 	/**
-	 * 리소스에 포함된 NotoSansKR-Regular.otf 폰트 로드
+	 * 리소스에 포함된 NotoSansKR-Regular.ttf 폰트 로드
 	 */
 	private Font loadResourceFont() {
 		try (InputStream in = new ClassPathResource(FONT_RESOURCE_PATH).getInputStream()) {
@@ -81,14 +86,15 @@ public class TextThumbnail {
 	 * 줄바꿈 처리하며 텍스트 출력
 	 */
 	private void drawWrappedText(Graphics2D g, String text, int width, int height) {
-		float drawWidth = Math.max(1, width - TextThumbnail.PADDING * 2);
+		float drawWidth = Math.max(1, width - PADDING * 2);
 		FontRenderContext frc = g.getFontRenderContext();
-		float y = TextThumbnail.PADDING;
+		float y = PADDING;
+
 		String[] paragraphs = text.replace("\r\n", "\n").split("\n", -1);
 		for (String p : paragraphs) {
 			if (p.isEmpty()) {
 				y += g.getFontMetrics().getHeight();
-				if (y > height - TextThumbnail.PADDING) break;
+				if (y > height - PADDING) break;
 				continue;
 			}
 			AttributedString as = new AttributedString(p);
@@ -101,9 +107,9 @@ public class TextThumbnail {
 				if (layout == null) break;
 
 				y += layout.getAscent();
-				if (y > height - TextThumbnail.PADDING) return;
+				if (y > height - PADDING) return;
 
-				layout.draw(g, TextThumbnail.PADDING, y);
+				layout.draw(g, PADDING, y);
 				y += layout.getDescent() + layout.getLeading();
 			}
 		}
@@ -127,19 +133,7 @@ public class TextThumbnail {
 		String text = """
 				/data01/attach/20251016/13/54/20251016135437.GCFTMEDJWI7MWJNBA2R6MXTQ5EV2Y2EY/20251016135437-01e13165-a04f680a-54207-443-00-64560-DEBDA8FBC3951135ED28B45CFD0FAB8B-VI01.http-1.txt",
 				            "text": ""\"13:50:47.405 | INFO  | [    MSGWorker-1] | stractLogVaultWorker. 172 | [MG_START] 20251016135045.IOOAR7FWCCIMBXD34YGGDFRQE7SLNPLG | /users/las/msg/info/wmail/54/WMAIL20251016135045-01e13165-a04f680a-54201-443-00-64521-DEBDA8FBC39511 35ED28B45CFD0FAB8B-VI01.http-1.MSG | 0.032s
-				13:50:47.808 | INFO  | [    MSGWorker-1] | .m.a.PrivacyAnalysis. 102 | [REG_DONE] 20251016135045.IOOAR7FWCCIMBXD34YGGDFRQE7SLNPLG | B | NUMBER:15\s
-				13:50:47.838 | INFO  | [    MSGWorker-1] | stractLogVaultWorker. 223 | [BDY_SEND] 20251016135045.IOOAR7FWCCIMBXD34YGGDFRQE7SLNPLG | /data01/attach/20251016/13/50/20251016135045.IOOAR7FWCCIMBXD34YGGDFRQE7SLNPLG/20251016135045-01e1316 5-a04f680a-54201-443-00-64521-DEBDA8FBC3951135ED28B45CFD0FAB8B-VI01.http-1.txt (274 Byte) | 0.001s
-				13:50:47.960 | INFO  | [    MSGWorker-1] |  c.x.l.m.w.MSGWorker.  77 | [MG_INDEX] 20251016135045.IOOAR7FWCCIMBXD34YGGDFRQE7SLNPLG | 0.122s
-				13:50:47.961 | INFO  | [    MSGWorker-1] | x.l.m.a.AlertService.  19 | [ALT_SEND] 20251016135045.IOOAR7FWCCIMBXD34YGGDFRQE7SLNPLG | 0.000s
-				13:50:47.961 | INFO  | [    MSGWorker-1] | x.l.m.c.ClearService.  38 | [DEL_FILE] 20251016135045.IOOAR7FWCCIMBXD34YGGDFRQE7SLNPLG | 0.000s
-				13:50:47.962 | INFO  | [    MSGWorker-1] | c.x.l.m.l.LogService.  37 | [MSG_DONE] 20251016135045.IOOAR7FWCCIMBXD34YGGDFRQE7SLNPLG | ICLS | BODY:true (274 Byte) US | AT_CNT:0 | EXIST_CNT:0 (0 KB) | 구매관리팀 | 184 | 라수빈 부장 | 1.225.49.101:54201 > 160.79.104.10:443 | https://claude.ai/api/organizations/a9b8b59d-2c82-4c6c-94ea-282c5fe59353/chat_conversations/2e3e2597 -3742-4449-8f76-5cd724045ee2/completion | Windows Chrome | 0.588s
-				13:53:08.467 | INFO  | [    MSGWorker-1] | stractLogVaultWorker. 172 | [MG_START] 20251016135257.WEOBOGDJJRR3ZAFKNFXQ6A3WIAYWONJG | /users/las/msg/info/wmail/34/WMAIL20251016135257-01e13165-a04f680a-54200-443-00-64543-DEBDA8FBC39511 35ED28B45CFD0FAB8B-VI01.http-1.MSG | 0.001s
-				13:53:08.481 | INFO  | [    MSGWorker-1] | .m.a.PrivacyAnalysis. 102 | [REG_DONE] 20251016135257.WEOBOGDJJRR3ZAFKNFXQ6A3WIAYWONJG | B | NUMBER:34\s
-				13:53:08.482 | INFO  | [    MSGWorker-1] | stractLogVaultWorker. 223 | [BDY_SEND] 20251016135257.WEOBOGDJJRR3ZAFKNFXQ6A3WIAYWONJG | /data01/attach/20251016/13/52/20251016135257.WEOBOGDJJRR3ZAFKNFXQ6A3WIAYWONJG/20251016135257-01e1316 5-a04f680a-54200-443-00-64543-DEBDA8FBC3951135ED28B45CFD0FAB8B-VI01.http-1.txt (6.3 KB) | 0.000s
-				13:53:08.492 | INFO  | [    MSGWorker-1] |  c.x.l.m.w.MSGWorker.  77 | [MG_INDEX] 20251016135257.WEOBOGDJJRR3ZAFKNFXQ6A3WIAYWONJG | 0.010s
-				13:53:08.493 | INFO  | [    MSGWorker-1] | x.l.m.a.AlertService.  19 | [ALT_SEND] 20251016135257.WEOBOGDJJRR3ZAFKNFXQ6A3WIAYWONJG | 0.000s
-				13:53:08.493 | INFO  | [    MSGWorker-1] | x.l.m.c.ClearService.  38 | [DEL_FILE] 20251016135257.WEOBOGDJJRR3ZAFKNFXQ6A3WIAYWONJG | 0.000s
-				13:53:08.493 | INFO  | [    MSGWorker-1] | c.x.l.m.l.LogService.  37 | [MSG_DONE] 20251016135257.WEOBOGDJJRR3ZAFKNFXQ6A3WIAYWONJG | ICLS | BODY:true (6.3 KB) KR | AT_CNT:0 | EXIST_CNT:0 (0 KB) | 구매관리팀 | 184 | 라수빈 부장 | 1.225.49.101:54200 > 160.79.104.10:443 | https://claude.ai/api/organizations/a9b8b59d-2c82-4c6c-94ea-282c5fe59353/chat_conversations/2e3e2597 -3742-4449-8f76-5cd724045ee2/completion | Windows Chrome | 0.027s
+				...
 				""";
 
 		TextThumbnail tn = new TextThumbnail();

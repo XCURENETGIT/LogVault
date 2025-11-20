@@ -83,15 +83,20 @@ public class RandomMailGenerator {
 					}
 				}
 				""";
-		Connection.Response response = Jsoup.connect(ES_URL).header("Content-Type", "application/json").ignoreContentType(true)           // JSON 응답 파싱 허용
-				.method(Connection.Method.POST).requestBody(requestJson).execute();
 
-		System.out.println(response.body());
-		JSONObject obj = JSONObject.parseObject(response.body());
-		JSONArray list = obj.getJSONObject("hits").getJSONArray("hits");
-		if (list.isEmpty()) return null;
+		try {
+			Connection.Response response = Jsoup.connect(ES_URL).header("Content-Type", "application/json").ignoreContentType(true)           // JSON 응답 파싱 허용
+					.method(Connection.Method.POST).requestBody(requestJson).execute();
 
-		return list.getJSONObject(0).getJSONObject("fields").getJSONArray("body").getString(0);
+			JSONObject obj = JSONObject.parseObject(response.body());
+			JSONArray list = obj.getJSONObject("hits").getJSONArray("hits");
+			if (list.isEmpty()) return null;
+
+			return list.getJSONObject(0).getJSONObject("fields").getJSONArray("body").getString(0);
+		} catch (Exception e) {
+			return generateMail(sentenceCount);
+		}
+
 
 /*		for (int i = 0; true; i++) {
 			//JSONObject source = list.getJSONObject(i).getJSONObject("_source");

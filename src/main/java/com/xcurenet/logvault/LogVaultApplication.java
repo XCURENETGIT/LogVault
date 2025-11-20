@@ -6,7 +6,7 @@ import com.xcurenet.common.utils.NamedThreadFactory;
 import com.xcurenet.crypto.Crypto;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.module.ScanData;
-import com.xcurenet.logvault.module.scanner.Scanner;
+import com.xcurenet.logvault.module.scanner.FileScanner;
 import com.xcurenet.logvault.module.worker.AbstractWorker;
 import com.xcurenet.logvault.module.worker.MSGWorker;
 import jakarta.annotation.PostConstruct;
@@ -112,7 +112,7 @@ public class LogVaultApplication implements CommandLineRunner {
 		if (Common.isEmpty(dir)) return;
 
 		ExecutorService executor = Executors.newFixedThreadPool(1);
-		executor.execute(new Scanner(dir, queue, run, conf.getScanDirectoryScanningWaitingSec()));
+		executor.execute(new FileScanner(dir, queue, run, conf.getScanDirectoryScanningWaitingSec()));
 		executor.shutdown();
 
 //		WatchServiceScanner scanner = WatchServiceScanner.ofDefault(dir, queue, run, scannerCount, false);

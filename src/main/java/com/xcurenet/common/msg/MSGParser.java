@@ -3,24 +3,24 @@ package com.xcurenet.common.msg;
 import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.types.AttachExtension;
 import com.xcurenet.common.types.EMail;
-import com.xcurenet.common.types.FileNameInfo;
 import com.xcurenet.common.types.IP;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.common.utils.ExFactory;
 import com.xcurenet.logvault.exception.ProcessDataException;
+import com.xcurenet.logvault.module.ScanData;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,17 +33,14 @@ public class MSGParser {
 	private static final Pattern ARRAY_KEY = Pattern.compile("(\\w+)\\[(\\d+)]");
 	public static final char[] ERROR_CHAR = new char[]{'{', '}', ':', '"'};
 
-	public static MSGData parse(final String filePath) throws ProcessDataException {
-		File file = new File(filePath);
+	public static MSGData parse(final ScanData scanData) throws ProcessDataException {
+		Path filePath = scanData.getFilePath();
 		String input;
 		try {
-			input = FileUtils.readFileToString(file, StandardCharsets.UTF_8);
+			input = Files.readString(filePath, StandardCharsets.UTF_8);
 		} catch (Exception e) {
 			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_READ_FAIL, Map.of("context", filePath), e);
 		}
-
-		if (input == null)
-			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_TEXT_NULL, Map.of("context", filePath));
 
 		MSGData data;
 		try {
@@ -53,15 +50,10 @@ public class MSGParser {
 		}
 
 		checkField(data, input);
+		data.setFileNameInfo(scanData.getFileNameInfo());
 
 		try {
-			data.setFileNameInfo(FileNameInfo.getInfo(filePath));
-		} catch (Exception e) {
-			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_FILENAME_FAIL, Map.of("context", filePath), e);
-		}
-
-		try {
-			data.setInfoFilePath(filePath);
+			data.setInfoFilePath(filePath.toAbsolutePath().toString());
 			data.setInfoText(input);
 			data.setMsgid(Common.makeMsgId(data.getCtime(), Common.makeFilepath(data.getInfoFilePath())));
 			return data;
@@ -71,23 +63,16 @@ public class MSGParser {
 	}
 
 	private static void checkField(final MSGData data, final String input) {
-		if (data.getCtime() == null)
-			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_CTIME_NULL, Map.of("context", input));
-		if (data.getSourceIp() == null)
-			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_SIP_NULL, Map.of("context", input));
-		if (data.getSourcePort() == 0)
-			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_SPORT_NULL, Map.of("context", input));
-		if (data.getDestinationIp() == null)
-			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_DIP_NULL, Map.of("context", input));
-		if (Common.isEmpty(data.getHost()))
-			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_HOST_NULL, Map.of("context", input));
-		if (Common.isEmpty(data.getUrl()))
-			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_URL_NULL, Map.of("context", input));
+		if (data.getCtime() == null) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_CTIME_NULL, Map.of("context", input));
+		if (data.getSourceIp() == null) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_SIP_NULL, Map.of("context", input));
+		if (data.getSourcePort() == 0) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_SPORT_NULL, Map.of("context", input));
+		if (data.getDestinationIp() == null) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_DIP_NULL, Map.of("context", input));
+		if (Common.isEmpty(data.getHost())) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_HOST_NULL, Map.of("context", input));
+		if (Common.isEmpty(data.getUrl())) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_URL_NULL, Map.of("context", input));
 		if (Common.isNotEmpty(data.getQuery()) && data.getQuery().length() > 4000) {
 			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_QUERY_TOO_LONG, Map.of("context", Common.nvl(data.getQuery().length())));
 		}
-		if (Common.isEmpty(data.getSvc()))
-			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_STYPE_NULL, Map.of("context", input));
+		if (Common.isEmpty(data.getSvc())) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_STYPE_NULL, Map.of("context", input));
 	}
 
 	private static Map<String, Object> parseInfoText(String input) {
@@ -113,8 +98,7 @@ public class MSGParser {
 					if (matcher.find()) {
 						key = matcher.group(1);
 						int index = Integer.parseInt(matcher.group(2));
-						@SuppressWarnings("unchecked")
-						List<String> list = (List<String>) map.computeIfAbsent(key, k -> new ArrayList<>());
+						@SuppressWarnings("unchecked") List<String> list = (List<String>) map.computeIfAbsent(key, k -> new ArrayList<>());
 						while (list.size() <= index) list.add(null);
 						list.set(index, value);
 						continue;

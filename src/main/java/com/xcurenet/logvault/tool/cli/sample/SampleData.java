@@ -5,9 +5,9 @@ import com.xcurenet.common.msg.MSGParser;
 import com.xcurenet.common.types.IP;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
+import com.xcurenet.logvault.module.ScanData;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Log4j2
 @CommandLine.Command(
@@ -38,6 +39,7 @@ public class SampleData implements Callable<Integer> {
 	private static final String DECODER_DATA = "/users/las/msg/data";
 	private static final String REPLACE_NAME = "DEBDA8FBC3951135ED28B45CFD0FAB8B";
 	private static final SecureRandom SECURERANDOM = new SecureRandom();
+	private final AtomicInteger scannerCount = new AtomicInteger();
 
 	@Override
 	public Integer call() throws Exception {
@@ -56,7 +58,7 @@ public class SampleData implements Callable<Integer> {
 		File msg = getFile(dir, ".msg");
 		File body = getFile(dir, ".txt");
 		File header = getFile(dir, ".hdr");
-		File[] attach = getFiles(dir, ".attach");
+		File[] attach = getFiles(dir);
 		String randomStr = randomHex32();
 		String nowStr = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
 		String fileName = getInfoPath(replaceTimestampWithNow("WMAIL", msg.getName(), nowStr, randomStr)).replace(oldIp, ip.toHexString());
@@ -69,7 +71,7 @@ public class SampleData implements Callable<Integer> {
 		Common.setAllPermissions(newMsg);
 		log.info("MSG WRITE : {}", newMsg);
 
-		MSGData data = MSGParser.parse(newMsg.getAbsolutePath());
+		MSGData data = MSGParser.parse(new ScanData(newMsg.toPath(), scannerCount));
 		File bodyDest = new File(getDataPath(data.getMsgFile(), oldIp, ip.toHexString()));
 
 
@@ -85,8 +87,7 @@ public class SampleData implements Callable<Integer> {
 			File attDest = new File(getDataPath(appFiles.get(x), oldIp, ip.toHexString()));
 			copyFile(attach[x], attDest);
 
-			if (appFiles.size() - 1 == x) log.info("ATTACH WRITE : {}\n", attDest);
-			else log.info("ATTACH WRITE : {}", attDest);
+			log.info("ATTACH WRITE : {}", attDest);
 		}
 	}
 
@@ -147,10 +148,9 @@ public class SampleData implements Callable<Integer> {
 		return dir;
 	}
 
-	private static File[] getFiles(File dir, String ext) {
-		return dir.listFiles((d, name) -> name.toLowerCase().endsWith(ext));
+	private static File[] getFiles(File dir) {
+		return dir.listFiles((d, name) -> name.toLowerCase().endsWith(".attach"));
 	}
-
 
 	public static String replaceTimestampWithNow(String prefix, String filename, String nowStr, String randomStr) {
 		int prefixLen = prefix.length();

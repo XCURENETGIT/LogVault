@@ -21,7 +21,7 @@ public class LogService {
 
 			EmassDoc.User user = msg.getUser();
 			//String deptName = user.getDeptName() != null ? user.getDeptName() : "unknown dept";
-			String userId = user.getId() != null ? user.getId() : "unknown user";
+			String userId = user != null ? (user.getId() != null ? user.getId() : "unknown user") : "unknown user";
 			//String userName = (user.getName() != null ? user.getName() : "unknown userName") + " " + user.getJikgubName();
 
 			EmassDoc.Network net = msg.getNetwork();

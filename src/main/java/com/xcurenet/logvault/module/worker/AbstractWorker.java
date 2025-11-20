@@ -16,7 +16,7 @@ import com.xcurenet.logvault.module.analysis.AnalysisService;
 import com.xcurenet.logvault.module.clear.ClearService;
 import com.xcurenet.logvault.module.filter.FilterService;
 import com.xcurenet.logvault.module.log.LogService;
-import com.xcurenet.logvault.module.scanner.Scanner;
+import com.xcurenet.logvault.module.scanner.FileScanner;
 import com.xcurenet.logvault.module.statics.ThroughputMetrics;
 import com.xcurenet.logvault.module.task.service.TaskService;
 import com.xcurenet.logvault.module.util.InsaManager;
@@ -27,7 +27,6 @@ import org.slf4j.MDC;
 import org.springframework.context.ApplicationContext;
 import org.springframework.util.StopWatch;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -85,7 +84,7 @@ public abstract class AbstractWorker implements Runnable {
 			try {
 				inprogress.set(true);
 
-				Path filePath = Paths.get(data.getFilePath());
+				Path filePath = data.getFilePath();
 				if (!Files.exists(filePath)) continue;
 
 				data.setStopWatch(DateUtils.start());
@@ -131,13 +130,6 @@ public abstract class AbstractWorker implements Runnable {
 			} catch (final SkipFileException e) {
 				log.info("WAIT_SEC | {} | {} seconds\n", e.getMessage(), this.conf.getInterval() / 1000);
 				Common.sleep(3000);
-
-				try {
-					Path path = Paths.get(data.getFilePath());
-					Scanner.removeFromQueue(path.toRealPath().toString());
-				} catch (IOException ex) {
-					log.warn("{} | {}", ErrorCode.UNKNOWN_ERROR, ErrorCode.fromCode(ErrorCode.UNKNOWN_ERROR), ex);
-				}
 			} catch (final ProcessDataException | ParsingException e) {
 				log.debug("{}", data.getFilePath(), e);
 				removePermissions(data.getFilePath());
@@ -147,15 +139,15 @@ public abstract class AbstractWorker implements Runnable {
 			} finally {
 				MDC.remove("msgId");
 				data.decrementCount();
+				FileScanner.removeFromQueue(data.getFilePath().toAbsolutePath().toString());
 				inprogress.set(false);
 			}
 		}
 	}
 
-	private void removePermissions(String filePath) {
+	private void removePermissions(Path filePath) {
 		try {
-			Path path = Paths.get(filePath);
-			Files.setPosixFilePermissions(path, Collections.emptySet());
+			Files.setPosixFilePermissions(filePath, Collections.emptySet());
 		} catch (Exception ignored) {
 		}
 	}
@@ -175,11 +167,11 @@ public abstract class AbstractWorker implements Runnable {
 	protected void process(ScanData data) throws ProcessDataException {
 		StopWatch sw = DateUtils.start();
 
-		MSGData msg = MSGParser.parse(data.getFilePath());
+		MSGData msg = MSGParser.parse(data);
 		data.setMsgData(msg);
 
 		MDC.put("msgId", msg.getMsgid());
-		log.info("MG_START | {} | {} | ATT:{} | {} | {} | {}", msg.getSourceIp(), msg.getSvc(), msg.getAppFile().size(), msg.getSubject(), conf.getWmailPathSmall(data.getFilePath()), DateUtils.stop(sw));
+		log.info("MG_START | {} | {} | ATT:{} | {} | {} | {}", msg.getSourceIp(), msg.getSvc(), msg.getAppFile().size(), msg.getSubject(), conf.getWmailPathSmall(data.getFilePath().toAbsolutePath().toString()), DateUtils.stop(sw));
 	}
 
 	protected void checkAttachments(ScanData data) throws SkipFileException {

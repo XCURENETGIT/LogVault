@@ -26,7 +26,7 @@ public class ClearService {
 		boolean bodyDeleted = false;
 		boolean headerDeleted = false;
 		boolean attachDeleted = false;
-		remove(data.getFilePath());
+		remove(data.getFilePath().toAbsolutePath().toString());
 		boolean msgDeleted = true;
 
 		if (msg != null) {

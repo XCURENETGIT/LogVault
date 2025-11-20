@@ -8,6 +8,8 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.util.StopWatch;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Data
@@ -20,7 +22,7 @@ public class ScanData {
 
 	private long start;
 	private StopWatch stopWatch;
-	private String filePath;
+	private Path filePath;
 	private String fileName;
 	private long lastModified;
 	private long fileSize;
@@ -29,15 +31,14 @@ public class ScanData {
 	private MSGData msgData;
 	private EmassDoc emassDoc;
 
-	public ScanData(final File file, final AtomicInteger scannerCount) throws Exception {
-		this.filePath = file.getPath();
-		this.fileName = file.getName();
-		this.lastModified = file.lastModified();
-		this.fileSize = file.length();
+	public ScanData(final Path path, final AtomicInteger scannerCount) throws Exception {
+		this.filePath = path;
+		this.fileName = path.getFileName().toString();
+		this.lastModified = Files.getLastModifiedTime(path).toMillis();
+		this.fileSize = Files.size(path);
 		this.scannerCount = scannerCount;
-		fileNameInfo = FileNameInfo.getInfo(file.getName());
+		fileNameInfo = FileNameInfo.getInfo(this.fileName);
 	}
-
 
 	public void incrementCount() {
 		scannerCount.incrementAndGet();

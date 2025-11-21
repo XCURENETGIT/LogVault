@@ -75,6 +75,7 @@ public class FileScanner implements Runnable {
 	private void scan(Path rootDir) {
 		try (Stream<Path> stream = Files.walk(rootDir, MAX_DEPTH)) {
 			stream.filter(this::isValidCandidate) // 파일 크기가 0이거나, 권한이 755가 아니면 SKIP
+					.filter(path -> path.getFileName().toString().toLowerCase().endsWith(".msg"))
 					.filter(path -> PROCESSING_SET.putIfAbsent(path.toAbsolutePath().toString(), true) == null) //Worker에서 처리 중인 파일이면 SKIP
 					.limit(LogVaultApplication.QUEUE_CAPACITY) // 큐 크기만큼만 파일 스캔
 					.forEach(path -> {
@@ -217,46 +218,46 @@ public class FileScanner implements Runnable {
 
 		String[] parts = coreName.split("-");// 예상되는 파트 수는 9개 (WMAIL날짜, SrcIp, DstIp, SrcPort, DstPort, Seq1, Seq2, Host1, Host2)
 		if (parts.length != 9) { // LVT-5002: 구성 요소 개수 불일치
-			throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_PART_COUNT, Map.of("count", parts.length + ", Expected: 9"));
+			throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_PART_COUNT, Map.of("count", parts.length + ", Expected: 9", "file", fileName));
 		}
 
 		try {
 			if (!parts[0].startsWith("WMAIL") || parts[0].length() != 19) { // Part 0: WMAIL + yyyyMMddHHmmss (총 19자)
-				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_HEADER_INVALID, Map.of("value", parts[0]));
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_HEADER_INVALID, Map.of("value", parts[0], "file", fileName));
 			}
 			if (isNoneNumeric(parts[0].substring(5))) {
-				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_HEADER_INVALID, Map.of("value", parts[0] + " (time part is not numeric)"));
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_HEADER_INVALID, Map.of("value", parts[0] + " (time part is not numeric)", "file", fileName));
 			}
 
 			if (isNoneHex(parts[1])) { // LVT-5004: Source IP Hex 형식 오류
-				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_HEX_INVALID, Map.of("value", parts[1] + " (Source IP)"));
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_HEX_INVALID, Map.of("value", parts[1] + " (Source IP)", "file", fileName));
 			}
 			if (isNoneHex(parts[2])) {// LVT-5004: Destination IP Hex 형식 오류
-				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_HEX_INVALID, Map.of("value", parts[2] + " (Destination IP)"));
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_HEX_INVALID, Map.of("value", parts[2] + " (Destination IP)", "file", fileName));
 			}
 
 			int srcPort = Integer.parseInt(parts[3]);
 			int dstPort = Integer.parseInt(parts[4]);
 			if (srcPort < 0 || srcPort > 65535) { // LVT-5005: Source Port 범위 오류
-				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_PORT_RANGE, Map.of("value", parts[3] + " (Source Port)"));
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_PORT_RANGE, Map.of("value", parts[3] + " (Source Port)", "file", fileName));
 			}
 			if (dstPort < 0 || dstPort > 65535) {// LVT-5005: Destination Port 범위 오류
-				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_PORT_RANGE, Map.of("value", parts[4] + " (Destination Port)"));
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_PORT_RANGE, Map.of("value", parts[4] + " (Destination Port)", "file", fileName));
 			}
 
 			if (isNoneNumeric(parts[5])) { // LVT-5007: Seq1 숫자 형식 오류
-				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_SEQ_INVALID, Map.of("value", parts[5] + " (Seq 1)"));
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_SEQ_INVALID, Map.of("value", parts[5] + " (Seq 1)", "file", fileName));
 			}
 			if (isNoneNumeric(parts[6])) { // LVT-5007: Seq2 숫자 형식 오류
-				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_SEQ_INVALID, Map.of("value", parts[6] + " (Seq 2)"));
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_SEQ_INVALID, Map.of("value", parts[6] + " (Seq 2)", "file", fileName));
 			}
 
 
 			if (parts[7].isEmpty()) { // LVT-5008: Host1 공백 오류
-				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_HOST_EMPTY, Map.of("field", "Host 1"));
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_HOST_EMPTY, Map.of("field", "Host 1", "file", fileName));
 			}
 			if (parts[8].isEmpty()) { // LVT-5008: Host2 공백 오류
-				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_HOST_EMPTY, Map.of("field", "Host 2"));
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_HOST_EMPTY, Map.of("field", "Host 2", "file", fileName));
 			}
 
 		} catch (NumberFormatException e) {
@@ -267,7 +268,7 @@ public class FileScanner implements Runnable {
 			} catch (NumberFormatException ignored) {
 				invalidPort = parts[3]; // Src Port가 문제
 			}
-			throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_PORT_FORMAT, Map.of("value", invalidPort));
+			throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_PORT_FORMAT, Map.of("value", invalidPort, "file", fileName));
 		}
 	}
 

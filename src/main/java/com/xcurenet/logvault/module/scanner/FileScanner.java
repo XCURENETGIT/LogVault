@@ -1,7 +1,10 @@
 package com.xcurenet.logvault.module.scanner;
 
+import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.utils.Common;
+import com.xcurenet.common.utils.ExFactory;
 import com.xcurenet.logvault.LogVaultApplication;
+import com.xcurenet.logvault.exception.ScanException;
 import com.xcurenet.logvault.module.ScanData;
 import lombok.extern.log4j.Log4j2;
 
@@ -11,9 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -80,7 +81,14 @@ public class FileScanner implements Runnable {
 
 						ScanData data = null;
 						try {
+							String name = path.getFileName().toString();
+							validateDetail(name);
+
 							data = new ScanData(path, scannerCount);
+						} catch (ScanException e) {
+							log.debug("SCANNER | Error : {}", path, e);
+							Common.removeAllPermissions(path.toFile()); // 파싱 오류는 중복 처리 불가함.
+							removeFromQueue(path.toAbsolutePath().toString());  // 에러 발생시에도 임시 캐시는 초기화
 						} catch (Exception e) {
 							log.error("SCANNER | File parsing error. Set no-permission to avoid reprocessing: {}", path, e);
 							Common.removeAllPermissions(path.toFile()); // 파싱 오류는 중복 처리 불가함.
@@ -121,10 +129,7 @@ public class FileScanner implements Runnable {
 	 */
 	private boolean isFileValid(final Path path, final long lastModified) {
 		try (Stream<String> lines = Files.lines(path, StandardCharsets.UTF_8)) {
-			Optional<Path> missingFile = lines.filter(line -> TARGET_KEYS.stream().anyMatch(line::contains))
-					.map(this::getFieldValue).filter(Common::isNotEmpty)
-					.map(val -> Paths.get(getPath(val))).filter(Files::notExists)
-					.findFirst();
+			Optional<Path> missingFile = lines.filter(line -> TARGET_KEYS.stream().anyMatch(line::contains)).map(this::getFieldValue).filter(Common::isNotEmpty).map(val -> Paths.get(getPath(val))).filter(Files::notExists).findFirst();
 
 			if (missingFile.isPresent()) {
 				long elapsed = System.currentTimeMillis() - lastModified;
@@ -191,5 +196,88 @@ public class FileScanner implements Runnable {
 	 */
 	public static void removeFromQueue(final String absPath) {
 		PROCESSING_SET.remove(absPath);
+	}
+
+	/**
+	 * 상세 로직 검증 (Split 사용)
+	 * 각 항목의 범위(Port 65535 이하 등)나 길이를 디테일하게 체크
+	 *
+	 * @throws ScanException 검증 실패 시 발생
+	 */
+	public static void validateDetail(String fileName) { // 반환 타입을 void로 변경
+		if (fileName == null || fileName.isEmpty()) {
+			throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_INVALID, Map.of("info", "file name is null or empty"));
+		}
+
+		String coreName = fileName;
+		int dotIndex = fileName.indexOf('.');
+		if (dotIndex != -1) {
+			coreName = fileName.substring(0, dotIndex);
+		}
+
+		String[] parts = coreName.split("-");// 예상되는 파트 수는 9개 (WMAIL날짜, SrcIp, DstIp, SrcPort, DstPort, Seq1, Seq2, Host1, Host2)
+		if (parts.length != 9) { // LVT-5002: 구성 요소 개수 불일치
+			throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_PART_COUNT, Map.of("count", parts.length + ", Expected: 9"));
+		}
+
+		try {
+			if (!parts[0].startsWith("WMAIL") || parts[0].length() != 19) { // Part 0: WMAIL + yyyyMMddHHmmss (총 19자)
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_HEADER_INVALID, Map.of("value", parts[0]));
+			}
+			if (isNoneNumeric(parts[0].substring(5))) {
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_HEADER_INVALID, Map.of("value", parts[0] + " (time part is not numeric)"));
+			}
+
+			if (isNoneHex(parts[1])) { // LVT-5004: Source IP Hex 형식 오류
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_HEX_INVALID, Map.of("value", parts[1] + " (Source IP)"));
+			}
+			if (isNoneHex(parts[2])) {// LVT-5004: Destination IP Hex 형식 오류
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_HEX_INVALID, Map.of("value", parts[2] + " (Destination IP)"));
+			}
+
+			int srcPort = Integer.parseInt(parts[3]);
+			int dstPort = Integer.parseInt(parts[4]);
+			if (srcPort < 0 || srcPort > 65535) { // LVT-5005: Source Port 범위 오류
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_PORT_RANGE, Map.of("value", parts[3] + " (Source Port)"));
+			}
+			if (dstPort < 0 || dstPort > 65535) {// LVT-5005: Destination Port 범위 오류
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_PORT_RANGE, Map.of("value", parts[4] + " (Destination Port)"));
+			}
+
+			if (isNoneNumeric(parts[5])) { // LVT-5007: Seq1 숫자 형식 오류
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_SEQ_INVALID, Map.of("value", parts[5] + " (Seq 1)"));
+			}
+			if (isNoneNumeric(parts[6])) { // LVT-5007: Seq2 숫자 형식 오류
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_SEQ_INVALID, Map.of("value", parts[6] + " (Seq 2)"));
+			}
+
+
+			if (parts[7].isEmpty()) { // LVT-5008: Host1 공백 오류
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_HOST_EMPTY, Map.of("field", "Host 1"));
+			}
+			if (parts[8].isEmpty()) { // LVT-5008: Host2 공백 오류
+				throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_HOST_EMPTY, Map.of("field", "Host 2"));
+			}
+
+		} catch (NumberFormatException e) {
+			String invalidPort = "";
+			try {
+				Integer.parseInt(parts[3]);
+				invalidPort = parts[4]; // Src Port는 정상이므로 Dst Port가 문제
+			} catch (NumberFormatException ignored) {
+				invalidPort = parts[3]; // Src Port가 문제
+			}
+			throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_PORT_FORMAT, Map.of("value", invalidPort));
+		}
+	}
+
+	// 유틸: 숫자인지 확인
+	private static boolean isNoneNumeric(String str) {
+		return !str.matches("\\d+");
+	}
+
+	// 유틸: Hex 문자열인지 확인
+	private static boolean isNoneHex(String str) {
+		return !str.matches("[0-9a-fA-F]+");
 	}
 }

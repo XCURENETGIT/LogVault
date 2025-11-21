@@ -50,6 +50,14 @@ public enum ErrorCode {
 	INSA_SIP_NULL("LVT-4002", "source IP is null"),
 	INSA_MAPPING_FAIL("LVT-4999", "INSA Mapping Failed"),
 
+	SCAN_NAME_INVALID("LVT-5001", "Invalid file name: {info}"),
+	SCAN_NAME_PART_COUNT("LVT-5002", "File name component count mismatch: {count}"),
+	SCAN_NAME_HEADER_INVALID("LVT-5003", "File name header (Type+Time) is invalid: {value}"),
+	SCAN_NAME_HEX_INVALID("LVT-5004", "File name IP Hex string is invalid: {value}"),
+	SCAN_NAME_PORT_RANGE("LVT-5005", "File name Port is out of range (0-65535): {value}"),
+	SCAN_NAME_PORT_FORMAT("LVT-5006", "File name Port is not numeric: {value}"),
+	SCAN_NAME_SEQ_INVALID("LVT-5007", "File name Sequence is not numeric: {value}"),
+	SCAN_NAME_HOST_EMPTY("LVT-5008", "File name Host field is empty: {field}"),
 
 	UNKNOWN_ERROR("LVT-9999", "Unknown error");
 

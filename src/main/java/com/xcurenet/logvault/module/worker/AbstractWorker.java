@@ -254,7 +254,7 @@ public abstract class AbstractWorker implements Runnable {
 	 */
 	protected void checkFiles(final ScanData data, final String pathStr) throws SkipFileException {
 		Path path = Paths.get(pathStr);
-		if (!Files.exists(path)) {
+		if (Files.notExists(path)) {
 			if (System.currentTimeMillis() - data.getLastModified() < this.conf.getInterval()) {
 				throw new SkipFileException(pathStr);
 			} else {

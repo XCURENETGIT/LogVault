@@ -6,10 +6,14 @@ import com.xcurenet.logvault.module.ScanData;
 import lombok.extern.log4j.Log4j2;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -21,7 +25,7 @@ import java.util.stream.Stream;
 public class FileScanner implements Runnable {
 	private static final int MAX_DEPTH = 2; // DirectoryWalker 의 최대 탐색 깊이
 	private static final long QUEUE_OFFER_WAIT_MS = 500L; // 큐 적재 재시도 대기(밀리초)
-
+	private static final Set<String> TARGET_KEYS = Set.of("HDRFILE", "MSGFILE", "APPFILE");
 	private static final ConcurrentHashMap<String, Boolean> PROCESSING_SET = new ConcurrentHashMap<>(); // 중복 처리 방지를 위한 처리 중인 파일의 임시 저장
 
 	private final Path startDirectory;
@@ -29,13 +33,19 @@ public class FileScanner implements Runnable {
 	private final AtomicBoolean run;
 	private final AtomicInteger scannerCount;
 	private final int scanningWaitingSec;
+	private final String dataPath;
+	private final int split;
+	private final int fileWaitTime;
 
-	public FileScanner(final String dir, final PriorityBlockingQueue<ScanData> queue, final AtomicBoolean run, final int scanningWaitingSec) {
+	public FileScanner(final String dir, final PriorityBlockingQueue<ScanData> queue, final AtomicBoolean run, final int scanningWaitingSec, final String dataPath, final int split, final int fileWaitTime) {
 		this.startDirectory = Paths.get(Objects.requireNonNull(dir, "dir must not be null"));
 		this.queue = Objects.requireNonNull(queue, "queue must not be null");
 		this.run = Objects.requireNonNull(run, "run must not be null");
 		this.scannerCount = new AtomicInteger();
 		this.scanningWaitingSec = Math.max(1, scanningWaitingSec) * 1000;
+		this.dataPath = dataPath;
+		this.split = split;
+		this.fileWaitTime = fileWaitTime;
 
 		final String threadName = startDirectory.getFileName() + "_scan";
 		Thread.currentThread().setName(threadName);
@@ -89,25 +99,54 @@ public class FileScanner implements Runnable {
 		}
 	}
 
-	/**
-	 * 스캐닝한 파일의 유효성
-	 *
-	 * @param path 파일 경로
-	 * @return 유효 여부
-	 */
 	private boolean isValidCandidate(Path path) {
 		try {
-			if (!Files.isRegularFile(path)) return false; // 파일이 아니거나
-			if (Files.size(path) == 0) return false; // 파일이 0이거나
-			if (Files.isHidden(path)) return false; // 숨김 파일 이거나
-			if (!Common.filePermission(path.toFile())) return false; // 0755 권한이 아니거나
-		} catch (Exception e) {
-			log.warn("SCANNER | Error : {}", path, e);
+			BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
+			if (!attrs.isRegularFile() || attrs.size() <= 0) return false; //정규 파일이 아니거나, 사이즈가 0 이거나
+			if (Files.isHidden(path)) return false; //숨김 파일
+			if (!Common.filePermission(path.toFile())) return false; //0755 권한 검사
+			return isFileValid(path, attrs.lastModifiedTime().toMillis());
+		} catch (IOException | SecurityException e) {
+			log.warn("SCANNER | Invalid file access: {} - {}", path, e.getMessage()); // 파일 접근 불가, 삭제됨, 권한 없음 등의 상황
 			return false;
 		}
-		return true;
 	}
 
+	/**
+	 * Validates whether a given file meets certain criteria for processing.
+	 *
+	 * @param path         the path of the file to validate
+	 * @param lastModified the last modified time of the file, in milliseconds
+	 * @return true if the file is valid; false otherwise
+	 */
+	private boolean isFileValid(final Path path, final long lastModified) {
+		try (Stream<String> lines = Files.lines(path, StandardCharsets.UTF_8)) {
+			Optional<Path> missingFile = lines.filter(line -> TARGET_KEYS.stream().anyMatch(line::contains))
+					.map(this::getFieldValue).filter(Common::isNotEmpty)
+					.map(val -> Paths.get(getPath(val))).filter(Files::notExists)
+					.findFirst();
+
+			if (missingFile.isPresent()) {
+				long elapsed = System.currentTimeMillis() - lastModified;
+				if (elapsed < fileWaitTime) return false; // 대기 시간이 남았다면 유효하지 않음(false)으로 처리
+				log.info("NOTFOUND | {} | Referenced file missing: {} ({}s over)", path, missingFile.get(), fileWaitTime / 1000);
+			}
+			return true;
+		} catch (IOException e) {
+			log.warn("SCANNER | Error reading file: {}", path, e);
+			return false;
+		}
+	}
+
+	public String getPath(final String fileName) {
+		return Common.makeFilepath(dataPath, Long.toString(Common.getSplitNum(fileName, split)), fileName);
+	}
+
+	private String getFieldValue(final String line) {
+		String[] fields = line.split(":", 2);
+		if (fields.length > 1) return fields[1].trim();
+		return null;
+	}
 
 	private void addQueue(final ScanData data) {
 		if (!isRunning()) return;

@@ -156,7 +156,7 @@ public class InternalDataSampler implements Callable<Integer> {
 
 				Path src = Paths.get(path);
 				Path target = Paths.get(getPath(src.getFileName().toString()));
-				attachDown(src.toString(), target);
+				attachDown(file.getString("path"), target);
 			}
 			String nameExist = file.getString("nameExist").equals("Y") ? "1" : "0";
 			String ext = file.getString("ext") == null ? "unknown" : file.getString("ext");
@@ -166,6 +166,7 @@ public class InternalDataSampler implements Callable<Integer> {
 
 		String path = getInfoPath(doc.getString("fileName"));
 		Path file = Paths.get(path);
+		Files.createDirectories(file.getParent());
 		Files.writeString(file, sb.toString(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 		Common.setAllPermissions(file.toFile());
 		log.info("WRITE_INFO | {}", file);
@@ -195,13 +196,21 @@ public class InternalDataSampler implements Callable<Integer> {
 		}
 	}
 
+	public static void main(String[] args) {
+		InternalDataSampler sampler = new InternalDataSampler();
+		String path = "/msg/attach/emass/20250731/IGPS/20/32/20250731203214.GXTWR4J3O3DT3F3CHNAQDUXLG2TLNN7B/20250731203025-1e13171-ac409034-32343-443-00-1-XAIDEV-XAIDEV.http-1-0.attach";
+		Path target = Paths.get("./aaaaa.jpg");
+		sampler.attachDown(path, target);
+	}
 
 	private void attachDown(final String path, final Path target) {
-		try (MinioClient minioClient = MinioClient.builder().endpoint("http://emassailt:19000").credentials("minioadmin", "minioadmin").build(); InputStream in = minioClient.getObject(GetObjectArgs.builder().bucket("emass").object(path).build())) {
+		try (MinioClient minioClient = MinioClient.builder().endpoint("http://emassailt:19000").credentials("minioadmin", "minioadmin").build();
+		     InputStream in = minioClient.getObject(GetObjectArgs.builder().bucket("emass").object(path).build())) {
 			Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
 		} catch (Exception e) {
 			log.warn("attachDown | Error downloading file {}", path, e);
 		}
+		log.info("DOWNLOAD_ATTACH | {}", path);
 	}
 
 	public String getPath(final String fileName) {

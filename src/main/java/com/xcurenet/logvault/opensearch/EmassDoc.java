@@ -19,6 +19,12 @@ public class EmassDoc {
 	@Field("msgid")
 	private String msgid;
 
+	@Field("root_mtr")
+	private String rootMtr;
+
+	@Field("parent_mtr")
+	private String parentMtr;
+
 	@Field(name = "@timestamp", type = FieldType.Date, format = DateFormat.epoch_millis)
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
 	private Date timestamp;

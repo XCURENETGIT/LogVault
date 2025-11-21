@@ -109,7 +109,7 @@ public class MSGData {
 	@FieldKey({"MSGKEY", "X-MTR", "MESSAGE_ID"}) // EP 전용 (KNOX 메일에서 주로 사용되며, 각 메일마다 부여되는 고유 MailID 값), 메신저 등의 고유 방 아이디
 	private String msgKey;
 
-	@FieldKey("ROOTMTR") // EP 전용 (최상위 메일 아이디)
+	@FieldKey("ROOTMTR") // 최상위 메시지 아이디
 	private String rootMtr;
 
 	@FieldKey("PARENTMTR") // EP 전용 (KNOX 메일을 전달, 회신 등 사용할 때 바로 이전 MailID값)

@@ -52,6 +52,12 @@
 				"msgid": {
 					"type": "keyword"
 				},
+				"root_mtr": {
+					"type": "keyword"
+				},
+				"parent_mtr": {
+					"type": "keyword"
+				},
 				"ctime": {
 					"type": "date",
 					"format": "yyyyMMddHHmmss"

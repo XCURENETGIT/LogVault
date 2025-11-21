@@ -2,6 +2,7 @@ package com.xcurenet.logvault.tool.cli;
 
 import com.xcurenet.logvault.tool.cli.crypto.Decrypt;
 import com.xcurenet.logvault.tool.cli.crypto.Encrypt;
+import com.xcurenet.logvault.tool.cli.sample.InternalDataSampler;
 import com.xcurenet.logvault.tool.cli.sample.SampleData;
 import com.xcurenet.logvault.tool.cli.status.IndexStatus;
 import com.xcurenet.logvault.tool.cli.util.Base64Tool;
@@ -17,7 +18,8 @@ import picocli.CommandLine;
 				Decrypt.class,
 				Base64Tool.class,
 				IndexStatus.class,
-				SampleData.class
+				SampleData.class,
+				InternalDataSampler.class,
 		}
 )
 public class ToolCLI implements Runnable {

@@ -39,19 +39,25 @@ public class MSGWorker extends AbstractWorker {
 	@Override
 	protected void parse(ScanData data) throws ParsingException {
 		MSGData msg = data.getMsgData();
-		if (msg == null) throw ExFactory.ex(ParsingException::new, ErrorCode.PARSER_MSG_FAIL, Map.of("info", data.getFilePath()));
+		if (msg == null)
+			throw ExFactory.ex(ParsingException::new, ErrorCode.PARSER_MSG_FAIL, Map.of("info", data.getFilePath()));
 
 		try {
 			EmassDoc doc = new EmassDoc();
 			doc.setMsgid(msg.getMsgid());
+			doc.setRootMtr(msg.getRootMtr());
+			doc.setParentMtr(msg.getParentMtr());
 
-			if (msg.getCtime() == null) throw ExFactory.ex(ParsingException::new, ErrorCode.PARSER_CTIME_NULL, Map.of("info", msg.getInfoText()));
+			if (msg.getCtime() == null)
+				throw ExFactory.ex(ParsingException::new, ErrorCode.PARSER_CTIME_NULL, Map.of("info", msg.getInfoText()));
 			doc.setTimestamp(new Date(msg.getCtime().getMillis()));
 			doc.setCtime(msg.getCtime().toString(DateUtils.YYYYMMDDHHMMSS));
 			doc.setLtime(DateUtils.formatToYYYYMMDDHHMMSS(data.getStart()));
 
-			if (msg.getSvc() == null) throw ExFactory.ex(ParsingException::new, ErrorCode.PARSER_SVC_NULL, Map.of("info", msg.getInfoText()));
-			if (msg.getSvc().length() != 4) throw ExFactory.ex(ParsingException::new, ErrorCode.PARSER_SVC_INVALID, Map.of("info", msg.getInfoText()));
+			if (msg.getSvc() == null)
+				throw ExFactory.ex(ParsingException::new, ErrorCode.PARSER_SVC_NULL, Map.of("info", msg.getInfoText()));
+			if (msg.getSvc().length() != 4)
+				throw ExFactory.ex(ParsingException::new, ErrorCode.PARSER_SVC_INVALID, Map.of("info", msg.getInfoText()));
 
 			setService(msg, doc);
 			setNetwork(msg, doc);
@@ -238,7 +244,6 @@ public class MSGWorker extends AbstractWorker {
 		doc.setAttachExistCount(existCnt);
 		doc.setAttachTotalSize(sizeSum);
 	}
-
 
 	private boolean getFileNameExist(int i, List<AttachExtension> extensions) {
 		if (extensions == null || i < 0 || i >= extensions.size()) return false;

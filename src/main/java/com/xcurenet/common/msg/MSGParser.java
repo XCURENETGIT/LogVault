@@ -46,10 +46,10 @@ public class MSGParser {
 		try {
 			data = convertData(parseInfoText(input));
 		} catch (Exception e) {
-			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_WORK_FAIL, Map.of("context", input), e);
+			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_WORK_FAIL, Map.of("context", input, "info", filePath), e);
 		}
 
-		checkField(data, input);
+		checkField(filePath, data, input);
 		data.setFileNameInfo(scanData.getFileNameInfo());
 
 		try {
@@ -62,17 +62,17 @@ public class MSGParser {
 		}
 	}
 
-	private static void checkField(final MSGData data, final String input) {
-		if (data.getCtime() == null) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_CTIME_NULL, Map.of("context", input));
-		if (data.getSourceIp() == null) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_SIP_NULL, Map.of("context", input));
-		if (data.getSourcePort() == 0) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_SPORT_NULL, Map.of("context", input));
-		if (data.getDestinationIp() == null) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_DIP_NULL, Map.of("context", input));
-		if (Common.isEmpty(data.getHost())) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_HOST_NULL, Map.of("context", input));
-		if (Common.isEmpty(data.getUrl())) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_URL_NULL, Map.of("context", input));
+	private static void checkField(final Path filePath, final MSGData data, final String input) {
+		if (data.getCtime() == null) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_CTIME_NULL, Map.of("context", input, "info", filePath));
+		if (data.getSourceIp() == null) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_SIP_NULL, Map.of("context", input, "info", filePath));
+		if (data.getSourcePort() == 0) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_SPORT_NULL, Map.of("context", input, "info", filePath));
+		if (data.getDestinationIp() == null) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_DIP_NULL, Map.of("context", input, "info", filePath));
+		if (Common.isEmpty(data.getHost())) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_HOST_NULL, Map.of("context", input, "info", filePath));
+		if (Common.isEmpty(data.getUrl())) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_URL_NULL, Map.of("context", input, "info", filePath));
 		if (Common.isNotEmpty(data.getQuery()) && data.getQuery().length() > 4000) {
-			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_QUERY_TOO_LONG, Map.of("context", Common.nvl(data.getQuery().length())));
+			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_QUERY_TOO_LONG, Map.of("context", Common.nvl(data.getQuery().length()), "info", filePath));
 		}
-		if (Common.isEmpty(data.getSvc())) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_STYPE_NULL, Map.of("context", input));
+		if (Common.isEmpty(data.getSvc())) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_STYPE_NULL, Map.of("context", input, "info", filePath));
 	}
 
 	private static Map<String, Object> parseInfoText(String input) {

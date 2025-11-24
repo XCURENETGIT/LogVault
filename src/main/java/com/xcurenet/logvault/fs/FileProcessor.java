@@ -2,7 +2,6 @@ package com.xcurenet.logvault.fs;
 
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.logvault.conf.Config;
-import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,7 +21,6 @@ public class FileProcessor {
 
 	private final FileSystemService minioFileSystem;
 
-	@PostConstruct
 	public void init() throws Exception {
 		this.service = "local".equals(conf.getFileSystemType()) ? localFileSystem : minioFileSystem;
 		service.init();

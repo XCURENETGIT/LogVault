@@ -13,6 +13,7 @@ import com.xcurenet.crypto.Crypto;
 import com.xcurenet.crypto.Crypto.CIPHER;
 import com.xcurenet.crypto.CryptoInputStream;
 import com.xcurenet.crypto.CryptoOutputStream;
+import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.exception.ProcessDataException;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Base32;
@@ -35,6 +36,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
@@ -108,12 +110,6 @@ public final class Common {
 			hash = (hash * PRIME) ^ str.charAt(i);
 		}
 		return hash & 0xFFFFFFFFL;
-	}
-
-	public static void main(String[] args) throws IOException {
-		String ipStr = "1.225.49.101";
-		IP ip = new IP(ipStr);
-		System.out.println(ip.toHexString());
 	}
 
 	public static long fnvHash(final String str) {
@@ -1281,5 +1277,15 @@ public final class Common {
 
 	public static ProcessDataException ex(ErrorCode ec, String context, Throwable cause) {
 		return new ProcessDataException(ec, cause).with("context", context).log();
+	}
+
+	public static String getKey() {
+		Path keyFile = Paths.get("/etc/xcnkey");
+		return Common.toHexString(Crypto.loadKeyFile(keyFile.toString()));
+	}
+
+	public static void main(String[] args) throws Exception {
+		final Crypto crypto = new Crypto(Crypto.XCNKEY, Crypto.ARIA_128_CBC);
+		crypto.decrypt(new FileInputStream("/etc/xcnkey"), System.out);
 	}
 }

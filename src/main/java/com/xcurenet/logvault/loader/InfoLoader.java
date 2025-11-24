@@ -1,7 +1,6 @@
 package com.xcurenet.logvault.loader;
 
 import com.xcurenet.common.utils.DateUtils;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -17,7 +16,6 @@ public class InfoLoader {
 	private final KeywordLoader keywordLoader;
 	private final PatternLoader patternLoader;
 
-	@PostConstruct
 	public void init() {
 		StopWatch sw = DateUtils.start();
 		log.info("INFO_LOAD | START");

@@ -1280,12 +1280,7 @@ public final class Common {
 	}
 
 	public static String getKey() {
-		Path keyFile = Paths.get("/etc/xcnkey");
+		Path keyFile = Paths.get(Config.ENC_KEYFILE);
 		return Common.toHexString(Crypto.loadKeyFile(keyFile.toString()));
-	}
-
-	public static void main(String[] args) throws Exception {
-		final Crypto crypto = new Crypto(Crypto.XCNKEY, Crypto.ARIA_128_CBC);
-		crypto.decrypt(new FileInputStream("/etc/xcnkey"), System.out);
 	}
 }

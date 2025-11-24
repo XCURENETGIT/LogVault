@@ -45,6 +45,8 @@ public class Config {
 
 	public final static String PID_FILE = "./bin/application.pid";
 
+	public final static String ENC_KEYFILE = "/etc/xcnkey";
+
 	@Value("${spring.profiles.active:prod}")
 	private String activeProfile;
 

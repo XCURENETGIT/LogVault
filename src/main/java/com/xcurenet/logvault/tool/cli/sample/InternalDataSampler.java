@@ -33,7 +33,7 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(name = "generator", description = "사내 데이터를 이용한 샘플 데이터 생성기")
 public class InternalDataSampler implements Callable<Integer> {
 	private static final String MONGO_URL = "mongodb://emassailt:27018/venus?replicaSet=shard1rs";
-	private static final String ES_URL = "http://emassailt:9200/edc_w_%s/_search";
+	private static final String ES_URL = "http://emassailt:9200/edc_w_*/_search";
 	private static final String ES_QUERY = """
 			{
 				"size": 1,
@@ -50,17 +50,19 @@ public class InternalDataSampler implements Callable<Integer> {
 		while (true) {
 			try {
 				LastData data = getLastData();
+				log.info("FIND__DATA | {} | {}", data.ctime, data.msgId);
 				JSONObject source = query(data.ctime, data.msgId);
 				if (source == null) {
+					log.info("NOT___DATA | {} | {}", data.ctime, data.msgId);
 					Common.sleep(5000);
 					continue;
 				}
 				JSONObject doc = getMongoData(source.getString("msgid"));
-				System.out.println(doc);
+				log.debug("DOC | {}", doc);
 				writeMsg(doc, data.ctime);
 
 				writeLastData(source.getString("msgid"), source.getString("ctime"));
-				Common.sleep(500);
+				Common.sleep(300);
 			} catch (Exception e) {
 				log.error("", e);
 				break;
@@ -74,11 +76,20 @@ public class InternalDataSampler implements Callable<Integer> {
 			String msgId = "";
 			if (lastMsgId != null) msgId = " AND NOT msgid:" + lastMsgId;
 
-			Connection.Response response = Jsoup.connect(String.format(ES_URL, ctime.substring(0, 6))).header("Content-Type", "application/json").ignoreContentType(true).method(Connection.Method.POST).requestBody(String.format(ES_QUERY, ctime, msgId)).execute();
+
+			Connection.Response response = Jsoup.connect(ES_URL)
+					.header("Content-Type", "application/json")
+					.ignoreContentType(true)
+					.method(Connection.Method.POST)
+					.requestBody(String.format(ES_QUERY, ctime, msgId))
+					.execute();
 
 			JSONObject obj = JSONObject.parseObject(response.body());
 			JSONArray list = obj.getJSONObject("hits").getJSONArray("hits");
-			if (list.isEmpty()) return null;
+			if (list.isEmpty()) {
+				log.info("NOT___DATA | {} | {} | {}", ES_URL, String.format(ES_QUERY, ctime, msgId), response.body());
+				return null;
+			}
 
 			return list.getJSONObject(0).getJSONObject("_source");
 		} catch (Exception e) {
@@ -140,7 +151,7 @@ public class InternalDataSampler implements Callable<Integer> {
 		}
 
 		sb.append("SUBJECT : ").append(doc.getString("subject")).append("\n");
-		if(doc.getJSONObject("network").get("protocol") != null)
+		if (doc.getJSONObject("network").get("protocol") != null)
 			sb.append("PROTOCOL : ").append(doc.getJSONObject("network").getString("protocol")).append("\n");
 
 		sb.append("STYPE : ").append(doc.getString("svc")).append("\n");
@@ -169,7 +180,7 @@ public class InternalDataSampler implements Callable<Integer> {
 		Files.createDirectories(file.getParent());
 		Files.writeString(file, sb.toString(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 		Common.setAllPermissions(file.toFile());
-		log.info("WRITE_INFO | {}", file);
+		log.info("WRITE_INFO | {}\n", file);
 	}
 
 	private String getName(String ctime, IP srcIp, IP dstIp, int srcPort, int dstPort, String ext) throws IOException {
@@ -189,7 +200,7 @@ public class InternalDataSampler implements Callable<Integer> {
 
 			try (OutputStream out = Files.newOutputStream(target, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
 				bucket.downloadToStream(gridFSFile.getObjectId(), out);
-				log.info("DOWNLOAD_BODY | {}", target);
+				log.info("DOWN__BODY | {}", target);
 			} catch (IOException e) {
 				log.error("", e);
 			}
@@ -210,7 +221,7 @@ public class InternalDataSampler implements Callable<Integer> {
 		} catch (Exception e) {
 			log.warn("attachDown | Error downloading file {}", path, e);
 		}
-		log.info("DOWNLOAD_ATTACH | {}", path);
+		log.info("DOWN_ATTACH | {}", path);
 	}
 
 	public String getPath(final String fileName) {

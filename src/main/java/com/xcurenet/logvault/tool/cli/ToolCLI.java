@@ -30,6 +30,7 @@ public class ToolCLI implements Runnable {
 	}
 
 	public static void main(String[] args) {
+		System.setProperty("logback.configurationFile", "logback-spring.xml");
 		int exitCode = new CommandLine(new ToolCLI())
 				.setCaseInsensitiveEnumValuesAllowed(true)
 				.execute(args);

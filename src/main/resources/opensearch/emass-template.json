@@ -366,6 +366,9 @@
 						}
 					}
 				},
+				"keyword_total": {
+					"type": "integer"
+				},
 				"keyword_info": {
 					"properties": {
 						"exist": {

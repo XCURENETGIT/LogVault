@@ -57,6 +57,7 @@ public class KeywordAnalysis {
 		// 전체 존재 여부
 		keywordInfo.setExist(CollectionUtil.isNotEmpty(keywordInfo.getBody()) || CollectionUtil.isNotEmpty(keywordInfo.getAttachName()) || CollectionUtil.isNotEmpty(keywordInfo.getAttach()));
 
+		int total = 0;
 		// 병합된 keywords 생성
 		if (keywordInfo.isExist()) {
 			List<EmassDoc.KeywordInfo.Keyword> keywords = new ArrayList<>();
@@ -73,9 +74,11 @@ public class KeywordAnalysis {
 			List<EmassDoc.KeywordInfo.Keyword> mergedList = new ArrayList<>();
 			for (Map.Entry<String, Integer> entry : merged.entrySet()) {
 				mergedList.add(EmassDoc.KeywordInfo.Keyword.builder().name(entry.getKey()).count(entry.getValue()).build());
+				total += entry.getValue();
 			}
 			keywordInfo.setKeywords(mergedList);
 		}
+		doc.setKeywordTotal(total);
 		doc.setKeywordInfo(keywordInfo);
 	}
 

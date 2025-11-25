@@ -2,7 +2,6 @@ package com.xcurenet.logvault.conf;
 
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.opensearch.client.*;
@@ -27,7 +26,6 @@ public class OpenSearchInitializer {
 	private static final String TEMPLATE_PATH = "opensearch/emass-template.json";
 
 
-	@PostConstruct
 	public void init() throws IOException {
 		StopWatch sw = DateUtils.start();
 		log.info("INIT_OPENSEARCH | START");

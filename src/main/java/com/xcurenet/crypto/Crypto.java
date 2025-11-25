@@ -37,7 +37,7 @@ public class Crypto {
 	public static final String DIGEST_ALG = "SHA-256";
 
 	private static final String ASCII = "ISO-8859-1";
-	private static final byte[] XCNKEY = new byte[]{'7', 'T', 'Q', 'F', '1', 'N', '4', 'U', 'K', 'X', 'O', 'K', 'D', 'N', 'N', 'G'};
+	public static final byte[] XCNKEY = new byte[]{'7', 'T', 'Q', 'F', '1', 'N', '4', 'U', 'K', 'X', 'O', 'K', 'D', 'N', 'N', 'G'};
 	private static final byte[] XCNKEY_FILED = "XCNKEY=".getBytes();
 	private static final int KEYFILE_SIZE = 80;
 

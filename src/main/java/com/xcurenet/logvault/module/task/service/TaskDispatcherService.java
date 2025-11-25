@@ -1,7 +1,6 @@
 package com.xcurenet.logvault.module.task.service;
 
 import com.xcurenet.logvault.conf.Config;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,7 +16,6 @@ public class TaskDispatcherService {
 	private final TaskMessageRepository repo;
 	private final TaskDispatcher dispatcher;
 
-	@PostConstruct
 	public void init() {
 		repo.updateStatusPending(); //OCR 요청 후 RUNNING상태인 상태에서 모듈이 종료될 경우 남아있는 RUNNING 데이터를 초기화 한다.
 	}

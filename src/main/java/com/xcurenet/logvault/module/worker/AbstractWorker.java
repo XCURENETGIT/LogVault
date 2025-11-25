@@ -100,15 +100,12 @@ public abstract class AbstractWorker implements Runnable {
 
 					boolean success = false;
 					int retryCnt = 1;
-
 					while (retryCnt <= 3) {
 						try {
 							insaMapping(data);
 							transToBody(data);
 							transToAttach(data);
 							index(data);
-							alert(data);
-							task(data);
 							success = true;
 							break;
 						} catch (final FileSendException | IndexerException | InsaMappingException e) {
@@ -117,6 +114,19 @@ public abstract class AbstractWorker implements Runnable {
 							Common.sleep(2000);
 						}
 					}
+
+					while (retryCnt <= 3) {
+						try {
+							alert(data);
+							task(data);
+							break;
+						} catch (final Exception e) { // 성공 여부 관계없이 알림 전송, OCR 및 분석 후처리의 경우는 별도로 처리
+							log.warn("TASK_ERROR | {}", e.getMessage(), e);
+							retryCnt++;
+							Common.sleep(2000);
+						}
+					}
+
 					if (!success) return;
 				}
 
@@ -205,10 +215,13 @@ public abstract class AbstractWorker implements Runnable {
 			Path destPath = Paths.get(destStr);
 
 			try {
-				StopWatch sw = DateUtils.start();
-				Files.createDirectories(destPath.getParent());
-				Files.copy(srcPath, destPath, StandardCopyOption.REPLACE_EXISTING);
+				if (fileSystem.exists(destStr)) {
+					log.info("ATT_SKIP | {} already exists. Skipping copy.", conf.getDestPathSmall(destStr));
+					return;
+				}
 
+				StopWatch sw = DateUtils.start();
+				fileSystem.write(srcPath.toString(), destPath.toString(), srcPath.getFileName().toString());
 				long size = Files.size(srcPath);
 				log.info("ATT_SEND | {} ({}) | {}", conf.getDestPathSmall(destStr), Common.convertFileSize(size), DateUtils.stop(sw));
 			} catch (Exception e) {
@@ -231,10 +244,13 @@ public abstract class AbstractWorker implements Runnable {
 		Path destPath = Paths.get(destStr);
 
 		try {
-			StopWatch sw = DateUtils.start();
-			Files.createDirectories(destPath.getParent());
-			Files.copy(srcPath, destPath, StandardCopyOption.REPLACE_EXISTING);
+			if (fileSystem.exists(destStr)) {
+				log.info("BDY_SKIP | {} already exists. Skipping copy.", conf.getDestPathSmall(destStr));
+				return;
+			}
 
+			StopWatch sw = DateUtils.start();
+			fileSystem.write(srcPath.toString(), destPath.toString(), srcPath.getFileName().toString());
 			long size = Files.size(srcPath);
 			log.info("BDY_SEND | {} ({}) | {}", conf.getDestPathSmall(destStr), Common.convertFileSize(size), DateUtils.stop(sw));
 		} catch (Exception e) {

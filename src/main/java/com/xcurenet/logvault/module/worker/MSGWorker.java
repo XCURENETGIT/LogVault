@@ -80,6 +80,9 @@ public class MSGWorker extends AbstractWorker {
 		if (data.getMsgData().getSourceIp() == null) {
 			throw ExFactory.ex(InsaMappingException::new, ErrorCode.INSA_SIP_NULL, Map.of("info", data.getMsgData().getInfoText()));
 		}
+		if (data.getEmassDoc().getUser() != null) { //이미 처리된 상태라면
+			return;
+		}
 
 		EmassDoc.User user = new EmassDoc.User();
 		user.setIp(data.getMsgData().getSourceIp().toCanonicalAddr());

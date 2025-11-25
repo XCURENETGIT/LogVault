@@ -285,9 +285,7 @@
 							"type": "boolean"
 						},
 						"hash": {
-							"type": "keyword",
-							"doc_values": false,
-							"index": false
+							"type": "keyword"
 						},
 						"exist": {
 							"type": "boolean"

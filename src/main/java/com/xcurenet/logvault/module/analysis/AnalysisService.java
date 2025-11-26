@@ -18,8 +18,8 @@ public class AnalysisService {
 
 	public void analyse(final ScanData data) {
 		try {
-			//networkGEOLocation.networkGEO(data);         // source ip, dest ip MAXMIND 유틸을 활용하여 국가 탐지
-			//bodyLanguage.detect(data);                   // 본문 텍스트의 국가 탐지 (최대 2000자 기준, 나머지는 자르고 탐지)
+			//networkGEOLocation.networkGEO(data);         // source ip, dest ip MAXMIND 유틸을 활용하여 국가 탐지 * 현재는 사용하지 않음
+			//bodyLanguage.detect(data);                   // 본문 텍스트의 국가 탐지 (최대 2000자 기준, 나머지는 자르고 탐지) * 현재는 사용하지 않음
 			attachAnalysis.setAttachText(data);          // 첨부 암호여부, 압축 파일목록, 텍스트 추출, 텍스트 추출 후 관련 분석 기능 실행 필수!! (모든 파일)
 			attachAnalysis.setAttachThumbnail(data);     // 파일의 썸네일 생성
 			keywordAnalysis.detect(data);                // 키워드 탐지

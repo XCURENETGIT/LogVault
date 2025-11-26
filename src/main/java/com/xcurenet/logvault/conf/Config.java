@@ -45,7 +45,11 @@ public class Config {
 
 	public final static String PID_FILE = "./bin/application.pid";
 
-	public final static String ENC_KEYFILE = "/etc/xcnkey";
+	private final static String ENC_KEYFILE = "/etc/xcnkey";
+
+	public static String getEncryptKeyFile() {
+		return ENC_KEYFILE;
+	}
 
 	@Value("${spring.profiles.active:prod}")
 	private String activeProfile;
@@ -108,6 +112,9 @@ public class Config {
 	@Value("${ocr.api.enable:true}") //OCR Rest API ENABLE
 	private boolean ocrApiEnable;
 
+	@Value("${ocr.embedded.enable:true}") //파일 내부의 이미지도 OCR 처리를 할것인지 유무
+	private boolean ocrEmbeddedImageEnable;
+
 	@Value("${ocr.api.url:http://10.200.10.49:62975/sdk/ocr}") //OCR Rest API URL
 	private String ocrApiUrl;
 
@@ -119,6 +126,9 @@ public class Config {
 
 	@Value("${ocr.target.ext:tiff,tif,png,gif,jpg,jpeg,bmp,pcx,dcx,jb2,jfif,jp2,jpc,j2k,pdf}") //OCR 대상 확장자
 	private String ocrTargetExt;
+
+	@Value("${ocr.limit.size:10485760}") //OCR 파일 사이즈 LIMIT (default 10MB)
+	private int ocrLimitSize;
 
 	public Set<String> getOcrTargetExt() {
 		return new HashSet<>(Arrays.asList(ocrTargetExt.split(",")));
@@ -183,8 +193,8 @@ public class Config {
 		return Common.hexToBytes(encryptKey);
 	}
 
-	@Value("${encrypt.key.file:/etc/xcnkey}") //암호화 키 파일 경로 - 운영중 설정 변경 불가 (재시작필요)
-	private String encryptKeyFile;
+	@Value("${file.analysis.limit.size:104857600}") //파일 텍스트 추출 파일 사이즈 LIMIT (default 100MB)
+	private int fileAnalysisLimitSize;
 
 	@Value("${file.analysis.url:http://127.0.0.1:14545/api/text/path}") //파일 텍스트 추출 REST API
 	private String fileAnalysisUrl;

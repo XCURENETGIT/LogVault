@@ -9,6 +9,21 @@
 			"name": "release.version",
 			"type": "java.lang.String",
 			"description": "banner for release.version."
+		},
+		{
+			"name": "spring.application.description",
+			"type": "java.lang.String",
+			"description": "Description for spring.application.description."
+		},
+		{
+			"name": "jvm.xms",
+			"type": "java.lang.String",
+			"description": "Description for jvm.xms."
+		},
+		{
+			"name": "jvm.xmx",
+			"type": "java.lang.String",
+			"description": "Description for jvm.xmx."
 		}
 	]
 }

@@ -2,6 +2,7 @@ package com.xcurenet.logvault.module.analysis;
 
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.thumbnail.FileThumbnail;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
@@ -17,10 +18,12 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.StopWatch;
 import org.springframework.web.client.RestClient;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 @Log4j2
@@ -61,71 +64,99 @@ public class AttachAnalysis {
 		if (attaches == null) return;
 
 		for (EmassDoc.Attach attach : attaches) {
-			if (!attach.isExist()) continue;
 			attach.setOcrTarget(false);
+			attach.setExpectedUnknown(true);
+			attach.setChangeExtension(false);
+			attach.setEncrypted(false);
+
+			// 설정된 사이즈보다 큰 파일의 경우 텍스트 추출을 하지 않는다.
+			if (!attach.isExist() || isFileOverSize(attach.getSrcPath(), conf.getFileAnalysisLimitSize())) {
+				continue;
+			}
 
 			StopWatch sw = DateUtils.start();
 			JSONObject text = getText(doc.getMsgid(), attach.getSrcPath(), attach.getName());
 			if (text != null && text.getBoolean("success")) {
 				JSONObject data = text.getJSONObject("data");
-				String limit = Common.limitLength(data.getString("text"), conf.getTextLimitLength());
-				limit = Common.limitTokenLengthWithSpace(limit, conf.getTextLimitToken());
+				String limitText = Common.limitLength(data.getString("text"), conf.getTextLimitLength());
+				limitText = Common.limitTokenLengthWithSpace(limitText, conf.getTextLimitToken()); // 텍스트 추출 후 최대 사이즈 제한까지 등록
 
-				attach.setText(limit);
-				attach.setExpectedExtension(data.getString("extension"));
-				attach.setExpectedUnknown(data.getBoolean("unknownType"));
-				attach.setChangeExtension(data.getBoolean("changeExtension"));
-				attach.setEncrypted(data.getBoolean("encrypted"));
+				attach.setText(limitText);
+				attach.setExpectedExtension(data.getString("extension"));       // 예상 확장자
+				attach.setExpectedUnknown(data.getBoolean("unknownType"));      // 알수없는 확장자
+				attach.setChangeExtension(data.getBoolean("changeExtension"));  // 확장자 변경 유무
+				attach.setEncrypted(data.getBoolean("encrypted"));              // 암호화 유무
+				setEmbeddedImage(attach, data);                                     // 파일내 이미지 추출 정보
+				setExcelHiddenSheet(attach, data);                                  // 엑셀 히드시트 정보 추가
+				setOCRTarget(attach);                                               // OCR 대상 설정
 
-				// 이미지 추출 정보
-				try {
-					if (data.get("imagesCount") != null && data.get("imagesBase64") != null && data.getInteger("imagesCount") > 0) {
-
-						EmassDoc.ImageExtractorInfo imageExtractorInfo = new EmassDoc.ImageExtractorInfo();
-						imageExtractorInfo.setImageCount(data.getInteger("imagesCount"));
-
-						List<String> hashList = new ArrayList<>();
-						JSONArray array = data.getJSONArray("imagesBase64");
-						for (int i = 0; i < array.size(); i++) {
-							String base64 = array.getString(i);
-							if (base64 == null) continue;
-
-							String hash = Common.toHexString(Common.sha256(base64));
-							hashList.add(hash);
-							fileThumbnail.insertThumbnail(hash, base64);
-						}
-						imageExtractorInfo.setImageHash(hashList);
-						attach.setImageExtractorInfo(imageExtractorInfo);
-					}
-				} catch (Exception e) {
-					log.warn("ATT_OLE_IMG | {} | {}", conf.getDataPathSmall(attach.getSrcPath()), e.getMessage());
-				}
-
-				// 엑셀 Hidden Sheet 정보
-				try {
-					if (data.get("sheetInfo") != null) {
-						JSONObject sheet = data.getJSONObject("sheetInfo");
-						EmassDoc.SheetInfo sheetInfo = new EmassDoc.SheetInfo();
-						sheetInfo.setSheetTotal(sheet.getInteger("sheetTotal"));
-						sheetInfo.setSheetHiddenTotal(sheet.getInteger("sheetHiddenTotal"));
-						sheetInfo.setHiddenSheetNames(sheet.getJSONArray("hiddenSheetNames").toJavaList(String.class));
-						attach.setSheetInfo(sheetInfo);
-					}
-				} catch (Exception e) {
-					log.warn("ATT_SHEET | {} | {}", conf.getDataPathSmall(attach.getSrcPath()), e.getMessage());
-				}
-
-				// OCR 대상 여부
-				String ext = Common.nvl(attach.getExtension());
-				if (conf.getOcrTargetExt().contains(attach.getExpectedExtension()) || conf.getOcrTargetExt().contains(ext)) {
-					attach.setOcrStatus("P"); // PENDING
-					attach.setOcrTarget(true);
-				}
 				log.info("ATT_TEXT | {} | RESULT:{} | TXT_LEN:{} | {}", conf.getDataPathSmall(attach.getSrcPath()), text.get("success"), Common.nvl(attach.getText()).length(), DateUtils.stop(sw));
 			} else {
 				log.warn("ATT_TEXT | {} | {} | TXT_LEN:{} | {}", conf.getDataPathSmall(attach.getSrcPath()), text, Common.nvl(attach.getText()).length(), DateUtils.stop(sw));
 			}
 		}
+	}
+
+	// 파일내 이미지 추출 정보
+	private void setEmbeddedImage(EmassDoc.Attach attach, JSONObject data) {
+		try {
+			if (data.get("imagesCount") != null && data.get("embeddedImage") != null && data.getInteger("imagesCount") > 0) {
+				JSONArray array = data.getJSONArray("embeddedImage");
+				List<EmassDoc.ImageExtractorInfo> imageExtractorInfos = new ArrayList<>();
+				for (int i = 0; i < array.size(); i++) {
+					JSONObject embedded = array.getJSONObject(i);
+					String base64 = embedded.getString("base64");
+					if (base64 == null) continue;
+
+					imageExtractorInfos.add(EmassDoc.ImageExtractorInfo.builder().name(embedded.getString("name")).base64(base64).build());
+				}
+				attach.setImageExtractorInfo(imageExtractorInfos);
+
+				if (conf.isOcrEmbeddedImageEnable()) {
+					attach.setOcrStatus("P"); // PENDING, 파일 내부에 있는 이미지도 OCR 대상임
+					attach.setOcrTarget(true);
+				}
+			}
+		} catch (Exception e) {
+			log.warn("ATT_OLE_IMG | {} | {}", conf.getDataPathSmall(attach.getSrcPath()), e.getMessage());
+		}
+	}
+
+	// OCR 대상 여부
+	private void setOCRTarget(EmassDoc.Attach attach) {
+		String ext = Common.nvl(attach.getExtension());
+		// OCR 사이즈 제한보다 작아야 되며, 예상확장자 혹은 파일의 확장자가 이미지 타입인 경우 OCR 대상임.
+		if (!isFileOverSize(attach.getSrcPath(), conf.getOcrLimitSize()) && (conf.getOcrTargetExt().contains(attach.getExpectedExtension()) || conf.getOcrTargetExt().contains(ext))) {
+			attach.setOcrStatus("P"); // PENDING
+			attach.setOcrTarget(true);
+		}
+	}
+
+	// 엑셀 Hidden Sheet 정보
+	private void setExcelHiddenSheet(EmassDoc.Attach attach, JSONObject data) {
+		try {
+			if (data.get("sheetInfo") != null) {
+				JSONObject sheet = data.getJSONObject("sheetInfo");
+				EmassDoc.SheetInfo sheetInfo = new EmassDoc.SheetInfo();
+				sheetInfo.setSheetTotal(sheet.getInteger("sheetTotal"));
+				sheetInfo.setSheetHiddenTotal(sheet.getInteger("sheetHiddenTotal"));
+				sheetInfo.setHiddenSheetNames(sheet.getJSONArray("hiddenSheetNames").toJavaList(String.class));
+				attach.setSheetInfo(sheetInfo);
+			}
+		} catch (Exception e) {
+			log.warn("ATT_SHEET | {} | {}", conf.getDataPathSmall(attach.getSrcPath()), e.getMessage());
+		}
+	}
+
+	private boolean isFileOverSize(final String filePath, final long limitSize) {
+		try {
+			Path path = Paths.get(filePath);
+			if (Files.size(path) > limitSize) return true;
+		} catch (IOException e) {
+			log.warn("{} | {} | path:{} err={}", ErrorCode.FILE_ANALYSIS_SIZE, ErrorCode.fromCode(ErrorCode.FILE_ANALYSIS_SIZE), filePath, e.toString());
+			return true;
+		}
+		return false;
 	}
 
 	public void setAttachThumbnail(final ScanData msg) {

@@ -9,6 +9,8 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.PropertySource;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +25,12 @@ public class PropertySourceLoader implements EnvironmentPostProcessor, Ordered {
 
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment env, SpringApplication application) {
+		Path keyFile = Paths.get(Config.getEncryptKeyFile());
+		if (!keyFile.toFile().exists()) {
+			log.info("LOAD_ENCRYPT | Encryption key file not found. Generating a new one.");
+			return;
+		}
+
 		String url = env.getProperty("spring.datasource.url");
 		String user = JasyptConfig.decrypt(env.getProperty("spring.datasource.username"));
 		String pass = JasyptConfig.decrypt(env.getProperty("spring.datasource.password"));
@@ -32,7 +40,7 @@ public class PropertySourceLoader implements EnvironmentPostProcessor, Ordered {
 		Map<String, Object> props = new HashMap<>();
 		if (url != null && user != null) {
 			try {
-				Class.forName(driver); // 일부 환경에서 필요
+				Class.forName(driver);
 				try (Connection conn = DriverManager.getConnection(url, user, pass); PreparedStatement ps = conn.prepareStatement(QUERY)) {
 					ps.setString(1, appName);
 					ps.setString(2, "Y");

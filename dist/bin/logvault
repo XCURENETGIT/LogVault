@@ -8,6 +8,7 @@ PROGRAM_HOME=`dirname "$PROGRAM_SCRIPT"`/..
 PROGRAM_HOME=`cd "$PROGRAM_HOME"; pwd`
 PROGRAM_CLASSPATHS="$PROGRAM_HOME/lib/*.war"
 CONF_FILE="$PROGRAM_HOME/conf/application.properties"
+LOG_CONFIG_FILE="$PROGRAM_HOME/conf/logback-spring.xml"
 
 XMS=$(grep '^jvm.xms=' "$CONF_FILE" 2>/dev/null | cut -d'=' -f2- | tr -d '[:space:]')
 XMX=$(grep '^jvm.xmx=' "$CONF_FILE" 2>/dev/null | cut -d'=' -f2- | tr -d '[:space:]')
@@ -22,7 +23,8 @@ JAVA_OPTS="-server -Xms$XMS -Xmx$XMX \
  -XX:OnOutOfMemoryError=$PROGRAM_HOME/bin/oom_proc \
  -Dprogram.name=$PROGRAM_NAME -Dfile.encoding=UTF-8"
 
-PROGRAM_OPTS="--spring.config.location=file:$CONF_FILE"
+PROGRAM_OPTS="--spring.config.location=file:$CONF_FILE \
+ --logging.config=file:$LOG_CONFIG_FILE"
 
 
 JAVA="$PROGRAM_HOME/jdk/bin/java"

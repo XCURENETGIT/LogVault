@@ -197,19 +197,15 @@ public class EmassDoc {
 		private String path;
 		@Field("text")
 		private String text;
-		@Transient
-		private String srcPath;
-
-		@Field("image_count")
-		private String imageCount;
-		@Field("image_base64")
-		private List<String> imageBase64;
 
 		@Field("image_extractor_info")
-		private ImageExtractorInfo imageExtractorInfo;
+		private List<ImageExtractorInfo> imageExtractorInfo;
 
 		@Field("sheet_info")
 		private SheetInfo sheetInfo;
+
+		@Transient
+		private String srcPath;
 	}
 
 	@Data
@@ -304,12 +300,13 @@ public class EmassDoc {
 	}
 
 	@Data
+	@Builder
 	public static class ImageExtractorInfo {
-		@Field("image_count")
-		private int imageCount;
+		@Field("name")
+		private String name;
 
-		@Field("image_hash")
-		private List<String> imageHash;
+		@Field("base64")
+		private String base64;
 	}
 
 	@Data

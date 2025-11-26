@@ -70,25 +70,49 @@ public class OcrTaskProcessor implements TaskProcessor {
 			int fail = 0;
 			int target = 0;
 			for (EmassDoc.Attach attach : attaches) {
-				String ext = FileUtil.getExtension(attach.getName());
-				if (attach.isExist() && (conf.getOcrTargetExt().contains(attach.getExpectedExtension()) || conf.getOcrTargetExt().contains(ext))) {
-					target++;
-					StopWatch sw = DateUtils.start();
+				if (attach.isExist() && attach.isOcrTarget()) {
+					String ext = FileUtil.getExtension(attach.getName());
+					if (conf.getOcrTargetExt().contains(attach.getExpectedExtension()) || conf.getOcrTargetExt().contains(ext)) { // 첨부 자체가 이미지인 경우
+						target++;
+						StopWatch sw = DateUtils.start();
+						log.info("OCR_START | {}", conf.getDestPathSmall(attach.getPath()));
+						try (InputStream in = fileProcessor.open(attach.getPath())) {
+							String base64Image = Base64.getEncoder().encodeToString(IOUtils.toByteArray(in));
+							String text = ocrTextLocal(base64Image);
 
-					log.info("OCR_START | {}", conf.getDestPathSmall(attach.getPath()));
-					try (InputStream in = fileProcessor.open(attach.getPath())) {
-						String text = ocrText(in, attach.getName());
+							attach.setText(Common.nvl(attach.getText()) + "\n" + text);
+							attach.setOcrStatus("S");
+							attach.setOcrRate(sw.getTotalTimeMillis());
+							success++;
+							log.info("OCR_TEXT | {} | {} | {}", conf.getDestPathSmall(attach.getPath()), Common.nvl(text).length(), DateUtils.stop(sw));
+						} catch (Exception e) {
+							log.warn("OCR_WARN | {} | {}", conf.getDestPathSmall(attach.getPath()), conf.getOcrApiUrl(), e);
+							attach.setOcrStatus("E");
+							fail++;
+						}
+					} else { // 파일내 포함된 이미지가 있을 경우
+						if (conf.isOcrEmbeddedImageEnable()) {
+							try {
+								List<EmassDoc.ImageExtractorInfo> imageExtractorInfo = attach.getImageExtractorInfo();
+								for (EmassDoc.ImageExtractorInfo extractorInfo : imageExtractorInfo) {
+									if (extractorInfo.getBase64() == null) continue;
 
-						log.info("OCR_TEXT | {} | {} | {}", conf.getDestPathSmall(attach.getPath()), Common.nvl(text).length(), DateUtils.stop(sw));
+									StopWatch sw = DateUtils.start();
+									String text = ocrTextLocal(extractorInfo.getBase64());
 
-						attach.setText(Common.nvl(attach.getText()) + "\n" + text);
-						attach.setOcrStatus("S");
-						attach.setOcrRate(sw.getTotalTimeMillis());
-						success++;
-					} catch (Exception e) {
-						log.warn("OCR_WARN | {} | {}", conf.getDestPathSmall(attach.getPath()), conf.getOcrApiUrl(), e);
-						attach.setOcrStatus("E");
-						fail++;
+									attach.setText(attach.getText() + "\n" + Common.nvl(attach.getText()) + "\n" + text); //이미지가 여러개 이므로, append
+									attach.setOcrStatus("S");
+									attach.setOcrRate(sw.getTotalTimeMillis());
+									success++;
+
+									log.info("OCR_EMBED | {} | {} | {}", conf.getDestPathSmall(attach.getPath()), Common.nvl(text).length(), DateUtils.stop(sw));
+								}
+							} catch (Exception e) {
+								log.warn("OCR_WARN | {} | {}", conf.getDestPathSmall(attach.getPath()), conf.getOcrApiUrl(), e);
+								attach.setOcrStatus("E");
+								fail++;
+							}
+						}
 					}
 				}
 			}
@@ -120,10 +144,7 @@ public class OcrTaskProcessor implements TaskProcessor {
 	 * @param filePath 첨부파일 경로
 	 * @return 첨부 텍스트
 	 */
-	private String ocrTextLocal(InputStream in, String fileName, String filePath) throws IOException {
-		byte[] imageBytes = IOUtils.toByteArray(in);
-		String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-
+	private String ocrTextLocal(final String base64Image) throws IOException {
 		Map<String, Object> payload = new HashMap<>();
 
 		Map<String, Object> imageUrl = new HashMap<>();
@@ -131,9 +152,7 @@ public class OcrTaskProcessor implements TaskProcessor {
 
 		List<Object> contentList = new ArrayList<>();
 		contentList.add(Map.of("type", "image_url", "image_url", imageUrl));
-		contentList.add(Map.of("type", "text", "text", "Extract only the visible text from the image.\n" +
-				"Do not add, modify, translate, summarize, or analyze anything.\n" +
-				"Return the extracted text exactly as it appears, line by line."));
+		contentList.add(Map.of("type", "text", "text", "Extract only the visible text from the image.\n" + "Do not add, modify, translate, summarize, or analyze anything.\n" + "Return the extracted text exactly as it appears, line by line."));
 
 		Map<String, Object> message = new HashMap<>();
 		message.put("role", "user");
@@ -160,10 +179,7 @@ public class OcrTaskProcessor implements TaskProcessor {
 
 		JSONObject json = JSONObject.parseObject(resp.getBody());
 		assert json != null;
-		return json.getJSONArray("choices")
-				.getJSONObject(0)
-				.getJSONObject("message")
-				.getString("content");
+		return json.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
 	}
 
 	/**
@@ -175,15 +191,7 @@ public class OcrTaskProcessor implements TaskProcessor {
 	 * @return 첨부 텍스트
 	 */
 	private String ocrText(final InputStream in, final String fileName) throws IOException {
-		Connection.Response res = Jsoup.connect(conf.getOcrApiUrl())
-				.timeout(conf.getOcrTimeout())
-				.method(Connection.Method.POST)
-				.ignoreContentType(true)
-				.data("api_key", conf.getOcrApiKey())
-				.data("type", "upload")
-				.data("textout", "true")
-				.data("boxes_type", "line")
-				.data("image", fileName, in).execute();
+		Connection.Response res = Jsoup.connect(conf.getOcrApiUrl()).timeout(conf.getOcrTimeout()).method(Connection.Method.POST).ignoreContentType(true).data("api_key", conf.getOcrApiKey()).data("type", "upload").data("textout", "true").data("boxes_type", "line").data("image", fileName, in).execute();
 		JSONObject data = JSONObject.parseObject(res.body());
 		return data.getJSONObject("result").getString("full_text");
 	}

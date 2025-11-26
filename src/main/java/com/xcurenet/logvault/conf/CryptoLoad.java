@@ -20,7 +20,7 @@ public class CryptoLoad {
 
 	public void loadEncryptKey() {
 		if (conf.isEncryptEnable()) {
-			Path keyFile = Paths.get(conf.getEncryptKeyFile());
+			Path keyFile = Paths.get(Config.getEncryptKeyFile());
 			if (!Files.exists(keyFile)) {
 				log.warn("LOAD_ENCRYPT | The file encryption setting is enabled, but no key file is available.");
 				if (!makeKey()) {
@@ -31,7 +31,7 @@ public class CryptoLoad {
 
 			final String key = Common.getKey();
 			if (Common.isNotEmpty(key)) {
-				log.info("LOAD_ENCRYPT | {} | {} | {}", keyFile, key, conf.getEncryptCipher());
+				log.info("LOAD_ENCRYPT | {} | {}", keyFile, conf.getEncryptCipher());
 				conf.setEncryptKey(key);
 			} else {
 				log.error("LOAD_ENCRYPT | Invalid Key File: {}", conf.getEncryptKey());
@@ -40,17 +40,18 @@ public class CryptoLoad {
 		}
 	}
 
-	private boolean makeKey() {
-		Path keyPath = Paths.get(conf.getEncryptKeyFile());
+	public static boolean makeKey() {
+		Path keyPath = Paths.get(Config.getEncryptKeyFile());
 		return Crypto.makeKeyFile(keyPath.toString(), inputPassword());
 	}
 
-	private String inputPassword() {
+	private static String inputPassword() {
+		System.out.println("※ An encryption key must be generated to ensure system security.");
 		Console console = System.console();
 		String password;
 		if (console != null) {
 			while (true) {
-				char[] firstInput = console.readPassword("For security, the message body and attachments will be encrypted. Please set a password: ");
+				char[] firstInput = console.readPassword("Please enter the password: ");
 				char[] confirmInput = console.readPassword("Please confirm your password: ");
 
 				String pass1 = new String(firstInput);
@@ -65,7 +66,7 @@ public class CryptoLoad {
 		} else {
 			java.util.Scanner scanner = new java.util.Scanner(System.in);
 			while (true) {
-				System.out.print("For security, the message body and attachments will be encrypted. Please set a password: ");
+				System.out.print("Please enter the password: ");
 				String pass1 = scanner.nextLine();
 
 				System.out.print("Please confirm your password: ");

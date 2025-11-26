@@ -4,7 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum ErrorCode {
-	CONFIG_INVALID("LVT-0001", "Invalid configuration: {detail}"),
+	ENC_KEY_FAIL("LVT-0001", "Encryption Key file is missing."),
 
 	PARSER_READ_FAIL("LVT-1001", "MSG File Read Failed"),
 	PARSER_TEXT_NULL("LVT-1002", "MSG File is null"),
@@ -58,6 +58,8 @@ public enum ErrorCode {
 	SCAN_NAME_PORT_FORMAT("LVT-5006", "File name Port is not numeric: {value}"),
 	SCAN_NAME_SEQ_INVALID("LVT-5007", "File name Sequence is not numeric: {value}"),
 	SCAN_NAME_HOST_EMPTY("LVT-5008", "File name Host field is empty: {field}"),
+
+	FILE_ANALYSIS_SIZE("LVT-6001", "File size measurement failed."),
 
 	UNKNOWN_ERROR("LVT-9999", "Unknown error");
 

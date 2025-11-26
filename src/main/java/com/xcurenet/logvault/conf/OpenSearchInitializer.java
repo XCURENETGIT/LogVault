@@ -28,7 +28,7 @@ public class OpenSearchInitializer {
 
 	public void init() throws IOException {
 		StopWatch sw = DateUtils.start();
-		log.info("INIT_OPENSEARCH | START");
+		log.info("INIT_OPENSEARCH | START | {} | {}", OpenSearchInitializer.POLICY_PATH, OpenSearchInitializer.TEMPLATE_PATH);
 		if (existsPolicy())
 			log.info("CONF_OPENSEARCH | ISM POLICY [{}] already exists. Skipping creation.", OpenSearchInitializer.POLICY_NAME);
 		else {

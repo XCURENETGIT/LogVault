@@ -1280,7 +1280,11 @@ public final class Common {
 	}
 
 	public static String getKey() {
-		Path keyFile = Paths.get(Config.ENC_KEYFILE);
+		Path keyFile = Paths.get(Config.getEncryptKeyFile());
 		return Common.toHexString(Crypto.loadKeyFile(keyFile.toString()));
+	}
+
+	public static int getBase64Size(final String base64) {
+		return Base64.decodeBase64(base64).length;
 	}
 }

@@ -14,27 +14,23 @@
 				"highlight": { "max_analyzed_offset": 2000000 },
 				"opendistro.index_state_management.policy_id": "emass_policy",
 				"analysis": {
-					"tokenizer": {
-						"edge_ngram_tokenizer": {
+					"filter": {
+						"prefix_edge_ngram_filter": {
 							"type": "edge_ngram",
 							"min_gram": 2,
-							"max_gram": 10,
-							"token_chars": [
-								"letter",
-								"digit",
-								"whitespace"
-							]
+							"max_gram": 30
 						}
 					},
 					"analyzer": {
 						"index_analyzer": {
-							"tokenizer": "edge_ngram_tokenizer",
+							"tokenizer": "whitespace",
 							"filter": [
-								"lowercase"
+								"lowercase",
+								"prefix_edge_ngram_filter"
 							]
 						},
 						"search_analyzer": {
-							"tokenizer": "standard",
+							"tokenizer": "whitespace",
 							"filter": [
 								"lowercase"
 							]
@@ -262,9 +258,7 @@
 							"type": "keyword"
 						},
 						"name": {
-							"type": "text",
-							"analyzer": "index_analyzer",
-							"search_analyzer": "search_analyzer"
+							"type": "keyword"
 						},
 						"has_name": {
 							"type": "boolean"
@@ -314,10 +308,10 @@
 						},
 						"image_extractor_info": {
 							"properties": {
-								"image_count": {
-									"type": "integer"
+								"name": {
+									"type": "keyword"
 								},
-								"image_hash": {
+								"base64": {
 									"type": "keyword",
 									"doc_values": false,
 									"index": false

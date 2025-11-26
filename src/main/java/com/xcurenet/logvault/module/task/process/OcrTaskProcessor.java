@@ -96,6 +96,8 @@ public class OcrTaskProcessor implements TaskProcessor {
 								List<EmassDoc.ImageExtractorInfo> imageExtractorInfo = attach.getImageExtractorInfo();
 								for (EmassDoc.ImageExtractorInfo extractorInfo : imageExtractorInfo) {
 									if (extractorInfo.getBase64() == null) continue;
+									if (Common.getBase64Size(extractorInfo.getBase64()) > conf.getOcrLimitSize()) continue;
+									target++;
 
 									StopWatch sw = DateUtils.start();
 									String text = ocrTextLocal(extractorInfo.getBase64());

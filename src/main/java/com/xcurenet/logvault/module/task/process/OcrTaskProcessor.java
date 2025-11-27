@@ -9,6 +9,7 @@ import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.common.utils.FileUtil;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.fs.FileProcessor;
+import com.xcurenet.logvault.fs.FileSystemService;
 import com.xcurenet.logvault.module.analysis.KeywordAnalysis;
 import com.xcurenet.logvault.module.analysis.PrivacyAnalysis;
 import com.xcurenet.logvault.module.task.service.TaskMessage;
@@ -32,6 +33,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -47,7 +50,6 @@ public class OcrTaskProcessor implements TaskProcessor {
 	protected final IndexService indexService;
 	private final KeywordAnalysis keywordAnalysis;
 	private final PrivacyAnalysis privacyAnalysis;
-	private final RestTemplate restTemplate = new RestTemplate();
 
 	@Override
 	public boolean supports(String taskType) {
@@ -95,19 +97,23 @@ public class OcrTaskProcessor implements TaskProcessor {
 							try {
 								List<EmassDoc.ImageExtractorInfo> imageExtractorInfo = attach.getImageExtractorInfo();
 								for (EmassDoc.ImageExtractorInfo extractorInfo : imageExtractorInfo) {
-									if (extractorInfo.getBase64() == null) continue;
-									if (Common.getBase64Size(extractorInfo.getBase64()) > conf.getOcrLimitSize()) continue;
+									if (extractorInfo.getPath() == null) continue;
+									if (Files.size(Paths.get(extractorInfo.getPath())) > conf.getOcrLimitSize())
+										continue;
+
 									target++;
 
 									StopWatch sw = DateUtils.start();
-									String text = ocrTextLocal(extractorInfo.getBase64());
+									try (InputStream in = fileProcessor.open(extractorInfo.getPath())) {
+										String text = ocrTextLocal(Common.toBase64(IOUtils.toByteArray(in)));
 
-									attach.setText(attach.getText() + "\n" + Common.nvl(attach.getText()) + "\n" + text); //이미지가 여러개 이므로, append
-									attach.setOcrStatus("S");
-									attach.setOcrRate(sw.getTotalTimeMillis());
-									success++;
+										attach.setText(Common.nvl(attach.getText()) + "\n" + text); //이미지가 여러개 이므로, append
+										attach.setOcrStatus("S");
+										attach.setOcrRate(sw.getTotalTimeMillis());
+										success++;
 
-									log.info("OCR_EMBED | {} | {} | {}", conf.getDestPathSmall(attach.getPath()), Common.nvl(text).length(), DateUtils.stop(sw));
+										log.info("OCR_EMBED | {} | {} | {}", conf.getDestPathSmall(attach.getPath()), Common.nvl(text).length(), DateUtils.stop(sw));
+									}
 								}
 							} catch (Exception e) {
 								log.warn("OCR_WARN | {} | {}", conf.getDestPathSmall(attach.getPath()), conf.getOcrApiUrl(), e);

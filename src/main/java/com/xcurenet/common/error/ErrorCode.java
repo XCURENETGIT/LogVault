@@ -44,7 +44,8 @@ public enum ErrorCode {
 	FILE_MSG_SEND_FAIL("LVT-3003", "Failed to send MSG file"),
 	FILE_BODY_SEND_FAIL("LVT-3004", "Failed to send body file"),
 
-	FILE_SEND_FAIL("LVT-3999", "Failed to send file"),
+	FILE_SEND_FAIL("LVT-3998", "Failed to send file"),
+	EMBED_SEND_FAIL("LVT-3999", "Failed to send file"),
 
 	INSA_MSG_NULL("LVT-4001", "ScanData.getMsgData is null"),
 	INSA_SIP_NULL("LVT-4002", "source IP is null"),

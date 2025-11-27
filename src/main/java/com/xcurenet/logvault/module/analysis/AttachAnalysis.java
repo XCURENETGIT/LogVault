@@ -3,6 +3,7 @@ package com.xcurenet.logvault.module.analysis;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.xcurenet.common.error.ErrorCode;
+import com.xcurenet.common.msg.MSGData;
 import com.xcurenet.common.thumbnail.FileThumbnail;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
@@ -11,6 +12,7 @@ import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -22,9 +24,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 
 @Log4j2
 @Service
@@ -86,7 +90,7 @@ public class AttachAnalysis {
 				attach.setExpectedUnknown(data.getBoolean("unknownType"));      // 알수없는 확장자
 				attach.setChangeExtension(data.getBoolean("changeExtension"));  // 확장자 변경 유무
 				attach.setEncrypted(data.getBoolean("encrypted"));              // 암호화 유무
-				setEmbeddedImage(attach, data);                                     // 파일내 이미지 추출 정보
+				setEmbeddedImage(msg.getMsgData(), attach, data);                                     // 파일내 이미지 추출 정보
 				setExcelHiddenSheet(attach, data);                                  // 엑셀 히드시트 정보 추가
 				setOCRTarget(attach);                                               // OCR 대상 설정
 
@@ -98,18 +102,29 @@ public class AttachAnalysis {
 	}
 
 	// 파일내 이미지 추출 정보
-	private void setEmbeddedImage(EmassDoc.Attach attach, JSONObject data) {
+	private void setEmbeddedImage(MSGData msgData, EmassDoc.Attach attach, JSONObject data) {
 		try {
 			if (data.get("imagesCount") != null && data.get("embeddedImage") != null && data.getInteger("imagesCount") > 0) {
 				JSONArray array = data.getJSONArray("embeddedImage");
+				List<String> embeddedFiles = msgData.getEmbeddedFile();
 				List<EmassDoc.ImageExtractorInfo> imageExtractorInfos = new ArrayList<>();
 				for (int i = 0; i < array.size(); i++) {
 					JSONObject embedded = array.getJSONObject(i);
 					String base64 = embedded.getString("base64");
 					if (base64 == null) continue;
 
-					imageExtractorInfos.add(EmassDoc.ImageExtractorInfo.builder().name(embedded.getString("name")).base64(base64).build());
+					String ext = FilenameUtils.getExtension(embedded.getString("name"));
+					String name = Common.makeMD5Hex(Paths.get(attach.getSrcPath()).getFileName().toString(), embedded.getString("name")) + "." + ext; //첨부이름 + 이미지 이름 MD5
+					String srcPath = Common.makeFilepath(Paths.get(attach.getSrcPath()).getParent().toString(), name); //임시 SRC 저장 위치
+					String dest = conf.getDestPath(msgData.getCtime(), msgData.getMsgid(), name); //최종 저장 위치
+					Files.write(Path.of(Objects.requireNonNull(srcPath)), Common.decodeBase64(base64), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
+					embeddedFiles.add(srcPath);
+
+					log.info("OLE__IMG | {} | {}", embedded.getString("name"), Common.getBase64Size(base64));
+					imageExtractorInfos.add(EmassDoc.ImageExtractorInfo.builder().name(embedded.getString("name")).path(dest).build());
 				}
+				msgData.setEmbeddedFile(embeddedFiles); //파일 전송을 위한 저장
 				attach.setImageExtractorInfo(imageExtractorInfos);
 
 				if (conf.isOcrEmbeddedImageEnable()) {

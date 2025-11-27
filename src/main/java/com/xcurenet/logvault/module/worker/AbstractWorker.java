@@ -105,6 +105,7 @@ public abstract class AbstractWorker implements Runnable {
 							insaMapping(data);
 							transToBody(data);
 							transToAttach(data);
+							transToAttachEmbedded(data);
 							index(data);
 							success = true;
 							break;
@@ -213,11 +214,10 @@ public abstract class AbstractWorker implements Runnable {
 
 			String destStr = conf.getDestPath(msg.getCtime(), msg.getMsgid(), srcPath.getFileName().toString());
 			Path destPath = Paths.get(destStr);
-
 			try {
 				if (fileSystem.exists(destStr)) {
 					log.info("ATT_SKIP | {} already exists. Skipping copy.", conf.getDestPathSmall(destStr));
-					return;
+					continue;
 				}
 
 				StopWatch sw = DateUtils.start();
@@ -226,6 +226,33 @@ public abstract class AbstractWorker implements Runnable {
 				log.info("ATT_SEND | {} ({}) | {}", conf.getDestPathSmall(destStr), Common.convertFileSize(size), DateUtils.stop(sw));
 			} catch (Exception e) {
 				throw ExFactory.ex(FileSendException::new, ErrorCode.FILE_SEND_FAIL, Map.of("src", srcPath.toString(), "dst", destPath.toString()), e);
+			}
+		}
+	}
+
+	//첨부에 포함된 객체
+	protected void transToAttachEmbedded(ScanData data) throws FileSendException {
+		MSGData msg = data.getMsgData();
+		for (String src : msg.getEmbeddedFile()) {
+			if (src == null) continue;
+
+			Path srcPath = Paths.get(src); //embeddedFile의 경우 src 패스가 전체 경로로 된다.
+			if (!Files.exists(srcPath)) continue;
+
+			String destStr = conf.getDestPath(msg.getCtime(), msg.getMsgid(), srcPath.getFileName().toString());
+			Path destPath = Paths.get(destStr);
+			try {
+				if (fileSystem.exists(destStr)) {
+					log.info("EMB_SKIP | {} already exists. Skipping copy.", conf.getDestPathSmall(destStr));
+					return;
+				}
+
+				StopWatch sw = DateUtils.start();
+				fileSystem.write(srcPath.toString(), destPath.toString(), srcPath.getFileName().toString());
+				long size = Files.size(srcPath);
+				log.info("EMB_SEND | {} ({}) | {}", conf.getDestPathSmall(destStr), Common.convertFileSize(size), DateUtils.stop(sw));
+			} catch (Exception e) {
+				throw ExFactory.ex(FileSendException::new, ErrorCode.EMBED_SEND_FAIL, Map.of("src", srcPath.toString(), "dst", destPath.toString()), e);
 			}
 		}
 	}

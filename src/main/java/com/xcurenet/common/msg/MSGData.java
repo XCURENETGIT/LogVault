@@ -76,6 +76,8 @@ public class MSGData {
 	@FieldKey({"APPFILE", "SERVER_FNAME"})
 	private List<String> appFile = new ArrayList<>();
 
+	private List<String> embeddedFile = new ArrayList<>(); //첨부 정보에서 추출
+
 	@FieldKey("EXTENSION")
 	private List<AttachExtension> extension = new ArrayList<>();
 

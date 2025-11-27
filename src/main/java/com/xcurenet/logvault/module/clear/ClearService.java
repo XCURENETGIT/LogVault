@@ -26,6 +26,7 @@ public class ClearService {
 		boolean bodyDeleted = false;
 		boolean headerDeleted = false;
 		boolean attachDeleted = false;
+		boolean embeddedDeleted = false;
 		remove(data.getFilePath().toAbsolutePath().toString());
 		boolean msgDeleted = true;
 
@@ -49,7 +50,13 @@ public class ClearService {
 				remove(conf.getPath(path));
 				attachDeleted = true;
 			}
-			log.info("DEL_FILE | MSG:{} | BODY:{} | HEADER:{} | ATTACH:{} | {}", msgDeleted, bodyDeleted, headerDeleted, attachDeleted, DateUtils.stop(sw));
+
+			List<String> embeddedFiles = msg.getEmbeddedFile();
+			for (String path : embeddedFiles) {
+				remove(path); //embeddedFile의 경우 src 패스가 전체 경로로 된다.
+				embeddedDeleted = true;
+			}
+			log.info("DEL_FILE | MSG:{} | BODY:{} | HEADER:{} | ATTACH:{} | EMBEDDED:{} | {}", msgDeleted, bodyDeleted, headerDeleted, attachDeleted, embeddedDeleted, DateUtils.stop(sw));
 		}
 	}
 

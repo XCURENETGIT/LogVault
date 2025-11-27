@@ -305,8 +305,8 @@ public class EmassDoc {
 		@Field("name")
 		private String name;
 
-		@Field("base64")
-		private String base64;
+		@Field("path")
+		private String path;
 	}
 
 	@Data

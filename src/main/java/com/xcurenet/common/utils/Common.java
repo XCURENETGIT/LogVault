@@ -658,6 +658,10 @@ public final class Common {
 		return Base64.encodeBase64String(b);
 	}
 
+	public static byte[] decodeBase64(final String base64Str) {
+		return Base64.decodeBase64(base64Str);
+	}
+
 	public static String stringifyException(final Throwable e) {
 		final StringWriter stm = new StringWriter();
 		final PrintWriter wrt = new PrintWriter(stm);

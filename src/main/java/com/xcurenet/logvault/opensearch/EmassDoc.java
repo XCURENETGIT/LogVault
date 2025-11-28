@@ -291,8 +291,8 @@ public class EmassDoc {
 		@Data
 		@Builder
 		public static class ResponseHeader {
-			@Field(name = "date", type = FieldType.Date)
-			private ZonedDateTime date;
+			@Field(name = "date")
+			private String date;
 
 			@Field("content-type")
 			private String contentType;

@@ -57,11 +57,7 @@ public class UserAgentAnalysis {
 
 	}
 
-	private ZonedDateTime getHeaderDate(final HttpHeaderUtil.HttpHeader.HttpResponseHeader response) {
-		String date = response.getHeaders().get("date");
-		if (Common.isNotEmpty(date)) {
-			return ZonedDateTime.parse(date, DateUtils.RESPONSE_DATETIME);
-		}
-		return null;
+	private String getHeaderDate(final HttpHeaderUtil.HttpHeader.HttpResponseHeader response) {
+		return response.getHeaders().get("date");
 	}
 }

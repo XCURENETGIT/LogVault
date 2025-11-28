@@ -119,7 +119,7 @@ public abstract class AbstractWorker implements Runnable {
 					while (retryCnt <= 3) {
 						try {
 							alert(data);
-							task(data);
+							task(data); //OCR 및 분석 관련 TASK
 							break;
 						} catch (final Exception e) { // 성공 여부 관계없이 알림 전송, OCR 및 분석 후처리의 경우는 별도로 처리
 							log.warn("TASK_ERROR | {}", e.getMessage(), e);

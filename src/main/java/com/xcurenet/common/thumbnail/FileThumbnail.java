@@ -29,7 +29,7 @@ public class FileThumbnail {
 
 		StopWatch sw = DateUtils.start();
 		thumbnailRepository.deleteThumbnail(conf.getThumbnailRetentionDays());
-		log.info("RM_THUMBNAIL | {} | {}", conf.getThumbnailRetentionDays(), DateUtils.stop(sw));
+		log.info("RM_THUMBNAIL | {}day | {}", conf.getThumbnailRetentionDays(), DateUtils.stop(sw));
 	}
 
 	public boolean isExistThumbnail(final String hash) {

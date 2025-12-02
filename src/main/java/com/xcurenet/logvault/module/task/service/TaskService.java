@@ -31,31 +31,45 @@ public class TaskService {
 	}
 
 	public void send(final ScanData data) {
-		StopWatch sw = DateUtils.start();
+		EmassDoc doc = data.getEmassDoc();
+		if (Common.isNotEquals(doc.getService().getSvc3(), "S")) return; //발신 서비스만
+
+		TaskMessage message = new TaskMessage();
+		message.setMsgId(doc.getMsgid());
+		if (conf.isOcrApiEnable() && isOcrTarget(data)) {
+			message.setTaskType(TaskDispatcherService.TASK_TYPE.OCR.name());
+		}
+
+		if (conf.isMlApiEnable() && message.getTaskType() == null) { //ML을 사용하는 경우, OCR을 먼저 처리 후 ML처리
+			message.setTaskType(TaskDispatcherService.TASK_TYPE.ML.name());
+		}
+
+		if (message.getTaskType() != null) {
+			StopWatch sw1 = DateUtils.start();
+			message.setData(JSON.toJSONString(doc));
+			repository.insertMessage(message);
+			log.info("PPS_SEND | {} | {}", message.getTaskType(), DateUtils.stop(sw1));
+		}
+	}
+
+	private boolean isOcrTarget(final ScanData data) {
 		EmassDoc doc = data.getEmassDoc();
 		try {
+			StopWatch sw = DateUtils.start();
 			int ocrTargetCount = 0;
-			if (conf.isOcrApiEnable()) {
-				List<EmassDoc.Attach> attaches = doc.getAttach();
-				if (attaches == null || attaches.isEmpty()) return;
-				for (EmassDoc.Attach attach : attaches) { // 첨부파일 중 하나라도 OCR 대상이라면 처리.
-					if (attach.isOcrTarget()) {
-						ocrTargetCount++;
-					}
+			List<EmassDoc.Attach> attaches = doc.getAttach();
+			if (attaches == null || attaches.isEmpty()) return false;
+			for (EmassDoc.Attach attach : attaches) { // 첨부파일 중 하나라도 OCR 대상이라면 처리.
+				if (attach.isOcrTarget()) {
+					ocrTargetCount++;
 				}
 			}
-
-			if (ocrTargetCount > 0) {
-				TaskMessage message = new TaskMessage();
-				message.setMsgId(doc.getMsgid());
-				message.setTaskType("OCR");
-				message.setData(JSON.toJSONString(doc));
-				repository.insertMessage(message);
-				log.info("OCR_READY | CNT:{} | {}", ocrTargetCount, DateUtils.stop(sw));
-			}
+			log.info("OCRREADY | CNT:{} | {}", ocrTargetCount, DateUtils.stop(sw));
+			return ocrTargetCount > 0;
 		} catch (Exception e) {
-			log.warn("OCR_READY | {}", e.getMessage());
+			log.warn("OCRREADY | {}", e.getMessage());
 			log.error("", e);
 		}
+		return false;
 	}
 }

@@ -3,12 +3,11 @@ package com.xcurenet.logvault.opensearch;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import lombok.Data;
-import org.opensearch.common.geo.GeoPoint;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.elasticsearch.annotations.*;
 
-import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -37,6 +36,12 @@ public class EmassDoc {
 
 	@Field("day")
 	private Day day;
+
+	@Field("process_status")
+	private ProcessStatus processStatus;
+
+	@Field("ml_result")
+	private MLResult mlResult;
 
 	@Field("service")
 	private Service service;
@@ -84,9 +89,40 @@ public class EmassDoc {
 	public static class Day {
 		@Field("week")
 		private int week;
-
 		@Field("work")
 		private String work;
+	}
+
+	@Data
+	@Builder
+	public static class ProcessStatus {
+		@Field("ocr")
+		private String ocr;
+		@Field("ml")
+		private String ml;
+	}
+
+	@Data
+	public static class MLResult {
+		@Field("code_exist")
+		private boolean codeExist;
+		@Field("category")
+		private int category;
+		@Field("probs")
+		private float probs;
+		@Field("keywords")
+		private List<String> keywords;
+
+		public void merge(MLResult other) {
+			if (other == null) {
+				return;
+			}
+			this.codeExist |= other.isCodeExist();
+			this.category = Math.max(this.category, other.getCategory());
+			this.probs = Math.max(this.probs, other.getProbs());
+			if (this.keywords == null) this.keywords = new ArrayList<>();
+			this.keywords.addAll(other.getKeywords());
+		}
 	}
 
 	@Data
@@ -161,6 +197,8 @@ public class EmassDoc {
 		private String extension;
 		@Field("text")
 		private String text;
+		@Field("ml_result")
+		private MLResult mlResult;
 	}
 
 	@Data
@@ -204,6 +242,9 @@ public class EmassDoc {
 		@Field("sheet_info")
 		private SheetInfo sheetInfo;
 
+		@Field("ml_result")
+		private MLResult mlResult;
+
 		@Transient
 		private String srcPath;
 	}
@@ -212,16 +253,12 @@ public class EmassDoc {
 	public static class PrivacyInfo {
 		@Field("id") //SN:주민번호, CN:카드번호
 		private String id;
-
 		@Field("type") //B:본문, A:첨부
 		private String type;
-
 		@Field("attach_name")
 		private String attachName;
-
 		@Field("privacy_data") //탐지 키워드 정보
 		private List<String> privacyData;
-
 		@Field("count")
 		private int count;
 	}
@@ -244,7 +281,6 @@ public class EmassDoc {
 		public static class Keyword {
 			@Field("name")
 			private String name;
-
 			@Field("count")
 			private int count;
 		}
@@ -293,7 +329,6 @@ public class EmassDoc {
 		public static class ResponseHeader {
 			@Field(name = "date")
 			private String date;
-
 			@Field("content-type")
 			private String contentType;
 		}
@@ -304,7 +339,6 @@ public class EmassDoc {
 	public static class ImageExtractorInfo {
 		@Field("name")
 		private String name;
-
 		@Field("path")
 		private String path;
 	}
@@ -313,10 +347,8 @@ public class EmassDoc {
 	public static class SheetInfo {
 		@Field("sheet_total")
 		private int sheetTotal;
-
 		@Field("sheet_hidden_total")
 		private int sheetHiddenTotal;
-
 		@Field("hidden_sheet_names")
 		private List<String> hiddenSheetNames;
 	}

@@ -26,7 +26,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 
@@ -90,9 +89,10 @@ public class AttachAnalysis {
 				attach.setExpectedUnknown(data.getBoolean("unknownType"));      // 알수없는 확장자
 				attach.setChangeExtension(data.getBoolean("changeExtension"));  // 확장자 변경 유무
 				attach.setEncrypted(data.getBoolean("encrypted"));              // 암호화 유무
-				setEmbeddedImage(msg.getMsgData(), attach, data);                                     // 파일내 이미지 추출 정보
 				setExcelHiddenSheet(attach, data);                                  // 엑셀 히드시트 정보 추가
-				setOCRTarget(attach);                                               // OCR 대상 설정
+
+				setEmbeddedImage(doc, msg.getMsgData(), attach, data);              // 파일내 이미지 추출 정보
+				setOCRTarget(doc, attach);                                          // OCR 대상 설정
 
 				log.info("ATT_TEXT | {} | RESULT:{} | TXT_LEN:{} | {}", conf.getDataPathSmall(attach.getSrcPath()), text.get("success"), Common.nvl(attach.getText()).length(), DateUtils.stop(sw));
 			} else {
@@ -102,7 +102,7 @@ public class AttachAnalysis {
 	}
 
 	// 파일내 이미지 추출 정보
-	private void setEmbeddedImage(MSGData msgData, EmassDoc.Attach attach, JSONObject data) {
+	private void setEmbeddedImage(EmassDoc doc, MSGData msgData, EmassDoc.Attach attach, JSONObject data) {
 		try {
 			if (data.get("imagesCount") != null && data.get("embeddedImage") != null && data.getInteger("imagesCount") > 0) {
 				JSONArray array = data.getJSONArray("embeddedImage");
@@ -127,7 +127,8 @@ public class AttachAnalysis {
 				msgData.setEmbeddedFile(embeddedFiles); //파일 전송을 위한 저장
 				attach.setImageExtractorInfo(imageExtractorInfos);
 
-				if (conf.isOcrEmbeddedImageEnable()) {
+				if (conf.isOcrApiEnable() && conf.isOcrEmbeddedImageEnable()) {
+					doc.getProcessStatus().setOcr("P");
 					attach.setOcrStatus("P"); // PENDING, 파일 내부에 있는 이미지도 OCR 대상임
 					attach.setOcrTarget(true);
 				}
@@ -138,10 +139,13 @@ public class AttachAnalysis {
 	}
 
 	// OCR 대상 여부
-	private void setOCRTarget(EmassDoc.Attach attach) {
-		String ext = Common.nvl(attach.getExtension());
+	private void setOCRTarget(EmassDoc doc, EmassDoc.Attach attach) {
+		if (!conf.isOcrApiEnable()) return;
+
 		// OCR 사이즈 제한보다 작아야 되며, 예상확장자 혹은 파일의 확장자가 이미지 타입인 경우 OCR 대상임.
+		String ext = Common.nvl(attach.getExtension());
 		if (!isFileOverSize(attach.getSrcPath(), conf.getOcrLimitSize()) && (conf.getOcrTargetExt().contains(attach.getExpectedExtension()) || conf.getOcrTargetExt().contains(ext))) {
+			doc.getProcessStatus().setOcr("P");
 			attach.setOcrStatus("P"); // PENDING
 			attach.setOcrTarget(true);
 		}

@@ -20,25 +20,25 @@ public class TaskDispatcher {
 		Runnable job = () -> {
 			try {
 				processor.process(m);
-				repository.deleteById(m.getMsgId());
+				repository.deleteById(m.getMsgId(), m.getTaskType());
 			} catch (Exception e) {
 				log.debug("DISPATCH | Task failed: {}", e.getMessage(), e);
-				repository.updateStatusFailed(m.getMsgId(), e.getMessage());
+				repository.updateStatusFailed(m.getMsgId(), m.getTaskType(), e.getMessage());
 			}
 		};
 
 		String type = m.getTaskType();
-		if ("OCR".equalsIgnoreCase(type)) {
+		if (TaskDispatcherService.TASK_TYPE.OCR.name().equalsIgnoreCase(type)) {
 			ocrExecutor.execute(job);
-		} else if ("ML_ANALYSIS".equalsIgnoreCase(type)) {
+		} else if (TaskDispatcherService.TASK_TYPE.ML.name().equalsIgnoreCase(type)) {
 			mlExecutor.execute(job);
 		} else {
 			mlExecutor.execute(job);
 		}
 	}
 
-	public int remainingCapacityFor(String taskType) {
-		ThreadPoolTaskExecutor ex = "OCR".equalsIgnoreCase(taskType) ? ocrExecutor : mlExecutor;
+	public int remainingCapacityFor(TaskDispatcherService.TASK_TYPE taskType) {
+		ThreadPoolTaskExecutor ex = TaskDispatcherService.TASK_TYPE.OCR.name().equalsIgnoreCase(taskType.name()) ? ocrExecutor : mlExecutor;
 		int queueCap = ex.getThreadPoolExecutor().getQueue().remainingCapacity();
 		int size = ex.getActiveCount();
 		int headroom = Math.max(0, ex.getMaxPoolSize() - size);

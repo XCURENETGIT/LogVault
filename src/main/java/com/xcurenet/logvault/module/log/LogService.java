@@ -30,10 +30,13 @@ public class LogService {
 			int sPort = net != null ? net.getSrcPort() : 0;
 			int dPort = net != null ? net.getDstPort() : 0;
 
+			//if (msg.getBody() != null) System.out.println(msg.getBody().getText());
+
 			EmassDoc.Http http = msg.getHttp();
 			//String url = http != null ? http.getUrl() : "";
+			//System.out.println(url);
 			String agent = getUserAgent(http);
-			log.info("MSG_DONE | {} | BODY:{} ({}) | AT_CNT:{} | EXIST_CNT:{} ({}) | {} | {}:{} > {}:{} | {} | {}\n", msg.getService().getSvc(), isBody, bodySize, attachCnt, attachExistCnt, attSize, userId, sIp, sPort, dIp, dPort, agent, DateUtils.stop(data.getStopWatch()));
+			log.info("MSG_DONE | {} | BODY:{} ({}) | AT_CNT:{} | EXIST_CNT:{} ({}) | USER:{} | {}:{} > {}:{} | {} | {}\n", msg.getService().getSvc(), isBody, bodySize, attachCnt, attachExistCnt, attSize, userId, sIp, sPort, dIp, dPort, agent, DateUtils.stop(data.getStopWatch()));
 		} catch (Exception e) {
 			log.warn("DEBUG_LOG | {}", e.getMessage());
 			log.error("", e);

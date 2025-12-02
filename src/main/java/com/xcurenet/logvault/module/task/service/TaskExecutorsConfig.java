@@ -45,7 +45,13 @@ public class TaskExecutorsConfig {
 	@Bean(name = "mlExecutor")
 	public ThreadPoolTaskExecutor mlExecutor() {
 		ThreadPoolTaskExecutor ex = new ThreadPoolTaskExecutor();
-		ex.setThreadNamePrefix("TASK-ML-");
+		AtomicInteger threadIndex = new AtomicInteger(0);
+		ThreadFactory threadFactory = runnable -> {
+			Thread t = new Thread(runnable);
+			t.setName("TASK-ML-" + threadIndex.getAndIncrement());
+			return t;
+		};
+		ex.setThreadFactory(threadFactory);
 		ex.setCorePoolSize(conf.getTaskQueueWorkersThreads());
 		ex.setMaxPoolSize(conf.getTaskQueueWorkersThreads());
 		ex.setQueueCapacity(50);

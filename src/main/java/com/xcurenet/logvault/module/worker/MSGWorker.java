@@ -66,6 +66,9 @@ public class MSGWorker extends AbstractWorker {
 			setAttach(msg, doc);
 			setSize(doc);
 
+			String mlUsed = "N";
+			if (conf.isMlApiEnable() && Common.isEquals(doc.getService().getSvc3(), "S")) mlUsed = "P";
+			doc.setProcessStatus(EmassDoc.ProcessStatus.builder().ocr("N").ml(mlUsed).build()); //기본 OCR, ML 처리 대상여부, 처리 상태 값
 			data.setEmassDoc(doc);
 		} catch (Exception e) {
 			throw ExFactory.ex(ParsingException::new, ErrorCode.PARSER_MSG_FAIL, Map.of("info", msg.getInfoText()), e);

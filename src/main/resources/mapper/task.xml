@@ -7,7 +7,7 @@
 		INSERT IGNORE INTO AI_PROCESSING_QUEUE
 			(MSGID, TASK_TYPE, STATUS, `DATA`, ERROR_MESSAGE, RUN_AT, CREATE_DT)
 		VALUES
-			(#{msgId}, #{taskType}, 'PENDING', #{data}, NULL, current_timestamp(), current_timestamp())
+			(#{msgId}, #{taskType}, 'PENDING', #{data}, NULL, NULL, current_timestamp())
 	</insert>
 
 
@@ -32,6 +32,7 @@
 		SET 	STATUS  = 'RUNNING',
 				RUN_AT  = NOW()
 		WHERE	MSGID= #{msgId}
+		AND     TASK_TYPE = #{taskType}
 	</update>
 
 	<update id="updateStatusDone">
@@ -39,12 +40,14 @@
 		SET		STATUS='DONE',
 				ERROR_MESSAGE=NULL
 		WHERE	MSGID= #{msgId}
+		AND     TASK_TYPE = #{taskType}
 	</update>
 
 	<update id="deleteById">
 		DELETE
 		FROM 	AI_PROCESSING_QUEUE
 		WHERE 	MSGID = #{msgId}
+		AND     TASK_TYPE = #{taskType}
 	</update>
 
 	<update id="updateStatusFailed">
@@ -52,6 +55,7 @@
 		SET		STATUS = 'FAILED',
 				ERROR_MESSAGE = #{err}
 		WHERE 	MSGID = #{msgId}
+		AND     TASK_TYPE = #{taskType}
 	</update>
 
 	<delete id="deleteOldFailed">

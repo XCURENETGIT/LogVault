@@ -16,16 +16,16 @@ public interface TaskMessageRepository {
 	void updateStatusPending();
 
 	@Transactional
-	void updateStatusRunning(@Param("msgId") String id);
+	void updateStatusRunning(@Param("msgId") String id, @Param("taskType") String taskType);
 
 	@Transactional
-	void deleteById(@Param("msgId") String id);
+	void deleteById(@Param("msgId") String id, @Param("taskType") String taskType);
 
 	@Transactional
-	void updateStatusFailed(@Param("msgId") String id, @Param("err") String err);
+	void updateStatusFailed(@Param("msgId") String id, @Param("taskType") String taskType, @Param("err") String err);
 
 	@Transactional
-	void updateStatusDone(@Param("msgId") String id);
+	void updateStatusDone(@Param("msgId") String id, @Param("taskType") String taskType);
 
 	@Transactional
 	void insertMessage(TaskMessage message);

@@ -16,17 +16,22 @@ public class TaskDispatcherService {
 	private final TaskMessageRepository repo;
 	private final TaskDispatcher dispatcher;
 
+	public enum TASK_TYPE {
+		OCR,
+		ML
+	}
+
 	public void init() {
-		repo.updateStatusPending(); //OCR 요청 후 RUNNING상태인 상태에서 모듈이 종료될 경우 남아있는 RUNNING 데이터를 초기화 한다.
+		repo.updateStatusPending(); //OCR, ML 요청 후 RUNNING상태인 상태에서 모듈이 종료될 경우 남아있는 RUNNING 데이터를 초기화 한다.
 	}
 
 	@Scheduled(fixedDelayString = "${task.queue.scheduler.interval-ms:2000}")
 	public void dispatch() {
-		feedOneType("OCR");
-		feedOneType("ML_ANALYSIS");
+		feedOneType(TASK_TYPE.OCR);
+		feedOneType(TASK_TYPE.ML);
 	}
 
-	private void feedOneType(String type) {
+	private void feedOneType(TASK_TYPE type) {
 		int capacity = Math.max(0, dispatcher.remainingCapacityFor(type));
 		if (capacity == 0) return;
 
@@ -34,11 +39,11 @@ public class TaskDispatcherService {
 		if (toFetch <= 0) return;
 
 		// PENDING -> RUNNING으로 상태 전환하면서 배치 클레임
-		List<TaskMessage> batch = repo.claimBatchByType(type, toFetch);
+		List<TaskMessage> batch = repo.claimBatchByType(type.name(), toFetch);
 		if (batch.isEmpty()) return;
 
 		for (TaskMessage m : batch) {
-			repo.updateStatusRunning(m.getMsgId());
+			repo.updateStatusRunning(m.getMsgId(), m.getTaskType());
 			dispatcher.dispatch(m);
 		}
 		log.debug("FEED | type={}, fetched={}", type, batch.size());

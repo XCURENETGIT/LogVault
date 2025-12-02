@@ -655,7 +655,7 @@ public final class Common {
 	}
 
 	public static String toBase64(final byte[] b) {
-		return Base64.encodeBase64String(b);
+		return java.util.Base64.getEncoder().encodeToString(b);
 	}
 
 	public static byte[] decodeBase64(final String base64Str) {

@@ -62,6 +62,10 @@ public enum ErrorCode {
 
 	FILE_ANALYSIS_SIZE("LVT-6001", "File size measurement failed."),
 
+	ML_ANALYSIS_BODY_ERROR("LVT-7001", "Internal Server Error"),
+	ML_ANALYSIS_ATTACH_ERROR("LVT-7002", "Internal Server Error"),
+	ML_ANALYSIS_ERROR("LVT-7999", "ML Analysis Failed"),
+
 	UNKNOWN_ERROR("LVT-9999", "Unknown error");
 
 	private final String code;
@@ -72,14 +76,14 @@ public enum ErrorCode {
 		this.messageTemplate = messageTemplate;
 	}
 
-	public static ErrorCode fromCode(ErrorCode code) {
-		if (code == null) return UNKNOWN_ERROR;
+	public static String fromCode(ErrorCode code) {
+		if (code == null) return UNKNOWN_ERROR.getCode();
 		String codeVal = code.getCode();
 		for (ErrorCode e : values()) {
 			if (e.code.equalsIgnoreCase(codeVal)) {
-				return e;
+				return e.getCode();
 			}
 		}
-		return UNKNOWN_ERROR;
+		return UNKNOWN_ERROR.getCode();
 	}
 }

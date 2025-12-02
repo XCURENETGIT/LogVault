@@ -118,16 +118,22 @@ public class Config {
 	@Value("${ocr.api.url:http://10.200.10.49:62975/sdk/ocr}") //OCR Rest API URL
 	private String ocrApiUrl;
 
+	@Value("${ocr.api.local.url:http://10.100.20.209:8001/v1/chat/completions}") //OCR LOCAL Rest API URL
+	private String ocrApiLocalUrl;
+
+	@Value("${ocr.api.local.model:/models/allenai/olmOCR-2-7B-1025-FP8}") //OCR LOCAL Model
+	private String ocrApiLocalModel;
+
 	@Value("${ocr.api.key:SNOCR-834be64b6228442cac181eb08d84e56c}") //OCR Rest API KEY
 	private String ocrApiKey;
 
-	@Value("${ocr.api.timeout:60000}") //OCR Rest API KEY
-	private int ocrTimeout;
+	@Value("${ocr.api.timeout:600}") //OCR Rest API KEY
+	private int ocrTimeoutSec;
 
 	@Value("${ocr.target.ext:tiff,tif,png,gif,jpg,jpeg,bmp,pcx,dcx,jb2,jfif,jp2,jpc,j2k,pdf}") //OCR 대상 확장자
 	private String ocrTargetExt;
 
-	@Value("${ocr.limit.size:10485760}") //OCR 파일 사이즈 LIMIT (default 10MB)
+	@Value("${ocr.limit.size:20485760}") //OCR 파일 사이즈 LIMIT (default 20MB)
 	private int ocrLimitSize;
 
 	public Set<String> getOcrTargetExt() {
@@ -141,6 +147,27 @@ public class Config {
 	public Set<String> getIgnoreExtractorExt() {
 		return new HashSet<>(Arrays.asList(ignoreExtractorExt.split(",")));
 	}
+
+	@Value("${ml.api.enable:true}") //ML Rest API ENABLE
+	private boolean mlApiEnable;
+
+	@Value("${ml.api.url:http://10.200.10.50:15000/api/data-analyze}") //ML Rest API URL
+	private String mlApiUrl;
+
+	@Value("${ml.api.timeout:600}") //ML Rest API TimeOut
+	private int mlTimeoutSec;
+
+	@Value("${ml.api.code.split.code_split_threshold:10}") //ML Rest API TimeOut
+	private int mlCodeSplitThreshold;
+
+	@Value("${ml.api.codeline.exist.threshold:3}") //ML Rest API TimeOut
+	private int mlCodelineExistThreshold;
+
+	@Value("${ml.api.detect.model.dir:251114_epochs1_ebed512-ch31}") //ML Rest API TimeOut
+	private String mlDetectModelDir;
+
+	@Value("${ml.api.text.limit:200000}") //ML TEXT LIMIT
+	private int mlApiTextLimit;
 
 	@Value("${temp.path:/tmp}") //임시 저장 경로
 	private String tempPath;

@@ -273,6 +273,11 @@
 			<artifactId>bson</artifactId>
 			<version>4.11.1</version>
 		</dependency>
+		<dependency>
+			<groupId>com.gliwka.hyperscan</groupId>
+			<artifactId>hyperscan</artifactId>
+			<version>5.4.11-3.1.0</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>

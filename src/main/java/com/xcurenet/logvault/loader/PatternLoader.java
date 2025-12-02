@@ -1,7 +1,6 @@
 package com.xcurenet.logvault.loader;
 
 import com.xcurenet.common.regex.DetectOptions;
-import com.xcurenet.common.regex.PatternDetector;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.logvault.loader.mapper.InfoLoaderMapper;
 import com.xcurenet.logvault.loader.type.PatternInfo;
@@ -26,7 +25,7 @@ import java.util.regex.Pattern;
 public class PatternLoader {
 
 	private static final AtomicReference<Map<String, Integer>> DETECT_CODE_MAP_REF = new AtomicReference<>();
-	private static final AtomicReference<PatternDetector> USER_CODE_MAP_REF = new AtomicReference<>();
+	//private static final AtomicReference<PatternDetector> USER_CODE_MAP_REF = new AtomicReference<>();
 
 	private final InfoLoaderMapper mapper;
 
@@ -49,15 +48,11 @@ public class PatternLoader {
 			}
 		}
 		DETECT_CODE_MAP_REF.set(Collections.unmodifiableMap(fresh));
-		USER_CODE_MAP_REF.set(new PatternDetector(user));
+		//USER_CODE_MAP_REF.set(new PatternDetector(user));
 	}
 
 	public static Map<String, Integer> getDetectCodeMap() {
 		return DETECT_CODE_MAP_REF.get();
-	}
-
-	public static PatternDetector getUserCodeMap() {
-		return USER_CODE_MAP_REF.get();
 	}
 
 	public static boolean isDetectCode(String code) {

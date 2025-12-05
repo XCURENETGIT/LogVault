@@ -36,8 +36,8 @@ public class UserAgentAnalysis {
 			HttpHeaderUtil.HttpHeader.HttpRequestHeader request = httpHeader.getRequestHeader();
 			HttpHeaderUtil.HttpHeader.HttpResponseHeader response = httpHeader.getResponseHeader();
 
-			EmassDoc.Header.RequestHeader requestHeader = EmassDoc.Header.RequestHeader.builder().method(request.getMethod()).protocol(request.getProtocol()).origin(request.getHeaders().get("origin")).build();
-			EmassDoc.Header.ResponseHeader responseHeader = EmassDoc.Header.ResponseHeader.builder().date(getHeaderDate(response)).contentType(response.getHeaders().get("content-type")).build();
+			EmassDoc.Header.RequestHeader requestHeader = EmassDoc.Header.RequestHeader.builder().method(request.getMethod()).protocol(request.getProtocol()).origin(getOrigin(request)).build();
+			EmassDoc.Header.ResponseHeader responseHeader = EmassDoc.Header.ResponseHeader.builder().date(getHeaderDate(response)).contentType(getContentType(response)).build();
 			scanData.getEmassDoc().getHttp().setHeader(EmassDoc.Header.builder().request(requestHeader).response(responseHeader).build());
 
 			Client client = httpHeader.getClient();
@@ -57,7 +57,18 @@ public class UserAgentAnalysis {
 
 	}
 
+	private String getOrigin(final HttpHeaderUtil.HttpHeader.HttpRequestHeader request) {
+		if (request.getHeaders() == null) return null;
+		return request.getHeaders().get("origin");
+	}
+
 	private String getHeaderDate(final HttpHeaderUtil.HttpHeader.HttpResponseHeader response) {
+		if (response.getHeaders() == null) return null;
 		return response.getHeaders().get("date");
+	}
+
+	private String getContentType(final HttpHeaderUtil.HttpHeader.HttpResponseHeader response) {
+		if (response.getHeaders() == null) return null;
+		return response.getHeaders().get("content-type");
 	}
 }

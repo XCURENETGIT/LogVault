@@ -658,6 +658,12 @@ public final class Common {
 		return java.util.Base64.getEncoder().encodeToString(b);
 	}
 
+	public static String base64(File file) throws IOException {
+		if (file == null || !file.isFile()) return null;
+		byte[] fileContent = Files.readAllBytes(file.toPath());
+		return java.util.Base64.getEncoder().encodeToString(fileContent);
+	}
+
 	public static byte[] decodeBase64(final String base64Str) {
 		return Base64.decodeBase64(base64Str);
 	}

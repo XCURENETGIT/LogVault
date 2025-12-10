@@ -64,7 +64,7 @@ public class TaskService {
 					ocrTargetCount++;
 				}
 			}
-			log.info("OCRREADY | CNT:{} | {}", ocrTargetCount, DateUtils.stop(sw));
+			if (ocrTargetCount > 0) log.info("OCRREADY | CNT:{} | {}", ocrTargetCount, DateUtils.stop(sw));
 			return ocrTargetCount > 0;
 		} catch (Exception e) {
 			log.warn("OCRREADY | {}", e.getMessage());

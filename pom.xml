@@ -152,7 +152,7 @@
 		<dependency>
 			<groupId>io.minio</groupId>
 			<artifactId>minio</artifactId>
-			<version>8.5.17</version>
+			<version>8.6.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.squareup.okhttp3</groupId>
@@ -187,7 +187,7 @@
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
-			<version>4.2.1.Final</version>
+			<version>4.2.5.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -278,6 +278,70 @@
 			<artifactId>hyperscan</artifactId>
 			<version>5.4.11-3.1.0</version>
 		</dependency>
+		<dependency>
+			<groupId>net.sf.sevenzipjbinding</groupId>
+			<artifactId>sevenzipjbinding</artifactId>
+			<version>16.02-2.01</version>
+		</dependency>
+		<dependency>
+			<groupId>net.sf.sevenzipjbinding</groupId>
+			<artifactId>sevenzipjbinding-all-platforms</artifactId>
+			<version>16.02-2.01</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.junrar</groupId>
+			<artifactId>junrar</artifactId>
+			<version>7.5.5</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.tika</groupId>
+			<artifactId>tika-core</artifactId>
+			<version>3.2.2</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>slf4j-api</artifactId>
+					<groupId>org.slf4j</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>5.4.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>5.4.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml-schemas</artifactId>
+			<version>4.1.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-scratchpad</artifactId>
+			<version>5.4.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.odftoolkit</groupId>
+			<artifactId>odfdom-java</artifactId>
+			<version>0.12.0</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>slf4j-api</artifactId>
+					<groupId>org.slf4j</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>slf4j-simple</artifactId>
+					<groupId>org.slf4j</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>
@@ -339,6 +403,7 @@
 								<copy file="${project.basedir}\target\${project.artifactId}-${project.version}.war" tofile="${project.basedir}\target\dist\lib\${program.name}-${project.version}.war" />
 								<copy file="${project.basedir}\target\classes\application.properties" tofile="${project.basedir}\target\dist\conf\application.properties" />
 								<copy file="${project.basedir}\target\classes\logback-spring.xml" tofile="${project.basedir}\target\dist\conf\logback-spring.xml" />
+								<copy file="${project.basedir}\target\classes\extension.properties" tofile="${project.basedir}\target\dist\conf\extension.properties" />
 
 								<echo message=""/>
 								<echo message="Step 3. Remove remote old files"/>
@@ -359,6 +424,8 @@
 								<echo message="Step 5. RPM privilege setting"/>
 								<sshexec host="${host}" username="${user}" password="${password}" command="chmod 755 ${binary-dir}/${program.name}-skel${copy-dir}/bin/${program.name}" trust="yes" verbose="false"/>
 								<sshexec host="${host}" username="${user}" password="${password}" command="chmod 755 ${binary-dir}/${program.name}-skel${copy-dir}/bin/tool.sh" trust="yes" verbose="false"/>
+								<sshexec host="${host}" username="${user}" password="${password}" command="chmod 755 ${binary-dir}/${program.name}-skel${copy-dir}/lib/xutf_8" trust="yes" verbose="false"/>
+								<sshexec host="${host}" username="${user}" password="${password}" command="chmod 755 ${binary-dir}/${program.name}-skel${copy-dir}/lib/xutf_8_ext" trust="yes" verbose="false"/>
 
 								<sshexec host="${host}" username="${user}" password="${password}" command="chmod 755 ${binary-dir}/${program.name}-skel/etc/init.d/${program.name}" trust="yes" verbose="false"/>
 								<sshexec host="${host}" username="${user}" password="${password}" command="chmod 755 ${binary-dir}/rpmwand" trust="yes" verbose="false"/>

@@ -102,11 +102,12 @@ public abstract class AbstractWorker implements Runnable {
 					int retryCnt = 1;
 					while (retryCnt <= 3) {
 						try {
-							insaMapping(data);
-							transToBody(data);
-							transToAttach(data);
-							transToAttachEmbedded(data);
-							index(data);
+							insaMapping(data);              // 인사정보 연동
+							roomId(data);                   // 생성형AI 룸 번호 생성 (서비스 IAS_사용자 아이디 OR SRC_IP  BASE64)
+							transToBody(data);              // 본문 전송 (프롬프트 내용)
+							transToAttach(data);            // 첨부파일 전송
+							transToAttachEmbedded(data);    // 첨부내 객체 전송
+							index(data);                    // 색인
 							success = true;
 							break;
 						} catch (final FileSendException | IndexerException | InsaMappingException e) {
@@ -200,6 +201,8 @@ public abstract class AbstractWorker implements Runnable {
 
 	protected abstract void insaMapping(ScanData data);
 
+	protected abstract void roomId(ScanData data);
+
 	/**
 	 * 첨부파일 전송 (NIO 기반)
 	 */
@@ -267,9 +270,8 @@ public abstract class AbstractWorker implements Runnable {
 		Path srcPath = Paths.get(conf.getPath(msg.getMsgFile()));
 		if (!Files.exists(srcPath)) return;
 
-		String destStr = conf.getDestPath(msg.getCtime(), msg.getMsgid(), msg.getMsgid() + ".body");
+		String destStr = conf.getDestPath(msg.getCtime(), msg.getMsgid(), msg.getMsgFile());
 		Path destPath = Paths.get(destStr);
-
 		try {
 			if (fileSystem.exists(destStr)) {
 				log.info("BDY_SKIP | {} already exists. Skipping copy.", conf.getDestPathSmall(destStr));

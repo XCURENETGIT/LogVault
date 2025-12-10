@@ -1,5 +1,7 @@
 package com.xcurenet.logvault.module.analysis;
 
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
 import com.xcurenet.common.regex.MatchResult;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
@@ -11,8 +13,10 @@ import com.xcurenet.logvault.opensearch.EmassDoc;
 import com.xcurenet.logvault.privacy.PrivacyPattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
+import org.springframework.web.client.RestClient;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -26,6 +30,7 @@ import java.util.Map;
 public class PrivacyAnalysis {
 	private final PrivacyPattern pattern;
 	private final Config conf;
+	private final RestClient restClient;
 
 	public void detect(final ScanData scanData) {
 		if (scanData == null || scanData.getEmassDoc() == null) return;
@@ -66,16 +71,20 @@ public class PrivacyAnalysis {
 		Map<String, List<MatchResult>> api = pattern.scan(text);
 		log.debug("REG_DATA | {}", api);
 		if (api != null) {
-			for (String key : api.keySet()) {
-				List<MatchResult> arr = api.get(key);
-				if (arr == null || arr.isEmpty()) continue;
+			if (!api.isEmpty()) {
+				if (verify(text)) {
+					for (String key : api.keySet()) {
+						List<MatchResult> arr = api.get(key);
+						if (arr == null || arr.isEmpty()) continue;
 
-				EmassDoc.PrivacyInfo info = toPrivacyInfo(key, type, attachName, arr, /*enforceDetectCode=*/true);
-				if (info == null) continue;
+						EmassDoc.PrivacyInfo info = toPrivacyInfo(key, type, attachName, arr, /*enforceDetectCode=*/true);
+						if (info == null) continue;
 
-				bucket.add(info);
-				added += info.getCount();
-				sb.append(key).append(":").append(info.getCount()).append(" ");
+						bucket.add(info);
+						added += info.getCount();
+						sb.append(key).append(":").append(info.getCount()).append(" ");
+					}
+				}
 			}
 		} else log.warn("REG_DATA | DATA IS NULL");
 
@@ -99,7 +108,8 @@ public class PrivacyAnalysis {
 			if (it == null || it.matchString() == null) continue;
 
 			String matchString = it.matchString();
-			if (enforceDetectCode) matchString = encString(matchString.getBytes(StandardCharsets.UTF_8)); //개인 정보 탐지 텍스트는 암호화 처리
+			if (enforceDetectCode)
+				matchString = encString(matchString.getBytes(StandardCharsets.UTF_8)); //개인 정보 탐지 텍스트는 암호화 처리
 			items.add(matchString);
 		}
 		if (items.isEmpty()) return null;
@@ -132,5 +142,44 @@ public class PrivacyAnalysis {
 			log.warn("ENC_ERROR | {}", e.getMessage(), e);
 		}
 		return null;
+	}
+
+
+	private boolean verify(final String text) {
+		if (!conf.isMlPrivacyApiEnable()) return true;
+
+		JSONArray candidates = new JSONArray();
+		JSONObject obj = new JSONObject();
+		obj.put("category", "string");
+		obj.put("matched_text", "string");
+		obj.put("start_pos", 0);
+		obj.put("end_pos", 0);
+		candidates.add(obj);
+
+		JSONObject body = new JSONObject();
+		body.put("text", text);
+		body.put("candidates", candidates);
+		body.put("context_window", 100);
+
+		int maxRetries = 3;
+		int attempt = 0;
+		while (attempt < maxRetries) {
+
+			StopWatch sw = DateUtils.start();
+			try {
+				attempt++;
+				JSONObject rs = restClient.post().uri(conf.getMlPrivacyApiUrl()).contentType(MediaType.APPLICATION_JSON).body(body).retrieve().body(JSONObject.class);
+				if (rs != null) {
+					log.debug("ML_PII | text.length:{}, {} | {}", text.length(), rs, DateUtils.stop(sw));
+					JSONArray results = rs.getJSONArray("results");
+					JSONObject object = results.getJSONObject(0);
+					return object.getBoolean("is_pii");
+				}
+			} catch (Exception e) {
+				log.warn("ML_PII | ({}/{}) | {} | {} | {}", attempt, maxRetries, text.length(), DateUtils.stop(sw), e.getMessage());
+				if (attempt < maxRetries) Common.sleep(1000);
+			}
+		}
+		return false;
 	}
 }

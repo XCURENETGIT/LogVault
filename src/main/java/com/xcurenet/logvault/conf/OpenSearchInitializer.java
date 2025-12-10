@@ -25,6 +25,9 @@ public class OpenSearchInitializer {
 	private static final String TEMPLATE_NAME = "emass-template";
 	private static final String TEMPLATE_PATH = "opensearch/emass-template.json";
 
+	private static final String ROOM_TEMPLATE_NAME = "aegis-room-template";
+	private static final String ROOM_TEMPLATE_PATH = "opensearch/aegis-room-template.json";
+
 
 	public void init() throws IOException {
 		StopWatch sw = DateUtils.start();
@@ -36,10 +39,17 @@ public class OpenSearchInitializer {
 			Common.sleep(2000);
 		}
 
-		if (existsTemplate())
+		if (existsTemplate(OpenSearchInitializer.ROOM_TEMPLATE_NAME))
+			log.info("CONF_OPENSEARCH | INDEX TEMPLATE [{}] already exists. Skipping creation.", OpenSearchInitializer.ROOM_TEMPLATE_NAME);
+		else {
+			createTemplate(loadJson(OpenSearchInitializer.ROOM_TEMPLATE_PATH), OpenSearchInitializer.ROOM_TEMPLATE_NAME);
+			Common.sleep(2000);
+		}
+
+		if (existsTemplate(OpenSearchInitializer.TEMPLATE_NAME))
 			log.info("CONF_OPENSEARCH | INDEX TEMPLATE [{}] already exists. Skipping creation.", OpenSearchInitializer.TEMPLATE_NAME);
 		else {
-			createTemplate(loadJson(OpenSearchInitializer.TEMPLATE_PATH));
+			createTemplate(loadJson(OpenSearchInitializer.TEMPLATE_PATH), OpenSearchInitializer.TEMPLATE_NAME);
 			Common.sleep(2000);
 		}
 		log.info("INIT_OPENSEARCH | END | {}\n", DateUtils.stop(sw));
@@ -48,9 +58,9 @@ public class OpenSearchInitializer {
 	/**
 	 * 템플릿 존재 여부
 	 */
-	private boolean existsTemplate() throws IOException {
+	private boolean existsTemplate(final String name) throws IOException {
 		RestClient lowClient = client.getLowLevelClient();
-		Request request = new Request("GET", "/_index_template/" + OpenSearchInitializer.TEMPLATE_NAME);
+		Request request = new Request("GET", "/_index_template/" + name);
 		try {
 			Response response = lowClient.performRequest(request);
 			return response.getStatusLine().getStatusCode() == 200;
@@ -63,11 +73,11 @@ public class OpenSearchInitializer {
 	/**
 	 * 템플릿 생성
 	 */
-	private void createTemplate(String json) throws IOException {
-		Request request = new Request("PUT", "/_index_template/" + OpenSearchInitializer.TEMPLATE_NAME);
+	private void createTemplate(final String json, final String name) throws IOException {
+		Request request = new Request("PUT", "/_index_template/" + name);
 		request.setJsonEntity(json);
 		Response response = client.getLowLevelClient().performRequest(request);
-		log.info("CONF_OPENSEARCH | INDEX TEMPLATE [{}] created. Response: {}", OpenSearchInitializer.TEMPLATE_NAME, response.getStatusLine());
+		log.info("CONF_OPENSEARCH | INDEX TEMPLATE [{}] created. Response: {}", name, response.getStatusLine());
 	}
 
 	/**

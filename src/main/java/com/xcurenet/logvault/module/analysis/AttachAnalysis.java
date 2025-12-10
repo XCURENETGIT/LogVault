@@ -1,8 +1,12 @@
 package com.xcurenet.logvault.module.analysis;
 
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
 import com.xcurenet.common.error.ErrorCode;
+import com.xcurenet.common.fileanalysis.service.FileService;
+import com.xcurenet.common.fileanalysis.service.TextInfoVO;
+import com.xcurenet.common.fileanalysis.service.extension.excel.SheetDetector;
+import com.xcurenet.common.fileanalysis.service.option.Options;
+import com.xcurenet.common.fileanalysis.service.option.PathOptions;
+import com.xcurenet.common.fileanalysis.service.text.TextFilter;
 import com.xcurenet.common.msg.MSGData;
 import com.xcurenet.common.thumbnail.FileThumbnail;
 import com.xcurenet.common.utils.Common;
@@ -12,14 +16,13 @@ import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.StopWatch;
-import org.springframework.web.client.RestClient;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,30 +36,36 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 public class AttachAnalysis {
-	private final RestClient restClient;
 	private final Config conf;
 	private final FileThumbnail fileThumbnail;
+	private final FileService fileService;
 
-	private JSONObject getText(final String msgId, final String filePath, final String fileName) {
-		LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-		body.add("msgId", msgId);
-		body.add("filePath", filePath);
-		body.add("fileName", fileName);
-		body.add("extractImage", conf.isExtractImage());
-		body.add("checkArchiveImage", conf.isExtractImage());
-		body.add("checkArchiveDepth", conf.getDecompressDepth());
-		body.add("checkExcelHiddenSheet", conf.isCheckExcelHiddenSheet());
+	private String imageDir(Options options) {
+		String imgPath = null;
+		try {
+			imgPath = Common.makeFilepath(conf.getMemoryDiskPath(), options.getMsgId(), TextFilter.IMG_DIR);
+			FileUtils.forceMkdir(new File(Objects.requireNonNull(imgPath)));
+		} catch (Exception e) {
+			log.warn("[MKDIR] ", e);
+		}
+		return imgPath;
+	}
 
-		int maxRetries = 3;
-		int attempt = 0;
-		while (attempt < maxRetries) {
-			try {
-				attempt++;
-				return restClient.post().uri(conf.getFileAnalysisUrl()).contentType(MediaType.MULTIPART_FORM_DATA).body(body).retrieve().body(JSONObject.class);
-			} catch (Exception e) {
-				log.warn("GET_TEXT | {} | ({}/{}) | {}", filePath, attempt, maxRetries, e.getMessage());
-				if (attempt < maxRetries) Common.sleep(1000);
-			}
+	private TextInfoVO getText(final String msgId, final String filePath, final String fileName) {
+		PathOptions options = new PathOptions();
+		options.setMsgId(msgId);
+		options.setFilePath(filePath);
+		options.setFileName(fileName);
+		options.setImagePath(imageDir(options));
+		options.setExtractImage(conf.isExtractImage());
+		options.setCheckArchiveImage(conf.isExtractImage());
+		options.setCheckArchiveDepth(conf.getDecompressDepth());
+		options.setCheckExcelHiddenSheet(conf.isCheckExcelHiddenSheet());
+
+		try {
+			return fileService.processText(options.getFilePath(), options.getFileName(), options, false);
+		} catch (Exception e) {
+			log.warn("GET_TEXT | {}", filePath, e);
 		}
 		return null;
 	}
@@ -78,51 +87,48 @@ public class AttachAnalysis {
 			}
 
 			StopWatch sw = DateUtils.start();
-			JSONObject text = getText(doc.getMsgid(), attach.getSrcPath(), attach.getName());
-			if (text != null && text.getBoolean("success")) {
-				JSONObject data = text.getJSONObject("data");
-				String limitText = Common.limitLength(data.getString("text"), conf.getTextLimitLength());
+			TextInfoVO data = getText(doc.getMsgid(), attach.getSrcPath(), attach.getName());
+			if (data != null) {
+				String limitText = Common.limitLength(data.getText(), conf.getTextLimitLength());
 				limitText = Common.limitTokenLengthWithSpace(limitText, conf.getTextLimitToken()); // 텍스트 추출 후 최대 사이즈 제한까지 등록
 
 				attach.setText(limitText);
-				attach.setExpectedExtension(data.getString("extension"));       // 예상 확장자
-				attach.setExpectedUnknown(data.getBoolean("unknownType"));      // 알수없는 확장자
-				attach.setChangeExtension(data.getBoolean("changeExtension"));  // 확장자 변경 유무
-				attach.setEncrypted(data.getBoolean("encrypted"));              // 암호화 유무
-				setExcelHiddenSheet(attach, data);                                  // 엑셀 히드시트 정보 추가
+				attach.setExpectedExtension(data.getExtension());       // 예상 확장자
+				attach.setExpectedUnknown(data.isUnknownType());      // 알수없는 확장자
+				attach.setChangeExtension(data.isChangeExtension());  // 확장자 변경 유무
+				attach.setEncrypted(data.isEncrypted());              // 암호화 유무
+				setExcelHiddenSheet(attach, data);                    // 엑셀 히드시트 정보 추가
 
-				setEmbeddedImage(doc, msg.getMsgData(), attach, data);              // 파일내 이미지 추출 정보
-				setOCRTarget(doc, attach);                                          // OCR 대상 설정
+				setEmbeddedImage(doc, msg.getMsgData(), attach, data); // 파일내 이미지 추출 정보
+				setOCRTarget(doc, attach);                             // OCR 대상 설정
 
-				log.info("ATT_TEXT | {} | RESULT:{} | TXT_LEN:{} | {}", conf.getDataPathSmall(attach.getSrcPath()), text.get("success"), Common.nvl(attach.getText()).length(), DateUtils.stop(sw));
+				log.info("ATT_TEXT | {} | TXT_LEN:{} | {}", conf.getDataPathSmall(attach.getSrcPath()), Common.nvl(attach.getText()).length(), DateUtils.stop(sw));
 			} else {
-				log.warn("ATT_TEXT | {} | {} | TXT_LEN:{} | {}", conf.getDataPathSmall(attach.getSrcPath()), text, Common.nvl(attach.getText()).length(), DateUtils.stop(sw));
+				log.warn("ATT_TEXT | {} | TXT_LEN:{} | {}", conf.getDataPathSmall(attach.getSrcPath()), Common.nvl(attach.getText()).length(), DateUtils.stop(sw));
 			}
 		}
 	}
 
 	// 파일내 이미지 추출 정보
-	private void setEmbeddedImage(EmassDoc doc, MSGData msgData, EmassDoc.Attach attach, JSONObject data) {
+	private void setEmbeddedImage(EmassDoc doc, MSGData msgData, EmassDoc.Attach attach, TextInfoVO data) {
 		try {
-			if (data.get("imagesCount") != null && data.get("embeddedImage") != null && data.getInteger("imagesCount") > 0) {
-				JSONArray array = data.getJSONArray("embeddedImage");
+			if (data.getEmbeddedImage() != null && data.getImagesCount() > 0) {
+				List<TextInfoVO.EmbeddedImage> array = data.getEmbeddedImage();
 				List<String> embeddedFiles = msgData.getEmbeddedFile();
 				List<EmassDoc.ImageExtractorInfo> imageExtractorInfos = new ArrayList<>();
-				for (int i = 0; i < array.size(); i++) {
-					JSONObject embedded = array.getJSONObject(i);
-					String base64 = embedded.getString("base64");
-					if (base64 == null) continue;
+				for (TextInfoVO.EmbeddedImage embedded : array) {
+					if (embedded.getBase64() == null) continue;
 
-					String ext = FilenameUtils.getExtension(embedded.getString("name"));
-					String name = Common.makeMD5Hex(Paths.get(attach.getSrcPath()).getFileName().toString(), embedded.getString("name")) + "." + ext; //첨부이름 + 이미지 이름 MD5
+					String ext = FilenameUtils.getExtension(embedded.getName());
+					String name = Common.makeMD5Hex(Paths.get(attach.getSrcPath()).getFileName().toString(), embedded.getName()) + "." + ext; //첨부이름 + 이미지 이름 MD5
 					String srcPath = Common.makeFilepath(Paths.get(attach.getSrcPath()).getParent().toString(), name); //임시 SRC 저장 위치
 					String dest = conf.getDestPath(msgData.getCtime(), msgData.getMsgid(), name); //최종 저장 위치
-					Files.write(Path.of(Objects.requireNonNull(srcPath)), Common.decodeBase64(base64), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+					Files.write(Path.of(Objects.requireNonNull(srcPath)), Common.decodeBase64(embedded.getBase64()), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
 					embeddedFiles.add(srcPath);
 
-					log.info("OLE__IMG | {} | {}", embedded.getString("name"), Common.getBase64Size(base64));
-					imageExtractorInfos.add(EmassDoc.ImageExtractorInfo.builder().name(embedded.getString("name")).path(dest).build());
+					log.info("OLE__IMG | {} | {}", embedded.getName(), Common.getBase64Size(embedded.getBase64()));
+					imageExtractorInfos.add(EmassDoc.ImageExtractorInfo.builder().name(embedded.getName()).path(dest).build());
 				}
 				msgData.setEmbeddedFile(embeddedFiles); //파일 전송을 위한 저장
 				attach.setImageExtractorInfo(imageExtractorInfos);
@@ -152,14 +158,14 @@ public class AttachAnalysis {
 	}
 
 	// 엑셀 Hidden Sheet 정보
-	private void setExcelHiddenSheet(EmassDoc.Attach attach, JSONObject data) {
+	private void setExcelHiddenSheet(EmassDoc.Attach attach, TextInfoVO data) {
 		try {
-			if (data.get("sheetInfo") != null) {
-				JSONObject sheet = data.getJSONObject("sheetInfo");
+			if (data.getSheetInfo() != null) {
+				SheetDetector.SheetInfo sheet = data.getSheetInfo();
 				EmassDoc.SheetInfo sheetInfo = new EmassDoc.SheetInfo();
-				sheetInfo.setSheetTotal(sheet.getInteger("sheetTotal"));
-				sheetInfo.setSheetHiddenTotal(sheet.getInteger("sheetHiddenTotal"));
-				sheetInfo.setHiddenSheetNames(sheet.getJSONArray("hiddenSheetNames").toJavaList(String.class));
+				sheetInfo.setSheetTotal(sheet.getSheetTotal());
+				sheetInfo.setSheetHiddenTotal(sheet.getSheetHiddenTotal());
+				sheetInfo.setHiddenSheetNames(sheet.getHiddenSheetNames());
 				attach.setSheetInfo(sheetInfo);
 			}
 		} catch (Exception e) {
@@ -214,4 +220,29 @@ public class AttachAnalysis {
 		String formatted = DurationFormatUtils.formatDuration(sw.getTotalTimeMillis(), "s.SSS's'");
 		System.out.println(formatted);
 	}
+
+//
+//	private JSONObject getText(final String msgId, final String filePath, final String fileName) {
+//		LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+//		body.add("msgId", msgId);
+//		body.add("filePath", filePath);
+//		body.add("fileName", fileName);
+//		body.add("extractImage", conf.isExtractImage());
+//		body.add("checkArchiveImage", conf.isExtractImage());
+//		body.add("checkArchiveDepth", conf.getDecompressDepth());
+//		body.add("checkExcelHiddenSheet", conf.isCheckExcelHiddenSheet());
+//
+//		int maxRetries = 3;
+//		int attempt = 0;
+//		while (attempt < maxRetries) {
+//			try {
+//				attempt++;
+//				return restClient.post().uri(conf.getFileAnalysisUrl()).contentType(MediaType.MULTIPART_FORM_DATA).body(body).retrieve().body(JSONObject.class);
+//			} catch (Exception e) {
+//				log.warn("GET_TEXT | {} | ({}/{}) | {}", filePath, attempt, maxRetries, e.getMessage());
+//				if (attempt < maxRetries) Common.sleep(1000);
+//			}
+//		}
+//		return null;
+//	}
 }

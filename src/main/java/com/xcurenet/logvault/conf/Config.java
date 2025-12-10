@@ -54,6 +54,15 @@ public class Config {
 	@Value("${spring.profiles.active:prod}")
 	private String activeProfile;
 
+	@Value("${memory.disk.path:/dev/shm/file/}")
+	private String memoryDiskPath;
+
+	@Value("${xutf8.path:/users/logvault/lib/xutf_8}")
+	private String xutf8Path;
+
+	@Value("${xutf8.ext.path:/users/logvault/lib/xutf_8_ext}")
+	private String xutf8ExtPath;
+
 	@Value("${spring.opensearch.rest.uris}")
 	private String opensearchRestUris;
 
@@ -148,10 +157,16 @@ public class Config {
 		return new HashSet<>(Arrays.asList(ignoreExtractorExt.split(",")));
 	}
 
+	@Value("${ml.privacy.api.enable:true}") //ML Privacy Rest API ENABLE
+	private boolean mlPrivacyApiEnable;
+
+	@Value("${ml.privacy.api.url:http://127.0.0.1:8005/verify}") //ML Privacy Rest API URL
+	private String mlPrivacyApiUrl;
+
 	@Value("${ml.api.enable:true}") //ML Rest API ENABLE
 	private boolean mlApiEnable;
 
-	@Value("${ml.api.url:http://10.200.10.50:15000/api/data-analyze}") //ML Rest API URL
+	@Value("${ml.api.url:http://127.0.0.1:15000/api/data-analyze}") //ML Rest API URL
 	private String mlApiUrl;
 
 	@Value("${ml.api.timeout:600}") //ML Rest API TimeOut
@@ -201,6 +216,9 @@ public class Config {
 
 	@Value("${spring.opensearch.index.name:emass-}")
 	private String indexName;
+
+	@Value("${spring.opensearch.index.room.name:aegis-room}")
+	private String indexRoomName;
 
 	//	암호화 관련 설정
 	@Value("${encrypt.enable:true}") //본문, 첨부 암호화 저장 여부 - 운영중 설정 변경 불가 (재시작필요)

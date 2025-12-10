@@ -18,6 +18,9 @@ public class EmassDoc {
 	@Field("msgid")
 	private String msgid;
 
+	@Field("room_id")
+	private String roomId;
+
 	@Field("root_mtr")
 	private String rootMtr;
 

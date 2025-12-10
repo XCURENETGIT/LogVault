@@ -15,14 +15,18 @@ import com.xcurenet.logvault.exception.InsaMappingException;
 import com.xcurenet.logvault.exception.ParsingException;
 import com.xcurenet.logvault.loader.type.UserInfo;
 import com.xcurenet.logvault.module.ScanData;
+import com.xcurenet.logvault.opensearch.AegisRoomDoc;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationContext;
+import org.springframework.data.elasticsearch.NoSuchIndexException;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -100,11 +104,23 @@ public class MSGWorker extends AbstractWorker {
 				user.setJikgubCode(info.getJikgubCd());
 				user.setJikgubName(info.getJikgubNm());
 			}
-			data.getEmassDoc().setUser(user);
 		} catch (Exception e) {
 			//필수 srcip값이 있는 상황의 로직의 오류는 기본 처리는 하도록 한다.
 			log.warn("{} | {} | SRCIP={} err={}", ErrorCode.INSA_MAPPING_FAIL, ErrorCode.fromCode(ErrorCode.INSA_MAPPING_FAIL), data.getMsgData().getSourceIp(), e.toString(), e);
 		}
+		data.getEmassDoc().setUser(user);
+	}
+
+	@Override
+	protected void roomId(final ScanData data) {
+		EmassDoc doc = data.getEmassDoc();
+		if (Common.isNotEquals(doc.getService().getSvc1(), "I")) return;
+
+		String userId = doc.getUser() == null ? null : doc.getUser().getId();
+		if (userId == null) userId = doc.getNetwork().getSrcIp();
+
+		String roomId = Common.toBase64((doc.getService().getSvc12() + "_" + userId).getBytes(StandardCharsets.UTF_8));
+		doc.setRoomId(roomId);
 	}
 
 	@Override
@@ -112,6 +128,50 @@ public class MSGWorker extends AbstractWorker {
 		EmassDoc doc = data.getEmassDoc();
 		String index = conf.getIndexName() + doc.getCtime().substring(0, 8);
 		indexService.index(doc, index);
+
+		if (Common.isEquals(doc.getService().getSvc1(), "I")) { //생성형 AI 서비스만.
+			indexRoom(doc);
+		}
+	}
+
+	private void indexRoom(EmassDoc doc) {
+		AegisRoomDoc roomDoc = getRoom(doc.getRoomId());
+
+		AegisRoomDoc room = new AegisRoomDoc();
+		room.setRoomId(doc.getRoomId());
+		room.setSvc(doc.getService().getSvc12());
+
+		long recentCtime = roomDoc != null ? Common.nvn(roomDoc.getRecentCtime()) : 0;
+		if (recentCtime < Common.nvn(doc.getCtime())) { // 최근 데이터인 경우 신규 내용으로 업데이트
+			room.setUser(doc.getUser());
+			room.setRecentCtime(doc.getCtime());
+			room.setRecentMsgId(doc.getMsgid());
+
+			String message = doc.getBody() == null ? null : doc.getBody().getText();
+			if (Common.isEmpty(message) && doc.getAttachCount() > 0) {
+				message = "";
+				for (EmassDoc.Attach attach : doc.getAttach()) {
+					message = message.concat(attach.getName()).concat(" ");
+				}
+			}
+			room.setRecentMessage(message);
+		} else if (roomDoc != null) {  // 기존 데이터가 더 최근이라면 기존 값으로
+			room.setUser(roomDoc.getUser());
+			room.setRecentCtime(roomDoc.getRecentCtime());
+			room.setRecentMsgId(roomDoc.getRecentMsgId());
+			room.setRecentMessage(roomDoc.getRecentMessage());
+		}
+		indexService.index(room, conf.getIndexRoomName());
+	}
+
+	private AegisRoomDoc getRoom(final String roomId) {
+		AegisRoomDoc doc;
+		try {
+			doc = indexService.get(roomId, AegisRoomDoc.class, conf.getIndexRoomName());
+		} catch (NoSuchIndexException e) {
+			return null;
+		}
+		return doc;
 	}
 
 	@Override
@@ -150,7 +210,7 @@ public class MSGWorker extends AbstractWorker {
 		if (msg.getHost() == null) return;
 
 		EmassDoc.Http http = new EmassDoc.Http();
-		http.setUrl(String.join("", "https://", Common.nvl(msg.getHost()), Common.nvl(doc.getNetwork().getDstPort()), Common.nvl(msg.getUrl()), Common.nvl(msg.getQuery())));
+		http.setUrl(String.join("", "https://", Common.nvl(msg.getHost()), ":", Common.nvl(doc.getNetwork().getDstPort()), Common.nvl(msg.getUrl()), Common.nvl(msg.getQuery())));
 		doc.setHttp(http);
 	}
 

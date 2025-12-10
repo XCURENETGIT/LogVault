@@ -1,0 +1,95 @@
+{
+	"index_patterns": [
+		"aegis-room"
+	],
+	"priority": 9999999,
+	"template": {
+		"settings": {
+			"max_result_window": 5000,
+			"index.codec": "best_compression",
+			"index": {
+				"number_of_shards": 1,
+				"number_of_replicas": 0,
+				"codec": "best_compression",
+				"highlight": { "max_analyzed_offset": 2000000 },
+				"analysis": {
+					"filter": {
+						"prefix_edge_ngram_filter": {
+							"type": "edge_ngram",
+							"min_gram": 2,
+							"max_gram": 30
+						}
+					},
+					"analyzer": {
+						"index_analyzer": {
+							"tokenizer": "whitespace",
+							"filter": [
+								"lowercase",
+								"prefix_edge_ngram_filter"
+							]
+						},
+						"search_analyzer": {
+							"tokenizer": "whitespace",
+							"filter": [
+								"lowercase"
+							]
+						}
+					}
+				}
+			}
+		},
+		"mappings": {
+			"properties": {
+				"room_id" : {
+					"type": "keyword"
+				},
+				"recent_ctime": {
+					"type": "date",
+					"format": "yyyyMMddHHmmss"
+				},
+				"recent_msgid" : {
+					"type": "keyword"
+				},
+				"svc": {
+					"type": "keyword"
+				},
+				"recent_message" : {
+					"type": "text",
+					"analyzer": "index_analyzer",
+					"search_analyzer": "search_analyzer"
+				},
+				"user": {
+					"properties": {
+						"ip": {
+							"type": "ip"
+						},
+						"id": {
+							"type": "keyword"
+						},
+						"name": {
+							"type": "keyword"
+						},
+						"is_ceo": {
+							"type": "boolean"
+						},
+						"dept_code": {
+							"type": "keyword"
+						},
+						"dept_name": {
+							"type": "keyword"
+						},
+						"jikgub_code": {
+							"type": "keyword"
+						},
+						"jikgub_name": {
+							"type": "keyword"
+						}
+					}
+				}
+			}
+		},
+		"aliases": {
+			"room-emass": {}
+		}
+	}
+}

@@ -22,11 +22,15 @@ import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.util.StopWatch;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -141,8 +145,9 @@ public class OcrTaskProcessor implements TaskProcessor {
 		log.info("OCR_START | {} | {} | {}", attach.getExtension(), attach.getSize(), pathSmall);
 
 		try (InputStream in = fileProcessor.open(attach.getPath())) {
-			String base64Image = Base64.getEncoder().encodeToString(IOUtils.toByteArray(in));
-			String text = ocrTextLocal(base64Image);
+			String text = ocrTextLocalCPU(in, attach.getName());
+//			String base64Image = Base64.getEncoder().encodeToString(IOUtils.toByteArray(in));
+//			String text = ocrTextLocal(base64Image);
 
 			attach.setText(Common.nvl(attach.getText()) + "\n" + text);
 			attach.setOcrStatus(OCR_STATUS_SUCCESS);
@@ -185,8 +190,9 @@ public class OcrTaskProcessor implements TaskProcessor {
 		String pathSmall = conf.getDestPathSmall(attach.getPath());
 
 		try (InputStream in = fileProcessor.open(extractorInfo.getPath())) {
-			byte[] imageBytes = IOUtils.toByteArray(in);
-			String text = ocrTextLocal(Common.toBase64(imageBytes));
+			String text = ocrTextLocalCPU(in, extractorInfo.getName());
+			//byte[] imageBytes = IOUtils.toByteArray(in);
+			//String text = ocrTextLocal(Common.toBase64(imageBytes));
 
 			attach.setText(Common.nvl(attach.getText()) + "\n" + text); // 이미지가 여러 개이므로 append
 			attach.setOcrStatus(OCR_STATUS_SUCCESS); // 성공 상태 업데이트
@@ -248,6 +254,34 @@ public class OcrTaskProcessor implements TaskProcessor {
 
 			log.info("PPS_SEND | {} | Time: {}", TaskDispatcherService.TASK_TYPE.ML.name(), DateUtils.stop(sw1));
 		}
+	}
+
+	private String ocrTextLocalCPU(final InputStream in, final String fileName) throws IOException, RestClientException {
+		byte[] bytes = in.readAllBytes();
+		ByteArrayResource fileAsResource = new ByteArrayResource(bytes) {
+			@Override
+			public String getFilename() {
+				return fileName;
+			}
+		};
+
+		MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+		body.add("file", fileAsResource);
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+		headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+
+		HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+		ResponseEntity<String> resp = restTemplate.postForEntity(conf.getOcrApiLocalCpuUrl(), requestEntity, String.class);
+		if (!resp.getStatusCode().is2xxSuccessful()) {
+			throw new IOException("HTTP " + resp.getStatusCode() + " : " + resp.getBody());
+		}
+		JSONObject json = JSONObject.parseObject(resp.getBody());
+		if (json == null) {
+			throw new IOException("OCR API response format is invalid or empty.");
+		}
+		return json.getString("text");
 	}
 
 	/**

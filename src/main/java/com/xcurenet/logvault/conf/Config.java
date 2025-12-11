@@ -127,6 +127,9 @@ public class Config {
 	@Value("${ocr.api.url:http://10.200.10.49:62975/sdk/ocr}") //OCR Rest API URL
 	private String ocrApiUrl;
 
+	@Value("${ocr.api.local.cpu.url:http://10.100.20.209:8000/ocr}") //OCR LOCAL CPU Rest API URL
+	private String ocrApiLocalCpuUrl;
+
 	@Value("${ocr.api.local.url:http://10.100.20.209:8001/v1/chat/completions}") //OCR LOCAL Rest API URL
 	private String ocrApiLocalUrl;
 

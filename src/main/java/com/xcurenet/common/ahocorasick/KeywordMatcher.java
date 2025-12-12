@@ -138,7 +138,7 @@ public class KeywordMatcher implements Serializable {
 			List<String> tokens = e.getValue();
 
 			boolean allHit = true;
-			Integer minCountAcrossTokens = null;   // ★ 최소값으로 카운트
+			Integer minCountAcrossTokens = null;
 			for (String t : tokens) {
 				int c = tokenCounts.getOrDefault(normalize(t), 0);
 				if (c <= 0) {
@@ -149,7 +149,6 @@ public class KeywordMatcher implements Serializable {
 			}
 			if (allHit) {
 				int countForComplex = (minCountAcrossTokens == null) ? 0 : minCountAcrossTokens;
-				// ★ 복합 키워드 카운트 = 각 토큰 카운트의 최소값
 				result.put(complexKey, countForComplex);
 			}
 		}

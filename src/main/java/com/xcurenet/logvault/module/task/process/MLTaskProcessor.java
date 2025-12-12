@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.logvault.conf.Config;
+import com.xcurenet.logvault.module.alert.AlertService;
 import com.xcurenet.logvault.module.task.service.TaskDispatcherService;
 import com.xcurenet.logvault.module.task.service.TaskMessage;
 import com.xcurenet.logvault.module.task.service.TaskProcessor;
@@ -32,16 +33,15 @@ public class MLTaskProcessor implements TaskProcessor {
 	private final ObjectMapper mapper;
 	private final RestTemplate restTemplate;
 	protected final IndexService indexService;
+	private final AlertService alertService;
 
-	public MLTaskProcessor(Config conf, ObjectMapper mapper, @Qualifier("mlRestTemplate") RestTemplate restTemplate, IndexService indexService) {
+	public MLTaskProcessor(Config conf, ObjectMapper mapper, @Qualifier("mlRestTemplate") RestTemplate restTemplate, IndexService indexService, AlertService alertService) {
 		this.conf = conf;
 		this.mapper = mapper;
 		this.restTemplate = restTemplate;
 		this.indexService = indexService;
+		this.alertService = alertService;
 	}
-
-	private static final String ML_STATUS_SUCCESS = "S";
-	private static final String ML_STATUS_ERROR = "E";
 
 	@Override
 	public boolean supports(String taskType) {
@@ -62,11 +62,17 @@ public class MLTaskProcessor implements TaskProcessor {
 		} catch (Exception e) {
 			log.warn("{} | {} | {}", ErrorCode.ML_ANALYSIS_ERROR, ErrorCode.fromCode(ErrorCode.ML_ANALYSIS_ERROR), e.toString());
 		} finally {
-			if (doc != null) updateIndex(doc);
+			if (doc != null) {
+				updateIndex(doc);
+				processAlert(doc);
+			}
 			MDC.remove("msgId");
 		}
 	}
 
+	/**
+	 * EmassDoc 문서에 프롬프트 분석 내용 업데이트
+	 */
 	private void setBodyMLResult(EmassDoc doc) {
 		try {
 			if (doc.getBody() != null && doc.getBody().getText() != null) {
@@ -79,6 +85,9 @@ public class MLTaskProcessor implements TaskProcessor {
 		}
 	}
 
+	/**
+	 * EmassDoc 문서에 첨부 분석 내용 업데이트
+	 */
 	private void setAttachMLResult(EmassDoc doc) {
 		if (doc.getAttach() == null) return;
 		for (EmassDoc.Attach attach : doc.getAttach()) {
@@ -94,6 +103,9 @@ public class MLTaskProcessor implements TaskProcessor {
 		}
 	}
 
+	/**
+	 * EmassDoc 문서에 프롬프트, 첨부 분석 내용을 취합한 내용을 업데이트
+	 */
 	private void setSummaryMLResult(EmassDoc doc) {
 		EmassDoc.MLResult summary = new EmassDoc.MLResult();
 		if (doc.getBody() != null) {
@@ -111,19 +123,35 @@ public class MLTaskProcessor implements TaskProcessor {
 	}
 
 
+	/**
+	 * ML 결과 내용 색인
+	 */
 	private void updateIndex(EmassDoc doc) {
-		//ML 분석 결과 색인 용도
 		String index = conf.getIndexName() + doc.getCtime().substring(0, 8);
 		doc.setProcessStatus(getProcessStatus(doc));
 		indexService.index(doc, index);
 	}
 
+	/**
+	 * ML완료 후, Alert 로직 실행
+	 */
+	private void processAlert(final EmassDoc doc) {
+		alertService.send(doc);
+	}
+
+	/**
+	 * ML완료 후, 상태 필드 END로 업데이트
+	 */
 	private EmassDoc.ProcessStatus getProcessStatus(EmassDoc doc) {
 		EmassDoc.ProcessStatus status = doc.getProcessStatus() == null ? EmassDoc.ProcessStatus.builder().build() : doc.getProcessStatus();
 		status.setMl("E");
 		return status;
 	}
 
+
+	/**
+	 * ML API 호출
+	 */
 	private EmassDoc.MLResult analysisML(final String text) {
 		JSONObject data = new JSONObject();
 		data.put("text", Common.toBase64(text.getBytes()));

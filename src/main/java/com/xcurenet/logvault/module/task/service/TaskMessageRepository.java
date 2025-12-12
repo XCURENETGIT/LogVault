@@ -1,5 +1,6 @@
 package com.xcurenet.logvault.module.task.service;
 
+import com.xcurenet.logvault.module.alert.AlertMessage;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,4 +33,7 @@ public interface TaskMessageRepository {
 
 	@Transactional
 	void deleteOldFailed();
+
+	@Transactional
+	void insertAlertRule(AlertMessage message);
 }

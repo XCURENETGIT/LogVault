@@ -119,8 +119,10 @@ public abstract class AbstractWorker implements Runnable {
 
 					while (retryCnt <= 3) {
 						try {
-							alert(data);
-							task(data); //OCR 및 분석 관련 TASK
+							boolean postProcessingTarget = task(data); //OCR 및 분석 관련 TASK
+							if (!postProcessingTarget) { // 후 처리 대상이 아닌 경우만 즉각 알림 전송
+								alert(data);
+							}
 							break;
 						} catch (final Exception e) { // 성공 여부 관계없이 알림 전송, OCR 및 분석 후처리의 경우는 별도로 처리
 							log.warn("TASK_ERROR | {}", e.getMessage(), e);
@@ -128,7 +130,6 @@ public abstract class AbstractWorker implements Runnable {
 							Common.sleep(2000);
 						}
 					}
-
 					if (!success) return;
 				}
 
@@ -291,7 +292,7 @@ public abstract class AbstractWorker implements Runnable {
 
 	protected abstract void alert(ScanData data);
 
-	protected abstract void task(ScanData data);
+	protected abstract boolean task(ScanData data);
 
 
 	/**

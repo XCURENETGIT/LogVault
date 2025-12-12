@@ -51,11 +51,11 @@ public class Config {
 		return ENC_KEYFILE;
 	}
 
-	@Value("${spring.profiles.active:prod}")
-	private String activeProfile;
-
 	@Value("${memory.disk.path:/dev/shm/file/}")
 	private String memoryDiskPath;
+
+	@Value("${ramdisk.limit:104857600}") // 첨부파일 텍스트 추출 저장 여유 공간
+	private long ramdiskLimit;
 
 	@Value("${xutf8.path:/users/logvault/lib/xutf_8}")
 	private String xutf8Path;
@@ -103,11 +103,17 @@ public class Config {
 	@Value("${worker.size.wmail:5}") //WORKER 동시 처리 수 - 운영중 설정 변경 불가 (재시작필요)
 	private int workerSizeWmail;
 
-	@Value("${body.language.detect.size:2000}") //본문 국가탐지 시 본문 길이 제한
-	private int bodyLanguageDetectSize;
-
-	@Value("${decompress.depth:3}") //첨부파일 텍스트 추출 시 압축 파일 DEPTH
+	@Value("${decompress.depth:3}") //첨부파일 텍스트 추출 시 압축 파일 탐지 DEPTH
 	private int decompressDepth;
+
+	@Value("${file.analysis.limit.size:104857600}") //파일 텍스트 추출 파일 사이즈 LIMIT (default 100MB)
+	private int fileAnalysisLimitSize;
+
+	@Value("${text.limit.length:10000000}") //텍스트 색인 시 최대 길이
+	private int textLimitLength;
+
+	@Value("${text.limit.token:100}") //텍스트 색인 시 한단어의 최대 길이
+	private int textLimitToken;
 
 	@Value("${extract.text.timeout.sec:60}") //첨부파일 텍스트 추출 TimeOut (초)
 	private int extractTextTimeoutSec;
@@ -118,23 +124,23 @@ public class Config {
 	@Value("${check.excel.hidden.sheet.enable:false}") //엑셀 숨김 시트 탐지 여부
 	private boolean checkExcelHiddenSheet;
 
-	@Value("${ocr.api.enable:true}") //OCR Rest API ENABLE
+	@Value("${ocr.api.enable:false}") //OCR Rest API ENABLE
 	private boolean ocrApiEnable;
 
-	@Value("${ocr.embedded.enable:true}") //파일 내부의 이미지도 OCR 처리를 할것인지 유무
+	@Value("${ocr.embedded.enable:false}") //파일 내부의 이미지도 OCR 처리를 할것인지 유무
 	private boolean ocrEmbeddedImageEnable;
 
-	@Value("${ocr.api.url:http://10.200.10.49:62975/sdk/ocr}") //OCR Rest API URL
-	private String ocrApiUrl;
+	@Value("${ocr.api.type:LC}") //OCR TYPE (SY: Synap OCR, LG: Local GPU, LC:Local CPU)
+	private String ocrApiType;
 
-	@Value("${ocr.api.local.cpu.url:http://10.100.20.209:8000/ocr}") //OCR LOCAL CPU Rest API URL
-	private String ocrApiLocalCpuUrl;
+	@Value("${ocr.api.host:127.0.0.1}") //OCR Rest API Host
+	private String ocrApiHost;
 
-	@Value("${ocr.api.local.url:http://10.100.20.209:8001/v1/chat/completions}") //OCR LOCAL Rest API URL
-	private String ocrApiLocalUrl;
+	@Value("${ocr.api.port:62975}") //OCR Rest API PORT
+	private String ocrApiPort;
 
-	@Value("${ocr.api.local.model:/models/allenai/olmOCR-2-7B-1025-FP8}") //OCR LOCAL Model
-	private String ocrApiLocalModel;
+	@Value("${ocr.api.local.gpu.model:/models/allenai/olmOCR-2-7B-1025-FP8}") //OCR LOCAL Model
+	private String ocrApiLocalGpuModel;
 
 	@Value("${ocr.api.key:SNOCR-834be64b6228442cac181eb08d84e56c}") //OCR Rest API KEY
 	private String ocrApiKey;
@@ -143,22 +149,10 @@ public class Config {
 	private int ocrTimeoutSec;
 
 	@Value("${ocr.target.ext:tiff,tif,png,gif,jpg,jpeg,bmp,pcx,dcx,jb2,jfif,jp2,jpc,j2k,pdf}") //OCR 대상 확장자
-	private String ocrTargetExt;
+	private Set<String> ocrTargetExt;
 
 	@Value("${ocr.limit.size:20485760}") //OCR 파일 사이즈 LIMIT (default 20MB)
 	private int ocrLimitSize;
-
-	public Set<String> getOcrTargetExt() {
-		return new HashSet<>(Arrays.asList(ocrTargetExt.split(",")));
-	}
-
-	@Value("${ignore.extractor.ext:gul,mpeg,mp3,asf,ra,rm,tiff,tif,png,gif,jpg,bmp,pcx,mid,wav,avi,pds}")
-	//텍스트 추출 예외 확장자
-	private String ignoreExtractorExt;
-
-	public Set<String> getIgnoreExtractorExt() {
-		return new HashSet<>(Arrays.asList(ignoreExtractorExt.split(",")));
-	}
 
 	@Value("${ml.privacy.api.enable:true}") //ML Privacy Rest API ENABLE
 	private boolean mlPrivacyApiEnable;
@@ -186,15 +180,6 @@ public class Config {
 
 	@Value("${ml.api.text.limit:200000}") //ML TEXT LIMIT
 	private int mlApiTextLimit;
-
-	@Value("${temp.path:/tmp}") //임시 저장 경로
-	private String tempPath;
-
-	@Value("${ramdisk.path:/dev/shm/edc}") //첨부파일 텍스트 추출 시 가장 빠른 디스크 경로
-	private String ramdiskPath;
-
-	@Value("${ramdisk.limit:104857600}") // 첨부파일 텍스트 추출 저장 여유 공간
-	private long ramdiskLimit;
 
 	@Value("${spring.minio.url:http://127.0.0.1:9000}")
 	private String minioUrl;
@@ -241,20 +226,8 @@ public class Config {
 		return Common.hexToBytes(encryptKey);
 	}
 
-	@Value("${file.analysis.limit.size:104857600}") //파일 텍스트 추출 파일 사이즈 LIMIT (default 100MB)
-	private int fileAnalysisLimitSize;
-
-	@Value("${file.analysis.url:http://127.0.0.1:14545/api/text/path}") //파일 텍스트 추출 REST API
-	private String fileAnalysisUrl;
-
-	@Value("${privacy.analysis.url:http://127.0.0.1:14544/api/detectText.xcn}") //개인정보 추출  REST API
-	private String privacyAnalysisUrl;
-
-	@Value("${text.limit.length:10000000}") //텍스트 색인 시 최대 길이
-	private int textLimitLength;
-
-	@Value("${text.limit.token:100}") //텍스트 색인 시 한단어의 최대 길이
-	private int textLimitToken;
+	@Value("${data.store.usage:true}") //데이터 자동 삭제 임계치 사용여부
+	private boolean dataStoreUsage;
 
 	@Value("${data.store.term:365}") //데이터 보관 기간
 	private int dataStoreTerm;
@@ -262,14 +235,11 @@ public class Config {
 	@Value("${data.store.usage.limit:90}") //데이터 자동 삭제 임계치
 	private int dataStoreUsageLimit;
 
-	@Value("${data.store.usage:true}") //데이터 자동 삭제 임계치 사용여부
-	private boolean dataStoreUsage;
-
 	@Value("${filter.http.response.content.type:text/css,application/javascript,text/javascript,font/woff2}")
 	//Response ContentType Filter
 	private String filterResponseContentType;
 
-	@Value("${filter.service.unknown:true}")
+	@Value("${filter.service.unknown:true}") // 서비스 타입이 unknown인 경우 필터링 처리
 	private boolean filterServiceUnknown;
 
 	@Value("${task.queue.workers.capacity:50}") //후 처리 큐 capacity

@@ -23,4 +23,10 @@ public class PatternInfo {
 
 	@Field("minCount")
 	private int minCount;
+
+	@Field("alarmYn")
+	private String alarmYn;
+
+	@Field("syslogYn")
+	private String syslogYn;
 }

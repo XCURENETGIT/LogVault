@@ -170,9 +170,9 @@ public class PrivacyAnalysis {
 				attempt++;
 				JSONObject rs = restClient.post().uri(conf.getMlPrivacyApiUrl()).contentType(MediaType.APPLICATION_JSON).body(body).retrieve().body(JSONObject.class);
 				if (rs != null) {
-					log.debug("ML_PII | text.length:{}, {} | {}", text.length(), rs, DateUtils.stop(sw));
 					JSONArray results = rs.getJSONArray("results");
 					JSONObject object = results.getJSONObject(0);
+					log.info("ML_PII | text.length:{}, {} | {}", text.length(), object.getBoolean("is_pii"), DateUtils.stop(sw));
 					return object.getBoolean("is_pii");
 				}
 			} catch (Exception e) {

@@ -38,7 +38,7 @@
 	</select>
 
 	<select id="getKeyword" resultType="KeywordVO">
-		SELECT	MAX(KEYWORD_NM) AS keywordNm, MIN(MIN_CNT) AS minCnt
+		SELECT	MAX(KEYWORD_NM) AS keywordNm, MIN(MIN_CNT) AS minCnt, ALARM_YN AS alarmYn, SYSLOG_YN AS syslogYn
 		FROM	UI_KEYWORD
 		WHERE	USE_YN = 'Y'
 		GROUP	BY KEYWORD_NM
@@ -49,7 +49,9 @@
 				PATTERN_NM AS patternNm,
 				PATTERN_TYPE AS patternType,
 				REGEX AS regex,
-				MIN_CNT AS minCount
+				MIN_CNT AS minCount,
+				ALARM_YN AS alarmYn,
+				SYSLOG_YN AS syslogYn
 		FROM	UI_PATTERN
 		WHERE	USE_YN = 'Y'
 	</select>

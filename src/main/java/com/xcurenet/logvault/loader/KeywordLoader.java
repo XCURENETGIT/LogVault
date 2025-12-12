@@ -8,7 +8,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Log4j2
@@ -17,16 +20,38 @@ import java.util.concurrent.atomic.AtomicReference;
 public class KeywordLoader {
 	private final InfoLoaderMapper mapper;
 	public final AtomicReference<KeywordMatcher> KEYWORD_MATCHER_REF = new AtomicReference<>();
+	public final AtomicReference<Set<String>> KEYWORD_ALARM_REF = new AtomicReference<>();
+	public final AtomicReference<Set<String>> KEYWORD_SYSLOG_REF = new AtomicReference<>();
 
 	public void load() {
 		List<KeywordVO> keywords = mapper.getKeyword();
 		KeywordMatcher keywordMatcher = new KeywordMatcher();
+		Set<String> alarmSet = new HashSet<>();
+		Set<String> syslogSet = new HashSet<>();
 		for (KeywordVO item : keywords) {
 			if (Common.isEmpty(item.getKeywordNm())) continue;
+
 			keywordMatcher.addKeyword(item.getKeywordNm(), item.getMinCnt());
+			if (Common.isEquals(item.getAlarmYn(), "Y")) {
+				alarmSet.add(item.getKeywordNm());
+			}
+			if (Common.isEquals(item.getSyslogYn(), "Y")) {
+				syslogSet.add(item.getKeywordNm());
+			}
 		}
 		keywordMatcher.prepare();
 		KEYWORD_MATCHER_REF.set(keywordMatcher);
+		KEYWORD_ALARM_REF.set(alarmSet);
+		KEYWORD_SYSLOG_REF.set(syslogSet);
+
 		log.info("INFO_LOAD | Keyword Size: {}", keywords.size());
+	}
+
+	public Set<String> getKeywordAlert() {
+		return KEYWORD_ALARM_REF.get();
+	}
+
+	public Set<String> getKeywordSyslog() {
+		return KEYWORD_SYSLOG_REF.get();
 	}
 }

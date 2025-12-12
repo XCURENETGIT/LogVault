@@ -30,9 +30,15 @@ public class TaskService {
 		log.info("RM_OCR_FAILED | {}", DateUtils.stop(sw));
 	}
 
-	public void send(final ScanData data) {
+	/**
+	 * OCR, ML 대상일 경우 후 처리로 처리한다.
+	 *
+	 * @param data 처리할 데이터
+	 * @return 후처리 대상 여부
+	 */
+	public boolean send(final ScanData data) {
 		EmassDoc doc = data.getEmassDoc();
-		if (Common.isNotEquals(doc.getService().getSvc3(), "S")) return; //발신 서비스만
+		if (Common.isNotEquals(doc.getService().getSvc3(), "S")) return false; //발신 서비스만
 
 		TaskMessage message = new TaskMessage();
 		message.setMsgId(doc.getMsgid());
@@ -44,12 +50,14 @@ public class TaskService {
 			message.setTaskType(TaskDispatcherService.TASK_TYPE.ML.name());
 		}
 
-		if (message.getTaskType() != null) {
+		if (message.getTaskType() != null) { // OCR, ML 분석 대상일 경우
 			StopWatch sw1 = DateUtils.start();
 			message.setData(JSON.toJSONString(doc));
 			repository.insertMessage(message);
 			log.info("PPS_SEND | {} | {}", message.getTaskType(), DateUtils.stop(sw1));
+			return true;
 		}
+		return false;
 	}
 
 	private boolean isOcrTarget(final ScanData data) {

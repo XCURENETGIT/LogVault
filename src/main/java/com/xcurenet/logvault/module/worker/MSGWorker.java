@@ -180,8 +180,8 @@ public class MSGWorker extends AbstractWorker {
 	}
 
 	@Override
-	protected void task(ScanData data) {
-		taskService.send(data);
+	protected boolean task(ScanData data) {
+		return taskService.send(data);
 	}
 
 	private void setService(MSGData msg, EmassDoc doc) {

@@ -108,17 +108,30 @@ public class MLTaskProcessor implements TaskProcessor {
 	 */
 	private void setSummaryMLResult(EmassDoc doc) {
 		EmassDoc.MLResult summary = new EmassDoc.MLResult();
+		int result = 200;
+		String message = "OK";
 		if (doc.getBody() != null) {
 			EmassDoc.MLResult mlResult = doc.getBody().getMlResult();
 			summary.merge(mlResult);
+
+			if (mlResult != null) {
+				result = doc.getBody().getMlResult().getResult();
+				message = doc.getBody().getMlResult().getMessage();
+			}
 		}
 
 		if (doc.getAttach() != null) {
 			for (EmassDoc.Attach attach : doc.getAttach()) {
 				EmassDoc.MLResult mlResult = attach.getMlResult();
 				summary.merge(mlResult);
+				if (mlResult != null && mlResult.getResult() > 200) {
+					result = mlResult.getResult();
+					message = mlResult.getMessage();
+				}
 			}
 		}
+		summary.setResult(result);
+		summary.setMessage(message);
 		doc.setMlResult(summary);
 	}
 
@@ -179,6 +192,8 @@ public class MLTaskProcessor implements TaskProcessor {
 			mlResult.setProbs(body.getFloat("probs"));
 			mlResult.setCategory(body.getInteger("class"));
 			mlResult.setKeywords(body.getJSONArray("keywords").toJavaList(String.class));
+			mlResult.setResult(body.getInteger("result"));
+			mlResult.setMessage(body.getString("message"));
 			return mlResult;
 		}
 		return null;

@@ -95,6 +95,12 @@
 						},
 						"keywords": {
 							"type": "keyword"
+						},
+						"result": {
+							"type": "integer"
+						},
+						"message": {
+							"type": "keyword"
 						}
 					}
 				},
@@ -278,6 +284,12 @@
 								},
 								"keywords": {
 									"type": "keyword"
+								},
+								"result": {
+									"type": "integer"
+								},
+								"message": {
+									"type": "keyword"
 								}
 							}
 						}
@@ -384,6 +396,12 @@
 									"type": "float"
 								},
 								"keywords": {
+									"type": "keyword"
+								},
+								"result": {
+									"type": "integer"
+								},
+								"message": {
 									"type": "keyword"
 								}
 							}

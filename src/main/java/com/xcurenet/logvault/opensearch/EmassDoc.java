@@ -115,6 +115,10 @@ public class EmassDoc {
 		private float probs;
 		@Field("keywords")
 		private List<String> keywords;
+		@Field("result")
+		private int result;
+		@Field("message")
+		private String message;
 
 		public void merge(MLResult other) {
 			if (other == null) {

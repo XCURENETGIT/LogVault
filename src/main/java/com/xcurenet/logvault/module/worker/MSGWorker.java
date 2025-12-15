@@ -54,6 +54,7 @@ public class MSGWorker extends AbstractWorker {
 
 			if (msg.getCtime() == null)
 				throw ExFactory.ex(ParsingException::new, ErrorCode.PARSER_CTIME_NULL, Map.of("info", msg.getInfoText()));
+
 			doc.setTimestamp(new Date(msg.getCtime().getMillis()));
 			doc.setCtime(msg.getCtime().toString(DateUtils.YYYYMMDDHHMMSS));
 			doc.setLtime(DateUtils.formatToYYYYMMDDHHMMSS(data.getStart()));
@@ -73,6 +74,11 @@ public class MSGWorker extends AbstractWorker {
 			String mlUsed = "N";
 			if (conf.isMlApiEnable() && Common.isEquals(doc.getService().getSvc3(), "S")) mlUsed = "P";
 			doc.setProcessStatus(EmassDoc.ProcessStatus.builder().ocr("N").ml(mlUsed).build()); //기본 OCR, ML 처리 대상여부, 처리 상태 값
+
+			if (doc.getService() != null) { //생성형 AI 서비스중 수신 서비스의 경우 1밀리세컨드를 추가하여 Sort 처리를 한다.
+				if (Common.isEquals("R", doc.getService().getSvc3()))
+					doc.getTimestamp().setTime(doc.getTimestamp().getTime() + 1);
+			}
 			data.setEmassDoc(doc);
 		} catch (Exception e) {
 			throw ExFactory.ex(ParsingException::new, ErrorCode.PARSER_MSG_FAIL, Map.of("info", msg.getInfoText()), e);

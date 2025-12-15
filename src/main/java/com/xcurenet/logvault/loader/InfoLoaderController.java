@@ -41,4 +41,11 @@ public class InfoLoaderController {
 		infoLoader.patternLoad();
 		return ResponseEntity.ok().build();
 	}
+
+	@ResponseBody
+	@GetMapping(value = "/insa/service/reload")
+	public ResponseEntity<Object> serviceReload() {
+		infoLoader.serviceLoad();
+		return ResponseEntity.ok().build();
+	}
 }

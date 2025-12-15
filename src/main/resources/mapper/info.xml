@@ -55,4 +55,11 @@
 		FROM	UI_PATTERN
 		WHERE	USE_YN = 'Y'
 	</select>
+
+	<select id="getService" resultType="ServiceVO">
+		SELECT	SERVICE_CD AS serviceCd, SERVICE_NAME AS serviceName
+		FROM	AEGISAI.UI_SERVICE
+		WHERE	LOGGING_YN = 'Y'
+		AND		USE_YN = 'Y'
+	</select>
 </mapper>

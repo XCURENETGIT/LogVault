@@ -15,6 +15,7 @@ public class InfoLoader {
 	private final UserLoader userLoader;
 	private final KeywordLoader keywordLoader;
 	private final PatternLoader patternLoader;
+	private final ServiceLoader serviceLoader;
 
 	public void init() {
 		StopWatch sw = DateUtils.start();
@@ -23,6 +24,7 @@ public class InfoLoader {
 		userLoad();
 		keywordLoad();
 		patternLoad();
+		serviceLoad();
 
 		log.info("INFO_LOAD | END | {}\n", DateUtils.stop(sw));
 	}
@@ -45,6 +47,13 @@ public class InfoLoader {
 		log.debug("INFO_LOAD | Pattern START");
 		synchronized (this) {
 			patternLoader.load();
+		}
+	}
+
+	public void serviceLoad() {
+		log.debug("INFO_LOAD | Service START");
+		synchronized (this) {
+			serviceLoader.load();
 		}
 	}
 }

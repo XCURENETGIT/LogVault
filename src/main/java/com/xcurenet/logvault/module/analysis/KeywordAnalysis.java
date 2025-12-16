@@ -86,7 +86,7 @@ public class KeywordAnalysis {
 		if (keyword == null) return null;
 
 		List<EmassDoc.KeywordInfo.Keyword> result = new ArrayList<>();
-		Map<String, Integer> keywords = keywordLoader.KEYWORD_MATCHER_REF.get().checkKeywordOverMin(keyword);
+		Map<String, Integer> keywords = keywordLoader.KEYWORD_MATCHER_REF.get().checkKeywordCounts(keyword);
 		for (String key : keywords.keySet()) {
 			result.add(EmassDoc.KeywordInfo.Keyword.builder().name(key).count(keywords.get(key)).build());
 		}

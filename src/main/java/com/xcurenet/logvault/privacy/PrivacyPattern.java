@@ -14,6 +14,7 @@ import org.apache.commons.io.IOUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
+import java.io.FileInputStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -126,11 +127,7 @@ public class PrivacyPattern {
 	private record PatternDefinition(String type, Expression expression, Optional<PatternValidator> validator) {
 	}
 
-	public static void main(String[] args) throws CompileErrorException {
-		PrivacyPattern pattern = new PrivacyPattern();
-		pattern.compile();
-
-		StopWatch sw = DateUtils.start();
+	public static void main(String[] args) throws Exception {
 		String text = """
 				서울 11-01-123456-78
 				부산 26-12-654321-90
@@ -138,13 +135,31 @@ public class PrivacyPattern {
 				대전 30-07-998877-66
 				""";
 
-		Map<String, List<MatchResult>> listMap = pattern.scan(text);
-		for (Map.Entry<String, List<MatchResult>> entry : listMap.entrySet()) {
-			System.out.println(entry.getKey() + " : " + entry.getValue());
-			for (MatchResult matchResult : entry.getValue()) {
-				System.out.println(matchResult.toString());
+		try (FileInputStream in = new FileInputStream("/home/jjcha/ngpii/bin/pattern.db");
+		     Scanner scanner = new Scanner();) {
+			Database database = Database.load(in);
+			scanner.allocScratch(database);
+			List<Match> matches = scanner.scan(database, text);
+			for (Match match : matches) {
+				System.out.println(match.getMatchedExpression().getId() + " : " + match.getMatchedString());
 			}
+			database.close();
 		}
-		System.out.println(DateUtils.stop(sw));
+
+//
+//		PrivacyPattern pattern = new PrivacyPattern();
+//		pattern.compile();
+//
+//		StopWatch sw = DateUtils.start();
+//
+//
+//		Map<String, List<MatchResult>> listMap = pattern.scan(text);
+//		for (Map.Entry<String, List<MatchResult>> entry : listMap.entrySet()) {
+//			System.out.println(entry.getKey() + " : " + entry.getValue());
+//			for (MatchResult matchResult : entry.getValue()) {
+//				System.out.println(matchResult.toString());
+//			}
+//		}
+//		System.out.println(DateUtils.stop(sw));
 	}
 }

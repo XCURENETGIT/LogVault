@@ -141,6 +141,7 @@ public class MSGWorker extends AbstractWorker {
 	}
 
 	private void indexRoom(EmassDoc doc) {
+		if (doc.isTestMessage()) return;
 		AegisRoomDoc roomDoc = getRoom(doc.getRoomId());
 
 		AegisRoomDoc room = new AegisRoomDoc();

@@ -18,6 +18,9 @@ public class EmassDoc {
 	@Field("msgid")
 	private String msgid;
 
+	@Field("test_message")
+	private boolean testMessage = false;
+
 	@Field("room_id")
 	private String roomId;
 

@@ -43,8 +43,6 @@ public class PrivacyAnalysis {
 	}
 
 	public void detect(final EmassDoc doc) {
-		if (Common.isNotEquals(doc.getService().getSvc3(), "S")) return; // 발신 데이터만 처리
-
 		int total = processText(doc, doc.getBody() == null ? null : doc.getBody().getText(), "B", "-");
 		if (doc.getAttach() != null) {
 			for (EmassDoc.Attach a : doc.getAttach()) {

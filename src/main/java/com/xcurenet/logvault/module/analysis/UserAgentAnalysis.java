@@ -51,11 +51,17 @@ public class UserAgentAnalysis {
 				agent.setClientVersion(String.join(".", client.userAgent != null ? client.userAgent.major : "0", client.userAgent != null ? client.userAgent.minor : "0"));
 				scanData.getEmassDoc().getHttp().setAgent(agent);
 			}
+			scanData.getEmassDoc().setTestMessage(isTestMessage(raw));
 		} catch (Exception e) {
 			log.warn("USER_AGENT | {}", e.getMessage());
 		}
-
 	}
+
+	private boolean isTestMessage(final String raw) {
+		if (raw == null) return false;
+		return raw.contains("XCURENET");
+	}
+
 
 	private String getOrigin(final HttpHeaderUtil.HttpHeader.HttpRequestHeader request) {
 		if (request.getHeaders() == null) return null;

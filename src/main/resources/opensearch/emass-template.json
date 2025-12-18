@@ -51,6 +51,9 @@
 				"root_mtr": {
 					"type": "keyword"
 				},
+				"test_message": {
+					"type": "boolean"
+				},
 				"parent_mtr": {
 					"type": "keyword"
 				},

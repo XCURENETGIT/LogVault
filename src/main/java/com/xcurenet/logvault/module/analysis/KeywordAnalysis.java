@@ -26,8 +26,6 @@ public class KeywordAnalysis {
 	}
 
 	public void detect(final EmassDoc doc) {
-		if (Common.isNotEquals(doc.getService().getSvc3(), "S")) return; // 발신 데이터만 처리
-
 		EmassDoc.Body body = doc.getBody();
 		EmassDoc.KeywordInfo keywordInfo = new EmassDoc.KeywordInfo();
 

@@ -151,6 +151,17 @@ public class Config {
 	@Value("${ocr.target.ext:tiff,tif,png,gif,jpg,jpeg,bmp,pcx,dcx,jb2,jfif,jp2,jpc,j2k,pdf}") //OCR 대상 확장자
 	private Set<String> ocrTargetExt;
 
+	/**
+	 * OCR 처리 모듈에 따라 지원 확장자가 다르다.
+	 *
+	 * @return 지원 가능한 확장자
+	 */
+	public Set<String> getOcrTargetExt() {
+		if (Common.isEquals(ocrApiType, "LC"))
+			return new HashSet<>(Arrays.asList("jpg", "jpeg", "png", "bmp", "tiff", "webp", "git", "pdf"));
+		return ocrTargetExt;
+	}
+
 	@Value("${ocr.limit.size:20485760}") //OCR 파일 사이즈 LIMIT (default 20MB)
 	private int ocrLimitSize;
 

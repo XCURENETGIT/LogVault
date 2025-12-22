@@ -244,9 +244,8 @@ public class OcrTaskProcessor implements TaskProcessor {
 	 * OCR 처리 후 색인 용도
 	 */
 	private void updateIndex(EmassDoc doc) {
-		String index = conf.getIndexName() + doc.getCtime().substring(0, 8);
 		doc.setProcessStatus(getProcessStatus(doc));
-		indexService.index(doc, index);
+		indexService.index(doc);
 	}
 
 	private EmassDoc.ProcessStatus getProcessStatus(EmassDoc doc) {

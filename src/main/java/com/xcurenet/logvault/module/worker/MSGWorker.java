@@ -131,54 +131,7 @@ public class MSGWorker extends AbstractWorker {
 
 	@Override
 	protected void index(ScanData data) throws IndexerException {
-		EmassDoc doc = data.getEmassDoc();
-		String index = conf.getIndexName() + doc.getCtime().substring(0, 8);
-		indexService.index(doc, index);
-
-		if (Common.isEquals(doc.getService().getSvc1(), "I")) { //생성형 AI 서비스만.
-			indexRoom(doc);
-		}
-	}
-
-	private void indexRoom(EmassDoc doc) {
-		if (doc.isTestMessage()) return;
-		AegisRoomDoc roomDoc = getRoom(doc.getRoomId());
-
-		AegisRoomDoc room = new AegisRoomDoc();
-		room.setRoomId(doc.getRoomId());
-		room.setSvc(doc.getService().getSvc12());
-
-		long recentCtime = roomDoc != null ? Common.nvn(roomDoc.getRecentCtime()) : 0;
-		if (recentCtime < Common.nvn(doc.getCtime())) { // 최근 데이터인 경우 신규 내용으로 업데이트
-			room.setUser(doc.getUser());
-			room.setRecentCtime(doc.getCtime());
-			room.setRecentMsgId(doc.getMsgid());
-
-			String message = doc.getBody() == null ? null : doc.getBody().getText();
-			if (Common.isEmpty(message) && doc.getAttachCount() > 0) {
-				message = "";
-				for (EmassDoc.Attach attach : doc.getAttach()) {
-					message = message.concat(attach.getName()).concat(" ");
-				}
-			}
-			room.setRecentMessage(message);
-		} else if (roomDoc != null) {  // 기존 데이터가 더 최근이라면 기존 값으로
-			room.setUser(roomDoc.getUser());
-			room.setRecentCtime(roomDoc.getRecentCtime());
-			room.setRecentMsgId(roomDoc.getRecentMsgId());
-			room.setRecentMessage(roomDoc.getRecentMessage());
-		}
-		indexService.index(room, conf.getIndexRoomName());
-	}
-
-	private AegisRoomDoc getRoom(final String roomId) {
-		AegisRoomDoc doc;
-		try {
-			doc = indexService.get(roomId, AegisRoomDoc.class, conf.getIndexRoomName());
-		} catch (NoSuchIndexException e) {
-			return null;
-		}
-		return doc;
+		indexService.index(data.getEmassDoc());
 	}
 
 	@Override

@@ -28,6 +28,7 @@ import org.opensearch.data.client.orhlc.OpenSearchRestTemplate;
 import org.opensearch.index.query.QueryBuilders;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.elasticsearch.NoSuchIndexException;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.document.Document;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
@@ -65,7 +66,74 @@ public class IndexService {
 		return template.get(msgId, clazz, IndexCoordinates.of(indexName));
 	}
 
-	public <T> void index(final T data, final String indexName) throws IndexerException {
+
+	/**
+	 * 생성형 AI DOC Indexing
+	 *
+	 * @param doc EmassDoc
+	 */
+	public void index(final EmassDoc doc) throws IndexerException {
+		String index = conf.getIndexName() + doc.getCtime().substring(0, 8);
+		indexData(doc, index);
+		if (Common.isEquals(doc.getService().getSvc1(), "I")) { //생성형 AI 서비스만.
+			indexRoom(doc);
+		}
+	}
+
+
+	/**
+	 * 생성형 AI Room 생성
+	 *
+	 * @param doc EmassDoc
+	 */
+	private void indexRoom(EmassDoc doc) {
+		if (doc.isTestMessage()) return;
+		AegisRoomDoc roomDoc = getRoom(doc.getRoomId());
+
+		AegisRoomDoc room = new AegisRoomDoc();
+		room.setRoomId(doc.getRoomId());
+		room.setSvc(doc.getService().getSvc12());
+
+		long recentCtime = roomDoc != null ? Common.nvn(roomDoc.getRecentCtime()) : 0;
+		if (recentCtime <= Common.nvn(doc.getCtime())) { // 최근 데이터인 경우 신규 내용으로 업데이트
+			room.setUser(doc.getUser());
+			room.setRecentCtime(doc.getCtime());
+			room.setRecentMsgId(doc.getMsgid());
+			room.setMlResult(doc.getMlResult());
+
+			String message = doc.getBody() == null ? null : doc.getBody().getText();
+			if (Common.isEmpty(message) && doc.getAttachCount() > 0) {
+				message = "";
+				for (EmassDoc.Attach attach : doc.getAttach()) {
+					message = message.concat(attach.getName()).concat(" ");
+				}
+			}
+			room.setRecentMessage(message);
+			room.setPrivacyTotal(doc.getPrivacyTotal());
+			room.setPrivacyInfo(doc.getPrivacyInfo());
+		} else if (roomDoc != null) {  // 기존 데이터가 더 최근이라면 기존 값으로
+			room.setUser(roomDoc.getUser());
+			room.setRecentCtime(roomDoc.getRecentCtime());
+			room.setRecentMsgId(roomDoc.getRecentMsgId());
+			room.setMlResult(roomDoc.getMlResult());
+			room.setRecentMessage(roomDoc.getRecentMessage());
+			room.setPrivacyTotal(roomDoc.getPrivacyTotal());
+			room.setPrivacyInfo(roomDoc.getPrivacyInfo());
+		}
+		indexData(room, conf.getIndexRoomName());
+	}
+
+	private AegisRoomDoc getRoom(final String roomId) {
+		AegisRoomDoc doc;
+		try {
+			doc = get(roomId, AegisRoomDoc.class, conf.getIndexRoomName());
+		} catch (NoSuchIndexException e) {
+			return null;
+		}
+		return doc;
+	}
+
+	public <T> void indexData(final T data, final String indexName) throws IndexerException {
 		StopWatch sw = DateUtils.start();
 		try {
 			if (indexName == null) {

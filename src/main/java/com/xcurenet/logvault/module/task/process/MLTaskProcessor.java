@@ -140,9 +140,8 @@ public class MLTaskProcessor implements TaskProcessor {
 	 * ML 결과 내용 색인
 	 */
 	private void updateIndex(EmassDoc doc) {
-		String index = conf.getIndexName() + doc.getCtime().substring(0, 8);
 		doc.setProcessStatus(getProcessStatus(doc));
-		indexService.index(doc, index);
+		indexService.index(doc);
 	}
 
 	/**

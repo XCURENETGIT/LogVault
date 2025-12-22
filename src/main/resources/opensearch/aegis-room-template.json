@@ -50,6 +50,28 @@
 				"recent_msgid" : {
 					"type": "keyword"
 				},
+				"ml_result": {
+					"properties": {
+						"code_exist": {
+							"type": "boolean"
+						},
+						"category": {
+							"type": "integer"
+						},
+						"probs": {
+							"type": "float"
+						},
+						"keywords": {
+							"type": "keyword"
+						},
+						"result": {
+							"type": "integer"
+						},
+						"message": {
+							"type": "keyword"
+						}
+					}
+				},
 				"svc": {
 					"type": "keyword"
 				},
@@ -83,6 +105,31 @@
 						},
 						"jikgub_name": {
 							"type": "keyword"
+						}
+					}
+				},
+				"privacy_total": {
+					"type": "integer"
+				},
+				"privacy_info": {
+					"type": "nested",
+					"properties": {
+						"id": {
+							"type": "keyword"
+						},
+						"type": {
+							"type": "keyword"
+						},
+						"attach_name": {
+							"type": "keyword"
+						},
+						"privacy_data": {
+							"type": "keyword",
+							"doc_values": false,
+							"index": false
+						},
+						"count": {
+							"type": "integer"
 						}
 					}
 				}

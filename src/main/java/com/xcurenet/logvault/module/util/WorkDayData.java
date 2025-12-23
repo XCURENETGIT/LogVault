@@ -4,19 +4,23 @@ import lombok.ToString;
 import org.joda.time.DateTime;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @ToString
 @Component
 public class WorkDayData {
 
-	private final Map<String, WorkTime> workday = new HashMap<>();
+	private final Map<String, WorkTime> workday = new ConcurrentHashMap<>();
 
-	public boolean isWorkingTime(final String cocd, final String busicd, final DateTime dt) {
-		final String key = String.format("%s_%s", cocd, busicd);
-		final WorkTime work = workday.get(key);
+	public boolean isWorkingTime(final DateTime dt) {
+		final WorkTime work = workday.get("workTime");
 		return work != null && work.isWorkingTime(dt);
+	}
+
+	public boolean isWorkDay(final DateTime dt) {
+		final WorkTime work = workday.get("workTime");
+		return work != null && work.isWorkDay(dt);
 	}
 
 	public void put(final String key, final WorkTime val) {
@@ -24,9 +28,7 @@ public class WorkDayData {
 	}
 
 	public void clear() {
-		synchronized (this) {
-			workday.clear();
-		}
+		workday.clear();
 	}
 
 	/**
@@ -35,11 +37,22 @@ public class WorkDayData {
 	public record WorkTime(String wday, String whour) {
 
 		public boolean isWorkingTime(final DateTime dt) {
-			// joda-time의 요일은 1-7이고 월요일이 첫번째다. 그렇기 때문에 0-6, 일요일을 첫번째으로 변경
 			// dt = 2024-03-19T18:29:23.000+09:00
-			final int day = dt.getDayOfWeek() % 7;
 			final int hour = dt.getHourOfDay();
-			return '1' == wday.charAt(day) && '1' == whour.charAt(hour);
+			return isWorkDay(dt) && '1' == whour.charAt(hour);
 		}
+
+		public boolean isWorkDay(final DateTime dt) {
+			final int day = dt.getDayOfWeek() - 1;
+			return '1' == wday.charAt(day);
+		}
+	}
+
+	public static void main(String[] args) {
+		DateTime dt = new DateTime("2025-12-29T12:29:23.000+09:00");
+		WorkDayData workDayData = new WorkDayData();
+		workDayData.put("workTime", new WorkTime("1011110", "000000000111111111110000"));
+		System.out.println(workDayData.isWorkingTime(dt));
+		System.out.println(workDayData.isWorkDay(dt));
 	}
 }

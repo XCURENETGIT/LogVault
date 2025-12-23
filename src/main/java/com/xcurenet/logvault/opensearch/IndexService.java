@@ -99,6 +99,7 @@ public class IndexService {
 			room.setUser(doc.getUser());
 			room.setRecentCtime(doc.getCtime());
 			room.setRecentMsgId(doc.getMsgid());
+			room.setDay(doc.getDay());
 			room.setMlResult(doc.getMlResult());
 
 			String message = doc.getBody() == null ? null : doc.getBody().getText();
@@ -115,6 +116,7 @@ public class IndexService {
 			room.setUser(roomDoc.getUser());
 			room.setRecentCtime(roomDoc.getRecentCtime());
 			room.setRecentMsgId(roomDoc.getRecentMsgId());
+			room.setDay(roomDoc.getDay());
 			room.setMlResult(roomDoc.getMlResult());
 			room.setRecentMessage(roomDoc.getRecentMessage());
 			room.setPrivacyTotal(roomDoc.getPrivacyTotal());

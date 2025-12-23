@@ -11,10 +11,6 @@ import java.io.Serializable;
 @ToString
 public class WorkDayInfo implements Serializable {
 
-	private String coCd;
-
-	private String busiCd;
-
 	private String wDay;
 
 	private String wHour;

@@ -16,6 +16,7 @@ public class InfoLoader {
 	private final KeywordLoader keywordLoader;
 	private final PatternLoader patternLoader;
 	private final ServiceLoader serviceLoader;
+	private final WorkDayLoader workDayLoader;
 
 	public void init() {
 		StopWatch sw = DateUtils.start();
@@ -25,6 +26,7 @@ public class InfoLoader {
 		keywordLoad();
 		patternLoad();
 		serviceLoad();
+		workDayLoad();
 
 		log.info("INFO_LOAD | END | {}\n", DateUtils.stop(sw));
 	}
@@ -54,6 +56,13 @@ public class InfoLoader {
 		log.debug("INFO_LOAD | Service START");
 		synchronized (this) {
 			serviceLoader.load();
+		}
+	}
+
+	public void workDayLoad() {
+		log.debug("INFO_LOAD | WORKDAY START");
+		synchronized (this) {
+			workDayLoader.load();
 		}
 	}
 }

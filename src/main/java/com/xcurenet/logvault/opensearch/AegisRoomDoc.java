@@ -21,6 +21,9 @@ public class AegisRoomDoc {
 	@Field("recent_msgid")
 	private String recentMsgId;
 
+	@Field("day")
+	private EmassDoc.Day day;
+
 	@Field("ml_result")
 	private EmassDoc.MLResult mlResult;
 

@@ -31,7 +31,8 @@ public class FileNameInfo implements Serializable {
 		final FileNameInfo info = new FileNameInfo();
 		final String filename = FilenameUtils.getName(filePath);
 		final String[] dotSplit = filename.split("\\.", 2);
-		final String[] split = dotSplit[0].split("-", 10);
+		int lastDot = filename.lastIndexOf('.');
+		String[] split = filename.substring(0, lastDot).split("-", 10);
 		final int startOffset = split[0].indexOf("2");
 		if (startOffset > 0) info.prefix = split[0].substring(0, startOffset);
 		info.ctime = split[0].substring(startOffset);

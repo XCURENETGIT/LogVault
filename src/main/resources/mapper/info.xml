@@ -32,9 +32,8 @@
 	</select>
 
 	<select id="getWorkDay" resultType="WorkDayInfo">
-		SELECT	USER_ID AS coCd, USER_IP AS busiCd, USER_IP AS wDay, USER_IP AS wHour
-		FROM 	UI_USER_IP A
-		ORDER	BY USER_ID
+		SELECT  (SELECT  VAL FROM UI_CONF WHERE CONF_ID = 'work.day') AS wDay,
+				(SELECT  VAL FROM UI_CONF WHERE CONF_ID = 'work.hour') AS wHour
 	</select>
 
 	<select id="getKeyword" resultType="KeywordVO">

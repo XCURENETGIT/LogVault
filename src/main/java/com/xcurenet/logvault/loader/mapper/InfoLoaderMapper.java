@@ -13,7 +13,7 @@ public interface InfoLoaderMapper {
 
 	List<HoliDayInfo> getHoliDay();
 
-	List<WorkDayInfo> getWorkDay();
+	WorkDayInfo getWorkDay();
 
 	List<KeywordVO> getKeyword();
 

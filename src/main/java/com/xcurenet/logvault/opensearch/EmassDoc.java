@@ -92,6 +92,7 @@ public class EmassDoc {
 	private KeywordInfo keywordInfo;
 
 	@Data
+	@Builder
 	public static class Day {
 		@Field("week")
 		private int week;

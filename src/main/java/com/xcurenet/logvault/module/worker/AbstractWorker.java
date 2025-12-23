@@ -17,6 +17,7 @@ import com.xcurenet.logvault.module.clear.ClearService;
 import com.xcurenet.logvault.module.filter.FilterService;
 import com.xcurenet.logvault.module.log.LogService;
 import com.xcurenet.logvault.module.scanner.FileScanner;
+import com.xcurenet.logvault.module.statics.StatService;
 import com.xcurenet.logvault.module.statics.ThroughputMetrics;
 import com.xcurenet.logvault.module.task.service.TaskService;
 import com.xcurenet.logvault.module.util.InsaManager;
@@ -56,6 +57,7 @@ public abstract class AbstractWorker implements Runnable {
 	protected final AlertService alertService;
 	protected final TaskService taskService;
 	protected final ThroughputMetrics metrics;
+	protected final StatService statService;
 
 	protected AbstractWorker(final ApplicationContext context, final PriorityBlockingQueue<ScanData> queue, final AtomicBoolean run) {
 		this.queue = queue;
@@ -71,6 +73,7 @@ public abstract class AbstractWorker implements Runnable {
 		this.alertService = context.getBean(AlertService.class);
 		this.taskService = context.getBean(TaskService.class);
 		this.indexService = context.getBean(IndexService.class);
+		this.statService = context.getBean(StatService.class);
 	}
 
 	@Override
@@ -108,6 +111,7 @@ public abstract class AbstractWorker implements Runnable {
 							transToAttach(data);            // 첨부파일 전송
 							transToAttachEmbedded(data);    // 첨부내 객체 전송
 							index(data);                    // 색인
+							statService.processEvent(data); // 통계생성
 							success = true;
 							break;
 						} catch (final FileSendException | IndexerException | InsaMappingException e) {
@@ -131,15 +135,14 @@ public abstract class AbstractWorker implements Runnable {
 						}
 					}
 					if (!success) return;
+
+					metrics.increment();
+					LogVaultApplication.getMinuteBy1Count().incrementAndGet();
+					LogVaultApplication.getSecBy10Count().incrementAndGet();
 				}
 
 				clearService.clear(data);
 				logService.log(data);
-
-				metrics.increment();
-				LogVaultApplication.getMinuteBy1Count().incrementAndGet();
-				LogVaultApplication.getSecBy10Count().incrementAndGet();
-
 			} catch (final SkipFileException e) {
 				log.info("WAIT_SEC | {} | {} seconds\n", e.getMessage(), this.conf.getInterval() / 1000);
 				Common.sleep(3000);

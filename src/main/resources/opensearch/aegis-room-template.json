@@ -47,6 +47,16 @@
 					"type": "date",
 					"format": "yyyyMMddHHmmss"
 				},
+				"day": {
+					"properties": {
+						"week": {
+							"type": "integer"
+						},
+						"work": {
+							"type": "keyword"
+						}
+					}
+				},
 				"recent_msgid" : {
 					"type": "keyword"
 				},

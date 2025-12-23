@@ -48,4 +48,11 @@ public class InfoLoaderController {
 		infoLoader.serviceLoad();
 		return ResponseEntity.ok().build();
 	}
+
+	@ResponseBody
+	@GetMapping(value = "/insa/workday/reload")
+	public ResponseEntity<Object> workDayReload() {
+		infoLoader.workDayLoad();
+		return ResponseEntity.ok().build();
+	}
 }

@@ -210,15 +210,10 @@ public class FileScanner implements Runnable {
 			throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_INVALID, Map.of("info", "file name is null or empty"));
 		}
 
-		String coreName = fileName;
-		int dotIndex = fileName.indexOf('.');
-		if (dotIndex != -1) {
-			coreName = fileName.substring(0, dotIndex);
-		}
-
-		String[] parts = coreName.split("-");// 예상되는 파트 수는 9개 (WMAIL날짜, SrcIp, DstIp, SrcPort, DstPort, Seq1, Seq2, Host1, Host2)
-		if (parts.length != 9) { // LVT-5002: 구성 요소 개수 불일치
-			throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_PART_COUNT, Map.of("count", parts.length + ", Expected: 9", "file", fileName));
+		int lastDot = fileName.lastIndexOf('.');
+		String[] parts = fileName.substring(0, lastDot).split("-", 10);
+		if (parts.length < 8) { // LVT-5002: 구성 요소 개수 불일치
+			throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_PART_COUNT, Map.of("count", parts.length + ", Expected: 8", "file", fileName));
 		}
 
 		try {

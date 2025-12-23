@@ -66,7 +66,12 @@ public enum ErrorCode {
 	ML_ANALYSIS_ATTACH_ERROR("LVT-7002", "Internal Server Error"),
 	ML_ANALYSIS_ERROR("LVT-7999", "ML Analysis Failed"),
 
-	UNKNOWN_ERROR("LVT-9999", "Unknown error");
+	WORKDAY_MSGDATA_NULL("LVT-8001", "ScanData.msgData is null"),
+	WORKDAY_CTIME_NULL("LVT-8002", "ScanData.msgData.ctime is null"),
+	WORKDAY_EMASSDOC_NULL("LVT-8003", "EmassDoc is null"),
+	WORKDAY_SET_FAIL("LVT-8099", "Failed to set working day information"),
+
+	UNKNOWN_ERROR("LVT-9999","Unknown error");
 
 	private final String code;
 	private final String messageTemplate;

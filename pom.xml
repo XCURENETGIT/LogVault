@@ -276,7 +276,7 @@
 		<dependency>
 			<groupId>com.gliwka.hyperscan</groupId>
 			<artifactId>hyperscan</artifactId>
-			<version>5.4.11-3.1.0</version>
+			<version>5.4.0-2.0.0</version><!--5.4.0-2.0.0 버전을올리면 윈도우에서는 실행 불가함.-->
 		</dependency>
 		<dependency>
 			<groupId>net.sf.sevenzipjbinding</groupId>

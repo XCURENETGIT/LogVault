@@ -1,38 +1,59 @@
 package com.xcurenet.logvault.module.analysis;
 
+import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.msg.MSGData;
-import com.xcurenet.common.utils.Common;
-import com.xcurenet.common.utils.DateUtils;
+import com.xcurenet.common.utils.ExFactory;
 import com.xcurenet.common.utils.FileUtil;
 import com.xcurenet.common.utils.HttpHeaderUtil;
 import com.xcurenet.logvault.conf.Config;
+import com.xcurenet.logvault.exception.ProcessDataException;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import okio.Path;
 import org.springframework.stereotype.Service;
 import ua_parser.Client;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.ZonedDateTime;
+import java.util.Map;
 
 @Log4j2
 @Service
 @RequiredArgsConstructor
 public class UserAgentAnalysis {
+
 	private final Config conf;
 
 	public void detect(final ScanData scanData) {
-		try {
-			MSGData msg = scanData.getMsgData();
-			if (msg.getHeader() == null) return;
-			if (!Files.exists(Paths.get(conf.getPath(msg.getHeader())))) return;
+		if (scanData.getMsgData() == null) {
+			throw ExFactory.ex(ProcessDataException::new, ErrorCode.UA_MSGDATA_NULL, Map.of("context", "ScanData.msgData is null"));
+		}
 
-			final String raw = FileUtil.getText(conf.getPath(msg.getHeader()));
-			HttpHeaderUtil.HttpHeader httpHeader = HttpHeaderUtil.parserHeader(raw);
+		MSGData msg = scanData.getMsgData();
+		if (msg.getHeader() == null) {
+			throw ExFactory.ex(ProcessDataException::new, ErrorCode.UA_HEADER_PATH_NULL, Map.of("context", "MSG.header is null"));
+		}
+
+		String headerPath = conf.getPath(msg.getHeader());
+		if (!Files.exists(Paths.get(headerPath))) {
+			log.warn("{} | {} | path={}", ErrorCode.UA_HEADER_FILE_NOT_FOUND, ErrorCode.fromCode(ErrorCode.UA_HEADER_FILE_NOT_FOUND), headerPath);
+			return;
+		}
+
+		try {
+			final String raw = FileUtil.getText(headerPath);
+			HttpHeaderUtil.HttpHeader httpHeader;
+			try {
+				httpHeader = HttpHeaderUtil.parserHeader(raw);
+			} catch (Exception e) {
+				log.warn("{} | {} | path={} err={}", ErrorCode.UA_HEADER_PARSE_FAIL, ErrorCode.fromCode(ErrorCode.UA_HEADER_PARSE_FAIL), headerPath, e.toString());
+				return;
+			}
+			if (scanData.getEmassDoc() == null || scanData.getEmassDoc().getHttp() == null) {
+				throw ExFactory.ex(ProcessDataException::new, ErrorCode.UA_EMASSDOC_HTTP_NULL, Map.of("context", "EmassDoc.http is null"));
+			}
+
 			HttpHeaderUtil.HttpHeader.HttpRequestHeader request = httpHeader.getRequestHeader();
 			HttpHeaderUtil.HttpHeader.HttpResponseHeader response = httpHeader.getResponseHeader();
 
@@ -40,20 +61,24 @@ public class UserAgentAnalysis {
 			EmassDoc.Header.ResponseHeader responseHeader = EmassDoc.Header.ResponseHeader.builder().date(getHeaderDate(response)).contentType(getContentType(response)).build();
 			scanData.getEmassDoc().getHttp().setHeader(EmassDoc.Header.builder().request(requestHeader).response(responseHeader).build());
 
-			Client client = httpHeader.getClient();
-			if (client != null) {
-				EmassDoc.Agent agent = new EmassDoc.Agent();
-				agent.setRaw(httpHeader.getAgentString());
-				agent.setDevice(client.device != null ? client.device.family : null);
-				agent.setOs(client.os != null ? client.os.family : null);
-				agent.setOsVersion(client.os != null ? client.os.major : null);
-				agent.setClient(client.userAgent != null ? client.userAgent.family : null);
-				agent.setClientVersion(String.join(".", client.userAgent != null ? client.userAgent.major : "0", client.userAgent != null ? client.userAgent.minor : "0"));
-				scanData.getEmassDoc().getHttp().setAgent(agent);
+			try {
+				Client client = httpHeader.getClient();
+				if (client != null) {
+					EmassDoc.Agent agent = new EmassDoc.Agent();
+					agent.setRaw(httpHeader.getAgentString());
+					agent.setDevice(client.device != null ? client.device.family : null);
+					agent.setOs(client.os != null ? client.os.family : null);
+					agent.setOsVersion(client.os != null ? client.os.major : null);
+					agent.setClient(client.userAgent != null ? client.userAgent.family : null);
+					agent.setClientVersion(String.join(".", client.userAgent != null ? client.userAgent.major : "0", client.userAgent != null ? client.userAgent.minor : "0"));
+					scanData.getEmassDoc().getHttp().setAgent(agent);
+				}
+			} catch (Exception e) {
+				log.warn("{} | {} | err={}", ErrorCode.UA_AGENT_PARSE_FAIL, ErrorCode.fromCode(ErrorCode.UA_AGENT_PARSE_FAIL), e.toString());
 			}
 			scanData.getEmassDoc().setTestMessage(isTestMessage(raw));
 		} catch (Exception e) {
-			log.warn("USER_AGENT | {}", e.getMessage());
+			log.warn("{} | {} | msgid={} err={}", ErrorCode.UA_ANALYSIS_FAIL, ErrorCode.fromCode(ErrorCode.UA_ANALYSIS_FAIL), msg.getMsgid(), e.toString());
 		}
 	}
 

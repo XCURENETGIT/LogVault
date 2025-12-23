@@ -1,5 +1,6 @@
 package com.xcurenet.logvault.module.analysis;
 
+import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.utils.CollectionUtil;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.logvault.loader.KeywordLoader;
@@ -22,10 +23,18 @@ public class KeywordAnalysis {
 	private final KeywordLoader keywordLoader;
 
 	public void detect(final ScanData scanData) {
+		if (scanData == null || scanData.getEmassDoc() == null) {
+			log.warn("{} | {} | scanData or emassDoc is null", ErrorCode.KEYWORD_MSGDATA_NULL, ErrorCode.fromCode(ErrorCode.KEYWORD_MSGDATA_NULL));
+			return;
+		}
 		detect(scanData.getEmassDoc());
 	}
 
 	public void detect(final EmassDoc doc) {
+		if (doc == null) {
+			log.warn("{} | {} | EmassDoc is null", ErrorCode.KEYWORD_MSGDATA_NULL, ErrorCode.fromCode(ErrorCode.KEYWORD_MSGDATA_NULL));
+			return;
+		}
 		EmassDoc.Body body = doc.getBody();
 		EmassDoc.KeywordInfo keywordInfo = new EmassDoc.KeywordInfo();
 

@@ -2,6 +2,7 @@ package com.xcurenet.logvault.module.analysis;
 
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.regex.MatchResult;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
@@ -28,36 +29,48 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class PrivacyAnalysis {
+
 	private final PrivacyPattern pattern;
 	private final Config conf;
 	private final RestClient restClient;
 
+	/* =========================
+	 * Entry
+	 * ========================= */
 	public void detect(final ScanData scanData) {
-		if (scanData == null || scanData.getEmassDoc() == null) return;
+		if (scanData == null || scanData.getEmassDoc() == null) {
+			log.warn("{} | {}", ErrorCode.PRIVACY_MSGDATA_NULL, ErrorCode.fromCode(ErrorCode.PRIVACY_MSGDATA_NULL));
+			return;
+		}
 
 		try {
 			detect(scanData.getEmassDoc());
 		} catch (Exception e) {
-			log.warn("REG_ERROR | {}", e.getMessage(), e);
+			log.warn("{} | {} | {}", ErrorCode.PRIVACY_UNKNOWN_ERROR, ErrorCode.fromCode(ErrorCode.PRIVACY_UNKNOWN_ERROR), e.getMessage(), e);
 		}
 	}
 
+	/* =========================
+	 * Document Detect
+	 * ========================= */
 	public void detect(final EmassDoc doc) {
 		int total = processText(doc, doc.getBody() == null ? null : doc.getBody().getText(), "B", "-");
+
 		if (doc.getAttach() != null) {
 			for (EmassDoc.Attach a : doc.getAttach()) {
 				total += processText(doc, a.getText(), "A", a.getName());
 			}
 		}
+
 		if (total == 0) {
 			doc.setPrivacyInfo(null);
 		}
 		doc.setPrivacyTotal(total);
 	}
 
-	/**
-	 * 텍스트 1개를 처리하고, 생성된 항목 수를 반환
-	 */
+	/* =========================
+	 * Text Processing
+	 * ========================= */
 	private int processText(EmassDoc doc, String text, String type, String attachName) {
 		if (Common.isEmpty(text)) return 0;
 
@@ -66,57 +79,72 @@ public class PrivacyAnalysis {
 		List<EmassDoc.PrivacyInfo> bucket = ensurePrivacyInfoList(doc);
 
 		int added = 0;
-		Map<String, List<MatchResult>> api = pattern.scan(text);
+		Map<String, List<MatchResult>> api;
+
+		try {
+			api = pattern.scan(text);
+		} catch (Exception e) {
+			log.warn("{} | {} | text.length={} | {}", ErrorCode.PRIVACY_REGEX_SCAN_FAIL, ErrorCode.fromCode(ErrorCode.PRIVACY_REGEX_SCAN_FAIL), text.length(), e.getMessage(), e);
+			return 0;
+		}
+
 		log.debug("REG_DATA | {}", api);
-		if (api != null) {
-			if (!api.isEmpty()) {
-				if (verify(text)) {
-					for (String key : api.keySet()) {
-						List<MatchResult> arr = api.get(key);
-						if (arr == null || arr.isEmpty()) continue;
 
-						EmassDoc.PrivacyInfo info = toPrivacyInfo(key, type, attachName, arr, /*enforceDetectCode=*/true);
-						if (info == null) continue;
+		if (api == null) {
+			log.warn("{} | {}", ErrorCode.PRIVACY_REGEX_RESULT_NULL, ErrorCode.fromCode(ErrorCode.PRIVACY_REGEX_RESULT_NULL));
+			return 0;
+		}
 
-						bucket.add(info);
-						added += info.getCount();
-						sb.append(key).append(":").append(info.getCount()).append(" ");
-					}
-				}
+		if (!api.isEmpty() && verify(text)) {
+			for (String key : api.keySet()) {
+				List<MatchResult> arr = api.get(key);
+				if (arr == null || arr.isEmpty()) continue;
+
+				EmassDoc.PrivacyInfo info = toPrivacyInfo(key, type, attachName, arr);
+
+				if (info == null) continue;
+
+				bucket.add(info);
+				added += info.getCount();
+				sb.append(key).append(":").append(info.getCount()).append(" ");
 			}
-		} else log.warn("REG_DATA | DATA IS NULL");
+		}
 
 		if (Common.isNotEmpty(sb.toString())) {
 			log.info("REG_DONE | {} | {} | {}", type, sb.toString(), DateUtils.stop(sw));
 		}
+
 		doc.setPrivacyInfo(bucket);
 		return added;
 	}
 
-	/**
-	 * 허용된 key이고(옵션), 임계치(코드 값 or 기본1) 이상일 때만 PrivacyInfo 생성
-	 *
-	 * @param enforceDetectCode true면 PatternLoader.isDetectCode(key) 검사, false면 검사하지 않음(로컬 패턴용)
-	 */
-	private EmassDoc.PrivacyInfo toPrivacyInfo(String key, String type, String attachName, List<MatchResult> arr, boolean enforceDetectCode) {
-		if (enforceDetectCode && !PatternLoader.isDetectCode(key)) return null; // 주민번호, 카드번호 등 사용하는 항목만
+	/* =========================
+	 * PrivacyInfo Builder
+	 * ========================= */
+	private EmassDoc.PrivacyInfo toPrivacyInfo(String key, String type, String attachName, List<MatchResult> arr) {
+		if (!PatternLoader.isDetectCode(key)) {
+			log.debug("{} | {} | key={}", ErrorCode.PRIVACY_DETECT_CODE_INVALID, ErrorCode.fromCode(ErrorCode.PRIVACY_DETECT_CODE_INVALID), key);
+			return null;
+		}
 
 		List<String> items = new ArrayList<>();
 		for (MatchResult it : arr) {
 			if (it == null || it.matchString() == null) continue;
 
-			String matchString = it.matchString();
-			if (enforceDetectCode)
-				matchString = encString(matchString.getBytes(StandardCharsets.UTF_8)); //개인 정보 탐지 텍스트는 암호화 처리
-			items.add(matchString);
+			String encrypted = encString(it.matchString().getBytes(StandardCharsets.UTF_8));
+			if (encrypted != null) {
+				items.add(encrypted);
+			}
 		}
+
 		if (items.isEmpty()) return null;
 
-		// 임계치는 detectCode 검사 미적용 시에도 동일하게 적용
 		int threshold = PatternLoader.getCodeValueOrDefault(key, 1);
-		if (items.size() < threshold) return null;
+		if (items.size() < threshold) {
+			log.debug("{} | {} | key={} count={} threshold={}", ErrorCode.PRIVACY_THRESHOLD_NOT_MET, ErrorCode.fromCode(ErrorCode.PRIVACY_THRESHOLD_NOT_MET), key, items.size(), threshold);
+			return null;
+		}
 
-		log.debug("items : {}", items);
 		EmassDoc.PrivacyInfo info = new EmassDoc.PrivacyInfo();
 		info.setId(key);
 		info.setType(type);
@@ -127,22 +155,29 @@ public class PrivacyAnalysis {
 	}
 
 	private static List<EmassDoc.PrivacyInfo> ensurePrivacyInfoList(EmassDoc doc) {
-		if (doc.getPrivacyInfo() == null) doc.setPrivacyInfo(new ArrayList<>());
+		if (doc.getPrivacyInfo() == null) {
+			doc.setPrivacyInfo(new ArrayList<>());
+		}
 		return doc.getPrivacyInfo();
 	}
 
+	/* =========================
+	 * Encrypt
+	 * ========================= */
 	private String encString(byte[] text) {
 		try {
 			Crypto crypto = new Crypto(conf.getEncryptKey(), conf.getEncyptCipher());
 			byte[] cipherTextBytes = crypto.encrypt(text, 0, text.length);
 			return Base64.getEncoder().encodeToString(cipherTextBytes);
 		} catch (Exception e) {
-			log.warn("ENC_ERROR | {}", e.getMessage(), e);
+			log.warn("{} | {} | {}", ErrorCode.PRIVACY_ENCRYPT_FAIL, ErrorCode.fromCode(ErrorCode.PRIVACY_ENCRYPT_FAIL), e.getMessage(), e);
 		}
 		return null;
 	}
 
-
+	/* =========================
+	 * ML Verify
+	 * ========================= */
 	private boolean verify(final String text) {
 		if (!conf.isMlPrivacyApiEnable()) return true;
 
@@ -161,23 +196,28 @@ public class PrivacyAnalysis {
 
 		int maxRetries = 3;
 		int attempt = 0;
-		while (attempt < maxRetries) {
 
+		while (attempt < maxRetries) {
 			StopWatch sw = DateUtils.start();
 			try {
 				attempt++;
 				JSONObject rs = restClient.post().uri(conf.getMlPrivacyApiUrl()).contentType(MediaType.APPLICATION_JSON).body(body).retrieve().body(JSONObject.class);
-				if (rs != null) {
-					JSONArray results = rs.getJSONArray("results");
-					JSONObject object = results.getJSONObject(0);
-					log.info("ML_PII | text.length:{}, {} | {}", text.length(), object.getBoolean("is_pii"), DateUtils.stop(sw));
-					return object.getBoolean("is_pii");
+				if (rs == null || rs.getJSONArray("results") == null) {
+					log.warn("{} | {} | text.length={}", ErrorCode.PRIVACY_ML_RESPONSE_INVALID, ErrorCode.fromCode(ErrorCode.PRIVACY_ML_RESPONSE_INVALID), text.length());
+					return false;
 				}
+
+				JSONObject object = rs.getJSONArray("results").getJSONObject(0);
+				log.info("ML_PII | text.length:{} | {} | {}", text.length(), object.getBoolean("is_pii"), DateUtils.stop(sw));
+				return object.getBoolean("is_pii");
 			} catch (Exception e) {
-				log.warn("ML_PII | ({}/{}) | {} | {} | {}", attempt, maxRetries, text.length(), DateUtils.stop(sw), e.getMessage());
-				if (attempt < maxRetries) Common.sleep(1000);
+				log.warn("{} | {} | ({}/{}) | text.length={} | {}", ErrorCode.PRIVACY_ML_API_ERROR, ErrorCode.fromCode(ErrorCode.PRIVACY_ML_API_ERROR), attempt, maxRetries, text.length(), e.getMessage());
+				if (attempt < maxRetries) {
+					Common.sleep(1000);
+				}
 			}
 		}
+		log.warn("{} | {} | text.length={}", ErrorCode.PRIVACY_ML_VERIFY_FAIL, ErrorCode.fromCode(ErrorCode.PRIVACY_ML_VERIFY_FAIL), text.length());
 		return false;
 	}
 }

@@ -36,21 +36,28 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 public class AttachAnalysis {
+
 	private final Config conf;
 	private final FileThumbnail fileThumbnail;
 	private final FileService fileService;
 
+	/* =========================
+	 * Image Directory
+	 * ========================= */
 	private String imageDir(Options options) {
 		String imgPath = null;
 		try {
 			imgPath = Common.makeFilepath(conf.getMemoryDiskPath(), options.getMsgId(), TextFilter.IMG_DIR);
 			FileUtils.forceMkdir(new File(Objects.requireNonNull(imgPath)));
 		} catch (Exception e) {
-			log.warn("[MKDIR] ", e);
+			log.warn("{} | {} | msgId={} | {}", ErrorCode.ATTACH_MKDIR_FAIL, ErrorCode.fromCode(ErrorCode.ATTACH_MKDIR_FAIL), options.getMsgId(), e.getMessage(), e);
 		}
 		return imgPath;
 	}
 
+	/* =========================
+	 * Text Extract
+	 * ========================= */
 	private TextInfoVO getText(final String msgId, final String filePath, final String fileName) {
 		PathOptions options = new PathOptions();
 		options.setMsgId(msgId);
@@ -65,15 +72,26 @@ public class AttachAnalysis {
 		try {
 			return fileService.processText(options.getFilePath(), options.getFileName(), options, false);
 		} catch (Exception e) {
-			log.warn("GET_TEXT | {}", filePath, e);
+			log.warn("{} | {} | path={} | name={} | {}", ErrorCode.ATTACH_TEXT_EXTRACT_FAIL, ErrorCode.fromCode(ErrorCode.ATTACH_TEXT_EXTRACT_FAIL), filePath, fileName, e.getMessage(), e);
 		}
 		return null;
 	}
 
+	/* =========================
+	 * Attach Text
+	 * ========================= */
 	public void setAttachText(final ScanData msg) {
+		if (msg == null || msg.getEmassDoc() == null) {
+			log.warn("{} | {}", ErrorCode.ATTACH_MSGDATA_NULL, ErrorCode.fromCode(ErrorCode.ATTACH_MSGDATA_NULL));
+			return;
+		}
+
 		EmassDoc doc = msg.getEmassDoc();
 		List<EmassDoc.Attach> attaches = doc.getAttach();
-		if (attaches == null) return;
+		if (attaches == null) {
+			log.warn("{} | {} | msgId={}", ErrorCode.ATTACH_LIST_NULL, ErrorCode.fromCode(ErrorCode.ATTACH_LIST_NULL), doc.getMsgid());
+			return;
+		}
 
 		for (EmassDoc.Attach attach : attaches) {
 			attach.setOcrTarget(false);
@@ -81,110 +99,129 @@ public class AttachAnalysis {
 			attach.setChangeExtension(false);
 			attach.setEncrypted(false);
 
-			// 설정된 사이즈보다 큰 파일의 경우 텍스트 추출을 하지 않는다.
-			if (!attach.isExist() || isFileOverSize(attach.getSrcPath(), conf.getFileAnalysisLimitSize())) {
+			if (!attach.isExist()) {
+				log.warn("{} | {} | path={}", ErrorCode.ATTACH_FILE_NOT_EXIST, ErrorCode.fromCode(ErrorCode.ATTACH_FILE_NOT_EXIST), attach.getSrcPath());
+				continue;
+			}
+
+			if (isFileOverSize(attach.getSrcPath(), conf.getFileAnalysisLimitSize())) {
 				continue;
 			}
 
 			StopWatch sw = DateUtils.start();
 			TextInfoVO data = getText(doc.getMsgid(), attach.getSrcPath(), attach.getName());
+
 			if (data != null) {
 				String limitText = Common.limitLength(data.getText(), conf.getTextLimitLength());
-				limitText = Common.limitTokenLengthWithSpace(limitText, conf.getTextLimitToken()); // 텍스트 추출 후 최대 사이즈 제한까지 등록
+				limitText = Common.limitTokenLengthWithSpace(limitText, conf.getTextLimitToken());
 
 				attach.setText(limitText);
-				attach.setExpectedExtension(data.getExtension());       // 예상 확장자
-				attach.setExpectedUnknown(data.isUnknownType());      // 알수없는 확장자
-				attach.setChangeExtension(data.isChangeExtension());  // 확장자 변경 유무
-				attach.setEncrypted(data.isEncrypted());              // 암호화 유무
-				setExcelHiddenSheet(attach, data);                    // 엑셀 히드시트 정보 추가
+				attach.setExpectedExtension(data.getExtension());
+				attach.setExpectedUnknown(data.isUnknownType());
+				attach.setChangeExtension(data.isChangeExtension());
+				attach.setEncrypted(data.isEncrypted());
 
-				setEmbeddedImage(doc, msg.getMsgData(), attach, data); // 파일내 이미지 추출 정보
-				setOCRTarget(doc, attach);                             // OCR 대상 설정
+				setExcelHiddenSheet(attach, data);
+				setEmbeddedImage(doc, msg.getMsgData(), attach, data);
+				setOCRTarget(doc, attach);
 
 				log.info("ATT_TEXT | {} | TXT_LEN:{} | {}", conf.getDataPathSmall(attach.getSrcPath()), Common.nvl(attach.getText()).length(), DateUtils.stop(sw));
 			} else {
-				log.warn("ATT_TEXT | {} | TXT_LEN:{} | {}", conf.getDataPathSmall(attach.getSrcPath()), Common.nvl(attach.getText()).length(), DateUtils.stop(sw));
+				log.warn("{} | {} | path={}", ErrorCode.ATTACH_TEXT_EXTRACT_FAIL, ErrorCode.fromCode(ErrorCode.ATTACH_TEXT_EXTRACT_FAIL), conf.getDataPathSmall(attach.getSrcPath()));
 			}
 		}
 	}
 
-	// 파일내 이미지 추출 정보
+	/* =========================
+	 * Embedded Image
+	 * ========================= */
 	private void setEmbeddedImage(EmassDoc doc, MSGData msgData, EmassDoc.Attach attach, TextInfoVO data) {
 		try {
 			if (data.getEmbeddedImage() != null && data.getImagesCount() > 0) {
-				List<TextInfoVO.EmbeddedImage> array = data.getEmbeddedImage();
 				List<String> embeddedFiles = msgData.getEmbeddedFile();
-				List<EmassDoc.ImageExtractorInfo> imageExtractorInfos = new ArrayList<>();
-				for (TextInfoVO.EmbeddedImage embedded : array) {
+				List<EmassDoc.ImageExtractorInfo> infos = new ArrayList<>();
+
+				for (TextInfoVO.EmbeddedImage embedded : data.getEmbeddedImage()) {
 					if (embedded.getBase64() == null) continue;
 
 					String ext = FilenameUtils.getExtension(embedded.getName());
-					String name = Common.makeMD5Hex(Paths.get(attach.getSrcPath()).getFileName().toString(), embedded.getName()) + "." + ext; //첨부이름 + 이미지 이름 MD5
-					String srcPath = Common.makeFilepath(Paths.get(attach.getSrcPath()).getParent().toString(), name); //임시 SRC 저장 위치
-					String dest = conf.getDestPath(msgData.getCtime(), msgData.getMsgid(), name); //최종 저장 위치
+					String name = Common.makeMD5Hex(Paths.get(attach.getSrcPath()).getFileName().toString(), embedded.getName()) + "." + ext;
+
+					String srcPath = Common.makeFilepath(Paths.get(attach.getSrcPath()).getParent().toString(), name);
+					String dest = conf.getDestPath(msgData.getCtime(), msgData.getMsgid(), name);
+
 					Files.write(Path.of(Objects.requireNonNull(srcPath)), Common.decodeBase64(embedded.getBase64()), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
 					embeddedFiles.add(srcPath);
-
-					log.info("OLE__IMG | {} | {}", embedded.getName(), Common.getBase64Size(embedded.getBase64()));
-					imageExtractorInfos.add(EmassDoc.ImageExtractorInfo.builder().name(embedded.getName()).path(dest).build());
+					infos.add(EmassDoc.ImageExtractorInfo.builder().name(embedded.getName()).path(dest).build());
 				}
-				msgData.setEmbeddedFile(embeddedFiles); //파일 전송을 위한 저장
-				attach.setImageExtractorInfo(imageExtractorInfos);
+
+				msgData.setEmbeddedFile(embeddedFiles);
+				attach.setImageExtractorInfo(infos);
 
 				if (conf.isOcrApiEnable() && conf.isOcrEmbeddedImageEnable()) {
 					doc.getProcessStatus().setOcr("P");
-					attach.setOcrStatus("P"); // PENDING, 파일 내부에 있는 이미지도 OCR 대상임
+					attach.setOcrStatus("P");
 					attach.setOcrTarget(true);
 				}
 			}
 		} catch (Exception e) {
-			log.warn("ATT_OLE_IMG | {} | {}", conf.getDataPathSmall(attach.getSrcPath()), e.getMessage());
+			log.warn("{} | {} | path={} | {}", ErrorCode.ATTACH_IMAGE_EXTRACT_FAIL, ErrorCode.fromCode(ErrorCode.ATTACH_IMAGE_EXTRACT_FAIL), conf.getDataPathSmall(attach.getSrcPath()), e.getMessage(), e);
 		}
 	}
 
-	// OCR 대상 여부
+	/* =========================
+	 * OCR Target
+	 * ========================= */
 	private void setOCRTarget(EmassDoc doc, EmassDoc.Attach attach) {
 		if (!conf.isOcrApiEnable()) return;
 
-		// OCR 사이즈 제한보다 작아야 되며, 예상확장자 혹은 파일의 확장자가 이미지 타입인 경우 OCR 대상임.
 		String ext = Common.nvl(attach.getExtension());
 		if (!isFileOverSize(attach.getSrcPath(), conf.getOcrLimitSize()) && (conf.getOcrTargetExt().contains(attach.getExpectedExtension()) || conf.getOcrTargetExt().contains(ext))) {
+
 			doc.getProcessStatus().setOcr("P");
-			attach.setOcrStatus("P"); // PENDING
+			attach.setOcrStatus("P");
 			attach.setOcrTarget(true);
 		}
 	}
 
-	// 엑셀 Hidden Sheet 정보
+	/* =========================
+	 * Excel Hidden Sheet
+	 * ========================= */
 	private void setExcelHiddenSheet(EmassDoc.Attach attach, TextInfoVO data) {
 		try {
 			if (data.getSheetInfo() != null) {
 				SheetDetector.SheetInfo sheet = data.getSheetInfo();
-				EmassDoc.SheetInfo sheetInfo = new EmassDoc.SheetInfo();
-				sheetInfo.setSheetTotal(sheet.getSheetTotal());
-				sheetInfo.setSheetHiddenTotal(sheet.getSheetHiddenTotal());
-				sheetInfo.setHiddenSheetNames(sheet.getHiddenSheetNames());
-				attach.setSheetInfo(sheetInfo);
+				EmassDoc.SheetInfo info = new EmassDoc.SheetInfo();
+				info.setSheetTotal(sheet.getSheetTotal());
+				info.setSheetHiddenTotal(sheet.getSheetHiddenTotal());
+				info.setHiddenSheetNames(sheet.getHiddenSheetNames());
+				attach.setSheetInfo(info);
 			}
 		} catch (Exception e) {
-			log.warn("ATT_SHEET | {} | {}", conf.getDataPathSmall(attach.getSrcPath()), e.getMessage());
+			log.warn("{} | {} | path={} | {}", ErrorCode.ATTACH_SHEET_INFO_FAIL, ErrorCode.fromCode(ErrorCode.ATTACH_SHEET_INFO_FAIL), conf.getDataPathSmall(attach.getSrcPath()), e.getMessage(), e);
 		}
 	}
 
+	/* =========================
+	 * File Size Check
+	 * ========================= */
 	private boolean isFileOverSize(final String filePath, final long limitSize) {
 		try {
 			Path path = Paths.get(filePath);
-			if (Files.size(path) > limitSize) return true;
+			return Files.size(path) > limitSize;
 		} catch (IOException e) {
-			log.warn("{} | {} | path:{} err={}", ErrorCode.FILE_ANALYSIS_SIZE, ErrorCode.fromCode(ErrorCode.FILE_ANALYSIS_SIZE), filePath, e.toString());
+			log.warn("{} | {} | path={} err={}", ErrorCode.FILE_ANALYSIS_SIZE, ErrorCode.fromCode(ErrorCode.FILE_ANALYSIS_SIZE), filePath, e.toString());
 			return true;
 		}
-		return false;
 	}
 
 	public void setAttachThumbnail(final ScanData msg) {
+		if (msg == null || msg.getEmassDoc() == null) {
+			log.warn("{} | {}", ErrorCode.ATTACH_MSGDATA_NULL, ErrorCode.fromCode(ErrorCode.ATTACH_MSGDATA_NULL));
+			return;
+		}
+
 		EmassDoc doc = msg.getEmassDoc();
 		try {
 			List<EmassDoc.Attach> attaches = doc.getAttach();
@@ -201,48 +238,23 @@ public class AttachAnalysis {
 					String thumbnail = fileThumbnail.execute(attach.getExpectedExtension(), path, attach.getText());
 					if (thumbnail != null) {
 						fileThumbnail.insertThumbnail(attach.getHash(), thumbnail);
-						log.info("THUMNAIL | {} | {}", conf.getDataPathSmall(attach.getSrcPath()), DateUtils.stop(sw));
+						log.info("THUMBNAIL | {} | {}", conf.getDataPathSmall(attach.getSrcPath()), DateUtils.stop(sw));
 					}
 				}
 			}
 		} catch (Exception e) {
-			log.warn("THUMNAIL | {}", e.getMessage());
+			log.warn("{} | {} | {}", ErrorCode.ATTACH_THUMBNAIL_FAIL, ErrorCode.fromCode(ErrorCode.ATTACH_THUMBNAIL_FAIL), e.getMessage(), e);
 		}
 	}
 
 	public static void main(String[] args) {
 		StopWatch sw = new StopWatch();
 		sw.start();
-		for (int i = 1; i <= 100; i++) {
+		for (int i = 0; i < 100; i++) {
 			Common.sleep(1);
 		}
 		sw.stop();
 		String formatted = DurationFormatUtils.formatDuration(sw.getTotalTimeMillis(), "s.SSS's'");
 		System.out.println(formatted);
 	}
-
-//
-//	private JSONObject getText(final String msgId, final String filePath, final String fileName) {
-//		LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-//		body.add("msgId", msgId);
-//		body.add("filePath", filePath);
-//		body.add("fileName", fileName);
-//		body.add("extractImage", conf.isExtractImage());
-//		body.add("checkArchiveImage", conf.isExtractImage());
-//		body.add("checkArchiveDepth", conf.getDecompressDepth());
-//		body.add("checkExcelHiddenSheet", conf.isCheckExcelHiddenSheet());
-//
-//		int maxRetries = 3;
-//		int attempt = 0;
-//		while (attempt < maxRetries) {
-//			try {
-//				attempt++;
-//				return restClient.post().uri(conf.getFileAnalysisUrl()).contentType(MediaType.MULTIPART_FORM_DATA).body(body).retrieve().body(JSONObject.class);
-//			} catch (Exception e) {
-//				log.warn("GET_TEXT | {} | ({}/{}) | {}", filePath, attempt, maxRetries, e.getMessage());
-//				if (attempt < maxRetries) Common.sleep(1000);
-//			}
-//		}
-//		return null;
-//	}
 }

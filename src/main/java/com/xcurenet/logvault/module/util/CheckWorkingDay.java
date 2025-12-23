@@ -32,7 +32,6 @@ public class CheckWorkingDay {
 	}
 
 	public void setDay(final ScanData data) {
-
 		if (data.getMsgData() == null) {
 			throw ExFactory.ex(ProcessDataException::new, ErrorCode.WORKDAY_MSGDATA_NULL, Map.of("context", "ScanData.msgData is null"));
 		}

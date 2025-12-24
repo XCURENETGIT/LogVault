@@ -38,11 +38,13 @@ public class CheckWorkingDay {
 
 		DateTime ctime = data.getMsgData().getCtime();
 		if (ctime == null) {
-			throw ExFactory.ex(ProcessDataException::new, ErrorCode.WORKDAY_CTIME_NULL, Map.of("context", "ScanData.msgData.ctime is null"));
+			log.warn("{} | {}", ErrorCode.WORKDAY_CTIME_NULL, ErrorCode.fromCode(ErrorCode.WORKDAY_CTIME_NULL));
+			return;
 		}
 
 		if (data.getEmassDoc() == null) {
-			throw ExFactory.ex(ProcessDataException::new, ErrorCode.WORKDAY_EMASSDOC_NULL, Map.of("context", "EmassDoc is null"));
+			log.warn("{} | {}", ErrorCode.WORKDAY_EMASSDOC_NULL, ErrorCode.fromCode(ErrorCode.WORKDAY_EMASSDOC_NULL));
+			return;
 		}
 
 		try {

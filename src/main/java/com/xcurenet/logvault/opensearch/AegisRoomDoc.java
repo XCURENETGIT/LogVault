@@ -1,11 +1,11 @@
 package com.xcurenet.logvault.opensearch;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.elasticsearch.annotations.Document;
-import org.springframework.data.elasticsearch.annotations.Field;
-import org.springframework.data.elasticsearch.annotations.WriteTypeHint;
+import org.springframework.data.elasticsearch.annotations.*;
 
+import java.util.Date;
 import java.util.List;
 
 @Data
@@ -14,6 +14,10 @@ public class AegisRoomDoc {
 	@Id
 	@Field("room_id")
 	private String roomId;
+
+	@Field(name = "@timestamp", type = FieldType.Date, format = DateFormat.epoch_millis)
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+	private Date timestamp;
 
 	@Field("recent_ctime")
 	private String recentCtime;

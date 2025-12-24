@@ -2,11 +2,9 @@ package com.xcurenet.logvault.module.analysis;
 
 import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.msg.MSGData;
-import com.xcurenet.common.utils.ExFactory;
 import com.xcurenet.common.utils.FileUtil;
 import com.xcurenet.common.utils.HttpHeaderUtil;
 import com.xcurenet.logvault.conf.Config;
-import com.xcurenet.logvault.exception.ProcessDataException;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +14,6 @@ import ua_parser.Client;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Map;
 
 @Log4j2
 @Service
@@ -27,12 +24,14 @@ public class UserAgentAnalysis {
 
 	public void detect(final ScanData scanData) {
 		if (scanData.getMsgData() == null) {
-			throw ExFactory.ex(ProcessDataException::new, ErrorCode.UA_MSGDATA_NULL, Map.of("context", "ScanData.msgData is null"));
+			log.warn("{} | {}", ErrorCode.UA_MSGDATA_NULL, ErrorCode.fromCode(ErrorCode.UA_MSGDATA_NULL));
+			return;
 		}
 
 		MSGData msg = scanData.getMsgData();
 		if (msg.getHeader() == null) {
-			throw ExFactory.ex(ProcessDataException::new, ErrorCode.UA_HEADER_PATH_NULL, Map.of("context", "MSG.header is null"));
+			log.warn("{} | {}", ErrorCode.UA_HEADER_PATH_NULL, ErrorCode.fromCode(ErrorCode.UA_HEADER_PATH_NULL));
+			return;
 		}
 
 		String headerPath = conf.getPath(msg.getHeader());
@@ -51,7 +50,8 @@ public class UserAgentAnalysis {
 				return;
 			}
 			if (scanData.getEmassDoc() == null || scanData.getEmassDoc().getHttp() == null) {
-				throw ExFactory.ex(ProcessDataException::new, ErrorCode.UA_EMASSDOC_HTTP_NULL, Map.of("context", "EmassDoc.http is null"));
+				log.warn("{} | {}", ErrorCode.UA_EMASSDOC_HTTP_NULL, ErrorCode.fromCode(ErrorCode.UA_EMASSDOC_HTTP_NULL));
+				return;
 			}
 
 			HttpHeaderUtil.HttpHeader.HttpRequestHeader request = httpHeader.getRequestHeader();
@@ -60,7 +60,6 @@ public class UserAgentAnalysis {
 			EmassDoc.Header.RequestHeader requestHeader = EmassDoc.Header.RequestHeader.builder().method(request.getMethod()).protocol(request.getProtocol()).origin(getOrigin(request)).build();
 			EmassDoc.Header.ResponseHeader responseHeader = EmassDoc.Header.ResponseHeader.builder().date(getHeaderDate(response)).contentType(getContentType(response)).build();
 			scanData.getEmassDoc().getHttp().setHeader(EmassDoc.Header.builder().request(requestHeader).response(responseHeader).build());
-
 			try {
 				Client client = httpHeader.getClient();
 				if (client != null) {

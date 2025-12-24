@@ -94,7 +94,10 @@ public class IndexService {
 		room.setRoomId(doc.getRoomId());
 		room.setSvc(doc.getService().getSvc12());
 
-		long recentCtime = roomDoc != null ? Common.nvn(roomDoc.getRecentCtime()) : 0;
+		long recentCtime = 0L;
+		if (roomDoc != null && roomDoc.getTimestamp() != null) recentCtime = roomDoc.getTimestamp().getTime();
+		else if (roomDoc != null) recentCtime = Common.nvn(roomDoc.getRecentCtime());
+
 		if (recentCtime <= Common.nvn(doc.getCtime())) { // 최근 데이터인 경우 신규 내용으로 업데이트
 			room.setUser(doc.getUser());
 			room.setRecentCtime(doc.getCtime());

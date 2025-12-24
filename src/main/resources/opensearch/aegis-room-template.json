@@ -43,6 +43,10 @@
 				"room_id" : {
 					"type": "keyword"
 				},
+				"@timestamp": {
+					"type": "date",
+					"format": "epoch_millis"
+				},
 				"recent_ctime": {
 					"type": "date",
 					"format": "yyyyMMddHHmmss"

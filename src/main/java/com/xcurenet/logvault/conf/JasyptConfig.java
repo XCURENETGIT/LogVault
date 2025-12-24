@@ -4,7 +4,6 @@ import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.ExFactory;
 import com.xcurenet.logvault.exception.EncryptException;
-import com.xcurenet.logvault.exception.FileSendException;
 import lombok.extern.log4j.Log4j2;
 import org.jasypt.encryption.StringEncryptor;
 import org.jasypt.encryption.pbe.PooledPBEStringEncryptor;
@@ -17,6 +16,7 @@ import java.util.Map;
 @Log4j2
 @Configuration
 public class JasyptConfig {
+
 	private static final String ALGORITHM = "PBEWithMD5AndDES";
 	private static StringEncryptor cachedEncryptor;
 
@@ -26,57 +26,67 @@ public class JasyptConfig {
 	}
 
 	private static synchronized StringEncryptor getEncryptorInstance() throws EncryptException {
-		if (cachedEncryptor == null) {
+		if (cachedEncryptor != null) {
+			return cachedEncryptor;
+		}
+
+		try {
+			String key = Common.getKey();
+			if (key == null || key.trim().isEmpty()) {
+				throw ExFactory.ex(EncryptException::new, ErrorCode.ENC_KEY_FAIL, Map.of("keyFile", Config.getEncryptKeyFile()));
+			}
+
 			PooledPBEStringEncryptor encryptor = new PooledPBEStringEncryptor();
 			SimpleStringPBEConfig config = new SimpleStringPBEConfig();
 
-			String key = Common.getKey();
-			if (key == null || key.trim().isEmpty()) {
-				throw ExFactory.ex(EncryptException::new, ErrorCode.ENC_KEY_FAIL, Map.of("detail", Config.getEncryptKeyFile()));
-			}
 			config.setPassword(key);
 			config.setAlgorithm(ALGORITHM);
 			config.setKeyObtentionIterations("1000");
 			config.setPoolSize("1");
 			config.setSaltGeneratorClassName("org.jasypt.salt.RandomSaltGenerator");
 			config.setStringOutputType("base64");
-			encryptor.setConfig(config);
 
+			encryptor.setConfig(config);
 			cachedEncryptor = encryptor;
+
 			log.info("JASYPT Encryptor initialized successfully.");
+			return cachedEncryptor;
+		} catch (EncryptException e) {
+			throw e;
+		} catch (Exception e) {
+			throw ExFactory.ex(EncryptException::new, ErrorCode.ENC_INIT_FAIL, Map.of("stage", "encryptor-init", "exception", e.getMessage()));
 		}
-		return cachedEncryptor;
 	}
 
 	public static String decrypt(final String text) throws EncryptException {
-		if (text != null && text.startsWith("ENC(") && text.endsWith(")")) {
-			String cipher = text.substring(4, text.length() - 1);
-			try {
-				return getEncryptorInstance().decrypt(cipher);
-			} catch (EncryptException e) {
-				throw new RuntimeException(e);
-			} catch (Exception e) {
-				log.error("Failed to decrypt value. Cipher: {}, Error: {}", cipher, e.getMessage());
-				throw new IllegalStateException("Decryption failed. Check encryption key match.", e);
-			}
+		if (text == null || !text.startsWith("ENC(") || !text.endsWith(")")) {
+			return text;
 		}
-		return text;
+
+		String cipher = text.substring(4, text.length() - 1);
+		try {
+			return getEncryptorInstance().decrypt(cipher);
+		} catch (EncryptException e) {
+			throw ExFactory.ex(EncryptException::new, ErrorCode.ENC_DECRYPT_FAIL, Map.of("cipher", cipher));
+		} catch (Exception e) {
+			throw ExFactory.ex(EncryptException::new, ErrorCode.ENC_INTERNAL_ERROR, Map.of("cipher", cipher, "exception", e.getMessage()));
+		}
 	}
 
-
 	/**
-	 * jasypt encrypt
+	 * 단독 실행 테스트
 	 */
 	public static void main(String[] args) {
-		String password = "NewPassword1e3!";
+		try {
+			String password = "NewPassword1e3!";
+			StringEncryptor encryptor = new JasyptConfig().stringEncryptor();
 
-		JasyptConfig jasyptConfig = new JasyptConfig();
-		StringEncryptor stringEncryptor = jasyptConfig.stringEncryptor();
-
-		String encryptedText = stringEncryptor.encrypt(password);
-		String decryptedText = stringEncryptor.decrypt(encryptedText);
-
-		log.info("encryptedText > {}", encryptedText);
-		log.info("decryptedText > {}", decryptedText);
+			String encrypted = encryptor.encrypt(password);
+			String decrypted = encryptor.decrypt(encrypted);
+			log.info("encryptedText={}", encrypted);
+			log.info("decryptedText={}", decrypted);
+		} catch (EncryptException e) {
+			log.error("", e);
+		}
 	}
 }

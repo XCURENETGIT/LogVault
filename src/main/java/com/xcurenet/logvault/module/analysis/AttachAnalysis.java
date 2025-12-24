@@ -89,7 +89,6 @@ public class AttachAnalysis {
 		EmassDoc doc = msg.getEmassDoc();
 		List<EmassDoc.Attach> attaches = doc.getAttach();
 		if (attaches == null) {
-			log.warn("{} | {} | msgId={}", ErrorCode.ATTACH_LIST_NULL, ErrorCode.fromCode(ErrorCode.ATTACH_LIST_NULL), doc.getMsgid());
 			return;
 		}
 

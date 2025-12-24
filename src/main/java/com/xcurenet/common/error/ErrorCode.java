@@ -8,55 +8,65 @@ public enum ErrorCode {
 	/* =========================
 	 * Crypto
 	 * ========================= */
-	ENC_KEY_FAIL("LVT-0001", "Encryption Key file is missing."),
+	ENC_KEY_FAIL("LVT-0001", "Encryption Key file is missing."), //암호화 키 파일 미존재 또는 비어 있음
+	ENC_KEY_LOAD_FAIL("LVT-0002", "Failed to load encryption key file."), //암호화 키 로딩 중 오류 발생 (권한, IO 오류 등)
+	ENC_INIT_FAIL("LVT-0003", "Jasypt encryptor initialization failed."), //Jasypt Encryptor 초기화 실패
+	ENC_DECRYPT_FAIL("LVT-0004", "Decryption failed. Encryption key mismatch or invalid cipher text."),//복호화 처리 실패 (키 불일치, 알고리즘 오류 등)
+	ENC_INTERNAL_ERROR("LVT-0099", "Internal crypto processing error."), //암·복호화 처리 중 알 수 없는 내부 오류
+
 	/* =========================
 	 * Parser
 	 * ========================= */
-	PARSER_READ_FAIL("LVT-1001", "MSG File Read Failed"),
-	PARSER_TEXT_NULL("LVT-1002", "MSG File is null"),
-	PARSER_WORK_FAIL("LVT-1003", "MSG File Parsing Failed"),
+	PARSER_READ_FAIL("LVT-1001", "MSG File Read Failed"), // MSG 파일 읽기 실패
+	PARSER_TEXT_NULL("LVT-1002", "MSG File is null"), // MSG 파일 내용이 비어 있음
+	PARSER_WORK_FAIL("LVT-1003", "MSG File Parsing Failed"), // MSG 파일 파싱 처리 실패
 
-	PARSER_CTIME_NULL("LVT-1004", "MSG CTIME is null"),
-	PARSER_SIP_NULL("LVT-1005", "MSG SOURCE IP is null"),
-	PARSER_SPORT_NULL("LVT-1006", "MSG SOURCE PORT is null"),
-	PARSER_DIP_NULL("LVT-1007", "MSG DEST IP is null"),
-	PARSER_HOST_NULL("LVT-1008", "MSG HOST is null"),
-	PARSER_URL_NULL("LVT-1009", "MSG URL is null"),
-	PARSER_QUERY_NULL("LVT-1010", "MSG Query is null"),
+	PARSER_CTIME_NULL("LVT-1004", "MSG CTIME is null"), // MSG 생성 시간(CTIME) 정보 없음
+	PARSER_SIP_NULL("LVT-1005", "MSG SOURCE IP is null"), // 출발지 IP 정보 없음
+	PARSER_SPORT_NULL("LVT-1006", "MSG SOURCE PORT is null"), // 출발지 PORT 정보 없음
+	PARSER_DIP_NULL("LVT-1007", "MSG DEST IP is null"), // 목적지 IP 정보 없음
+	PARSER_HOST_NULL("LVT-1008", "MSG HOST is null"), // HOST 정보 없음
+	PARSER_URL_NULL("LVT-1009", "MSG URL is null"), // URL 정보 없음
+	PARSER_QUERY_NULL("LVT-1010", "MSG Query is null"), // URL Query 정보 없음
 
-	PARSER_QUERY_TOO_LONG("LVT-1010", "MSG URL query is too long"),
-	PARSER_MSGFILE_NULL("LVT-1012", "MSG MSG FILE (body) is null"),
-	PARSER_STYPE_NULL("LVT-1013", "MSG STYPE is null or cannot be derived"),
+	PARSER_QUERY_TOO_LONG("LVT-1010", "MSG URL query is too long"),// URL Query 길이가 허용 범위를 초과함
+	PARSER_MSGFILE_NULL("LVT-1012", "MSG MSG FILE (body) is null"), // MSG 본문(body) 파일이 없음
+	PARSER_STYPE_NULL("LVT-1013", "MSG STYPE is null or cannot be derived"), // 서비스 타입(STYPE) 정보 없음 또는 추론 불가
 
-	PARSER_FILENAME_FAIL("LVT-1014", "MSG File Name Parsing Failed"),
-	PARSER_SVC_NULL("LVT-1015", "MSG File SVC is null"),
-	PARSER_SVC_INVALID("LVT-1016", "MSG File SVC is invalid"),
-	PARSER_INVALID("LVT-1998", "Invalid parser"),
-	PARSER_MSG_FAIL("LVT-1999", "EDCDoc Parsing Failed"),
+	PARSER_FILENAME_FAIL("LVT-1014", "MSG File Name Parsing Failed"), // 파일명 규칙 파싱 실패
+	PARSER_SVC_NULL("LVT-1015", "MSG File SVC is null"), // 서비스(SVC) 정보 없음
+	PARSER_SVC_INVALID("LVT-1016", "MSG File SVC is invalid"), // 서비스(SVC) 값이 유효하지 않음
+	PARSER_INVALID("LVT-1998", "Invalid parser"), // 유효하지 않은 파서 요청
+	PARSER_MSG_FAIL("LVT-1999", "EDCDoc Parsing Failed"), // EDCDoc 전체 파싱 실패
 
 	/* =========================
 	 * Index
 	 * ========================= */
-	INDEX_NAME_NULL("LVT-2002", "Index name is null"),
-	INDEX_DATA_NULL("LVT-2003", "Index data is null"),
-	INDEX_CONNECT_FAIL("LVT-2004", "OpenSearch Service Connection Failed"),
-	INDEX_DEL_NAME_NULL("LVT-2005", "Index name is null"),
-	INDEX_DEL_INVALID("LVT-2006", "Refusing to delete '*' or '_all'"),
-	INDEX_DEL_SYSTEM("LVT-2007", "Refusing to delete system/hidden indices"),
-	INDEX_DEL_FAIL("LVT-2009", "Refusing to delete system/hidden indices"),
+	INDEX_NAME_NULL("LVT-2002", "Index name is null"), // 인덱스 이름이 없음
+	INDEX_DATA_NULL("LVT-2003", "Index data is null"), // 인덱싱할 데이터가 없음
+	INDEX_CONNECT_FAIL("LVT-2004", "OpenSearch Service Connection Failed"), // OpenSearch 연결 실패
+	INDEX_DEL_NAME_NULL("LVT-2005", "Index name is null"), // 삭제할 인덱스 이름이 없음
 
-	INDEX_SAVE_FAIL("LVT-2999", "Failed to index document into {index}"),
+	INDEX_DEL_INVALID("LVT-2006", "Refusing to delete '*' or '_all'"), // 전체 인덱스 삭제 시도 차단
+	INDEX_DEL_SYSTEM("LVT-2007", "Refusing to delete system/hidden indices"), // 시스템/히든 인덱스 삭제 차단
+	INDEX_DEL_FAIL("LVT-2009", "Refusing to delete system/hidden indices"), // 인덱스 삭제 처리 실패
+	OPENSEARCH_INIT_FAIL("LVT-2100", "OpenSearch initialization failed."), // OpenSearch 초기화 전체 실패
+	OPENSEARCH_POLICY_DELETE_FAIL("LVT-2101", "Failed to delete ISM policy."), // ISM 정책 삭제 실패
+	OPENSEARCH_POLICY_CREATE_FAIL("LVT-2102", "Failed to create ISM policy."), // ISM 정책 생성 실패
+	OPENSEARCH_TEMPLATE_APPLY_FAIL("LVT-2103", "Failed to apply index template."), // 인덱스 템플릿 적용 실패
+	OPENSEARCH_JSON_LOAD_FAIL("LVT-2104", "Failed to load OpenSearch config JSON from classpath."), // OpenSearch 설정 JSON 로딩 실패
+	INDEX_SAVE_FAIL("LVT-2999", "Failed to index document into {index}"), // 문서 인덱싱 실패
 
 	/* =========================
 	 * File Send / Write
 	 * ========================= */
-	FILE_WRITE_TEXT_FAIL("LVT-3001", "Failed to write text file"),
-	FILE_WRITE_STREAM_FAIL("LVT-3002", "Failed to send file"),
-	FILE_MSG_SEND_FAIL("LVT-3003", "Failed to send MSG file"),
-	FILE_BODY_SEND_FAIL("LVT-3004", "Failed to send body file"),
+	FILE_WRITE_TEXT_FAIL("LVT-3001", "Failed to write text file"), // 파일 작성 실패
+	FILE_WRITE_STREAM_FAIL("LVT-3002", "Failed to send file"), // 파일 전송 오류
+	FILE_MSG_SEND_FAIL("LVT-3003", "Failed to send MSG file"), // MSG 파일 전송 실패
+	FILE_BODY_SEND_FAIL("LVT-3004", "Failed to send body file"), // 본문 파일 전송 실패
 
-	FILE_SEND_FAIL("LVT-3998", "Failed to send file"),
-	EMBED_SEND_FAIL("LVT-3999", "Failed to send file"),
+	FILE_SEND_FAIL("LVT-3998", "Failed to send file"), // 파일 전송 실패
+	EMBED_SEND_FAIL("LVT-3999", "Failed to send file"), // 파일 전송 실패
 
 	/* =========================
 	 * INSA
@@ -124,6 +134,14 @@ public enum ErrorCode {
 	WORKDAY_SET_FAIL("LVT-8099", "Failed to set working day information"),
 
 	/* =========================
+	 * Alert / Notification
+	 * ========================= */
+	ALERT_DOC_NULL("LVT-8301", "Alert target document is null"), // Alert 처리 대상 문서가 없음
+	ALERT_CALC_FAIL("LVT-8302", "Failed to calculate alert conditions"), // Alert 조건 계산 중 오류 발생
+	ALERT_REPOSITORY_FAIL("LVT-8303", "Failed to store alert message"),  // Alert 메시지 저장 실패
+	ALERT_INTERNAL_ERROR("LVT-8399", "Internal alert processing error"), // Alert 처리 중 알 수 없는 내부 오류
+
+	/* =========================
 	 * User-Agent
 	 * ========================= */
 	UA_MSGDATA_NULL("LVT-8101", "ScanData.msgData is null"),
@@ -146,7 +164,7 @@ public enum ErrorCode {
 	/* =========================
 	 * Common
 	 * ========================= */
-	UNKNOWN_ERROR("LVT-9999", "Unknown error");
+	UNKNOWN_ERROR("LVT-9999", "Unknown error"); //분류되지 않은 알 수 없는 오류
 
 	private final String code;
 	private final String messageTemplate;

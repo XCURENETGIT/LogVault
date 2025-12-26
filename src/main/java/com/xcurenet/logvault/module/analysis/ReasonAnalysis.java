@@ -47,6 +47,11 @@ public class ReasonAnalysis {
 			int total = doc.getPrivacyInfo().stream().mapToInt(EmassDoc.PrivacyInfo::getCount).sum();
 			doc.setPrivacyTotal(total);
 		}
+		if (doc.getKeywordInfo() != null && !doc.getKeywordInfo().getKeywords().isEmpty()) {
+			doc.setKeywordTotal(doc.getKeywordInfo().getKeywords().size());
+			int sum = doc.getKeywordInfo().getKeywords().stream().mapToInt(EmassDoc.KeywordInfo.Keyword::getCount).sum();
+			doc.setKeywordTotal(sum);
+		}
 	}
 
 	private void appendKeyword(EmassDoc doc, int id, String detectStr) {
@@ -75,7 +80,6 @@ public class ReasonAnalysis {
 		keywordInfo.setKeywords(body);
 
 		doc.setKeywordInfo(keywordInfo);
-		doc.setKeywordTotal(body.size());
 	}
 
 	private void appendPrivacy(EmassDoc doc, int id, int confidence, String detectStr) {

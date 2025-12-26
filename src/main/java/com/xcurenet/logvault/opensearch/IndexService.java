@@ -84,39 +84,40 @@ public class IndexService {
 	/**
 	 * 생성형 AI Room 생성
 	 *
-	 * @param doc EmassDoc
+	 * @param newDoc EmassDoc
 	 */
-	private void indexRoom(EmassDoc doc) {
-		if (doc.isTestMessage()) return;
-		AegisRoomDoc roomDoc = getRoom(doc.getRoomId());
+	private void indexRoom(EmassDoc newDoc) {
+		if (newDoc.isTestMessage()) return;
+		AegisRoomDoc roomDoc = getRoom(newDoc.getRoomId());
 
 		AegisRoomDoc room = new AegisRoomDoc();
-		room.setRoomId(doc.getRoomId());
-		room.setSvc(doc.getService().getSvc12());
+		room.setRoomId(newDoc.getRoomId());
+		room.setSvc(newDoc.getService().getSvc12());
 
-		long recentCtime = 0L;
-		if (roomDoc != null && roomDoc.getTimestamp() != null) recentCtime = roomDoc.getTimestamp().getTime();
-		else if (roomDoc != null) recentCtime = Common.nvn(roomDoc.getRecentCtime());
+		long recentCtime = (roomDoc != null && roomDoc.getTimestamp() != null) ? roomDoc.getTimestamp().getTime() : 0L;
+		if (recentCtime <= newDoc.getTimestamp().getTime()) { // 최근 데이터인 경우 신규 내용으로 업데이트
+			room.setUser(newDoc.getUser());
+			room.setAction(newDoc.getAction());
+			room.setTimestamp(newDoc.getTimestamp());
+			room.setRecentCtime(newDoc.getCtime());
+			room.setRecentMsgId(newDoc.getMsgid());
+			room.setDay(newDoc.getDay());
+			room.setMlResult(newDoc.getMlResult());
 
-		if (recentCtime <= Common.nvn(doc.getCtime())) { // 최근 데이터인 경우 신규 내용으로 업데이트
-			room.setUser(doc.getUser());
-			room.setRecentCtime(doc.getCtime());
-			room.setRecentMsgId(doc.getMsgid());
-			room.setDay(doc.getDay());
-			room.setMlResult(doc.getMlResult());
-
-			String message = doc.getBody() == null ? null : doc.getBody().getText();
-			if (Common.isEmpty(message) && doc.getAttachCount() > 0) {
+			String message = newDoc.getBody() == null ? null : newDoc.getBody().getText();
+			if (Common.isEmpty(message) && newDoc.getAttachCount() > 0) {
 				message = "";
-				for (EmassDoc.Attach attach : doc.getAttach()) {
+				for (EmassDoc.Attach attach : newDoc.getAttach()) {
 					message = message.concat(attach.getName()).concat(" ");
 				}
 			}
 			room.setRecentMessage(message);
-			room.setPrivacyTotal(doc.getPrivacyTotal());
-			room.setPrivacyInfo(doc.getPrivacyInfo());
-		} else if (roomDoc != null) {  // 기존 데이터가 더 최근이라면 기존 값으로
+			room.setPrivacyTotal(newDoc.getPrivacyTotal());
+			room.setPrivacyInfo(newDoc.getPrivacyInfo());
+		} else if (roomDoc != null) {  // 기존 데이터가 더 최근이라면 기존 값으로 (OCR, ML 처리 결과에 따라 분석 내용이 달라짐.)
 			room.setUser(roomDoc.getUser());
+			room.setAction(roomDoc.getAction());
+			room.setTimestamp(roomDoc.getTimestamp());
 			room.setRecentCtime(roomDoc.getRecentCtime());
 			room.setRecentMsgId(roomDoc.getRecentMsgId());
 			room.setDay(roomDoc.getDay());

@@ -1,6 +1,7 @@
 package com.xcurenet.logvault.opensearch;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.xcurenet.logvault.module.util.ActionType;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.*;
@@ -14,6 +15,9 @@ public class AegisRoomDoc {
 	@Id
 	@Field("room_id")
 	private String roomId;
+
+	@Field("action")
+	private ActionType action;
 
 	@Field(name = "@timestamp", type = FieldType.Date, format = DateFormat.epoch_millis)
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")

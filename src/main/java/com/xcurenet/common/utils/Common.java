@@ -48,6 +48,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -668,6 +669,16 @@ public final class Common {
 		return Base64.decodeBase64(base64Str);
 	}
 
+	public static String decodeBase64ToString(final String base64Str) {
+		if (base64Str == null || base64Str.isBlank()) return "";
+		try {
+			byte[] decoded = Base64.decodeBase64(base64Str);
+			return new String(decoded, StandardCharsets.UTF_8);
+		} catch (Exception e) {
+			return "";
+		}
+	}
+
 	public static String stringifyException(final Throwable e) {
 		final StringWriter stm = new StringWriter();
 		final PrintWriter wrt = new PrintWriter(stm);
@@ -960,6 +971,34 @@ public final class Common {
 			if (isNotEmpty(x) || !exceptEmpty) as.add(x);
 		}
 		return as.toArray(new String[0]);
+	}
+
+	/**
+	 * 기본 split
+	 * - null / blank → empty list
+	 * - trim 적용
+	 * - 빈 토큰 제거
+	 */
+	public static List<String> split(String value, String delimiter) {
+		return split(value, delimiter, true);
+	}
+
+	/**
+	 * 옵션 지정 split
+	 *
+	 * @param value       입력 문자열
+	 * @param delimiter   구분자 (regex 아님)
+	 * @param ignoreEmpty 빈 값 제거 여부
+	 */
+	public static List<String> split(String value, String delimiter, boolean ignoreEmpty) {
+		if (value == null || value.isBlank()) {
+			return Collections.emptyList();
+		}
+
+		if (delimiter == null || delimiter.isEmpty()) {
+			return List.of(value.trim());
+		}
+		return Arrays.stream(value.split(java.util.regex.Pattern.quote(delimiter))).map(String::trim).filter(s -> !ignoreEmpty || !s.isEmpty()).collect(Collectors.toList());
 	}
 
 	@SuppressWarnings("unchecked")

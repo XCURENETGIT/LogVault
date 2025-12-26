@@ -5,6 +5,7 @@ import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.module.ScanData;
+import com.xcurenet.logvault.module.util.ActionType;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -39,6 +40,7 @@ public class TaskService {
 	public boolean send(final ScanData data) {
 		EmassDoc doc = data.getEmassDoc();
 		if (Common.isNotEquals(doc.getService().getSvc3(), "S")) return false; //발신 서비스만
+		if (doc.getAction() != ActionType.ALLOW) return false; //허용 정책만
 
 		TaskMessage message = new TaskMessage();
 		message.setMsgId(doc.getMsgid());

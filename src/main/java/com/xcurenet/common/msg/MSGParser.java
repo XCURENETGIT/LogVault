@@ -56,6 +56,12 @@ public class MSGParser {
 			data.setInfoFilePath(filePath.toAbsolutePath().toString());
 			data.setInfoText(input);
 			data.setMsgid(Common.makeMsgId(data.getCtime(), Common.makeFilepath(data.getInfoFilePath())));
+			data.setAction(Common.nvl(data.getAction(), "ALLOW")); // ALLOW : 허용, BLOCK : 차단, SKIP : 스킵, ERROR : 에러
+			if (Common.isNotEquals(data.getAction(), "ALLOW")) { //복호화 장비의 경우 서비스타입을 3자리로 줄수있다.
+				if (Common.nvl(data.getSvc()).length() == 3) { //3자리로 설정된 경우 발신으로 서비스를 변경
+					data.setSvc(data.getSvc() + "S");
+				}
+			}
 			return data;
 		} catch (Exception e) {
 			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_INVALID, Map.of("context", filePath), e);

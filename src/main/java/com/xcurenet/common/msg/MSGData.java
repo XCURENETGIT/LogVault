@@ -99,8 +99,11 @@ public class MSGData {
 	@FieldKey("EPMSG_TYPE")
 	private String epMsgType;
 
-	@FieldKey("ACTION") // EP 전용 (SAVE, AUTO, BBS, APP, SEND, UNKNOWN), (http_decoder)
+	@FieldKey("ACTION") //정책 action:default allow, (ALLOW/BLOCK/SKIP/ERROR), EP 전용 (SAVE, AUTO, BBS, APP, SEND, UNKNOWN), (http_decoder)
 	private String action;
+
+	@FieldKey("REASON") //정책 차단 사유
+	private String reason;
 
 	@FieldKey("RESULT") // EP 전용 (GOOD, BAD) MysingleActor (http_decoder)
 	private String result;

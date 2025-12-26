@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.xcurenet</groupId>
 	<artifactId>LogVault</artifactId>
-	<version>0.0.1</version>
+	<version>1.0.0</version>
 	<packaging>war</packaging>
 	<name>LogVault</name>
 	<description>A module that processes and stores usage records of the generative AI service, handling tasks such as file analysis, PII detection</description>
@@ -24,7 +24,7 @@
 		<encoding>UTF-8</encoding>
 		<main.class>com.xcurenet.logvault.LogVaultApplication</main.class>
 
-		<release.version>17</release.version>
+		<release.version>2</release.version>
 		<build.version>${project.version}-${release.version}</build.version>
 		<arch>x86_64</arch>
 

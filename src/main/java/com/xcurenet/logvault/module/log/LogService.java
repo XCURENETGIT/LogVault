@@ -36,7 +36,7 @@ public class LogService {
 			String url = http != null ? http.getUrl() : "";
 			//System.out.println(url);
 			String agent = getUserAgent(http);
-			log.info("MSG_DONE | {} | BODY:{} ({}) | AT_CNT:{} | EXIST_CNT:{} ({}) | USER:{} | {}:{} > {}:{} | {} | {} | {}\n", msg.getService().getSvc(), isBody, bodySize, attachCnt, attachExistCnt, attSize, userId, sIp, sPort, dIp, dPort, agent, url, DateUtils.stop(data.getStopWatch()));
+			log.info("MSG_DONE | {} | {} | BODY:{} ({}) | AT_CNT:{} | EXIST_CNT:{} ({}) | USER:{} | {}:{} > {}:{} | {} | {} | {}\n", msg.getService().getSvc(), msg.getAction(), isBody, bodySize, attachCnt, attachExistCnt, attSize, userId, sIp, sPort, dIp, dPort, agent, url, DateUtils.stop(data.getStopWatch()));
 		} catch (Exception e) {
 			log.warn("DEBUG_LOG | {}", e.getMessage());
 			log.error("", e);

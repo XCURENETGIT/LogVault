@@ -164,7 +164,7 @@ public class PrivacyAnalysis {
 	/* =========================
 	 * Encrypt
 	 * ========================= */
-	private String encString(byte[] text) {
+	public String encString(byte[] text) {
 		try {
 			Crypto crypto = new Crypto(conf.getEncryptKey(), conf.getEncyptCipher());
 			byte[] cipherTextBytes = crypto.encrypt(text, 0, text.length);

@@ -43,6 +43,9 @@
 				"room_id" : {
 					"type": "keyword"
 				},
+				"action": {
+					"type": "keyword"
+				},
 				"@timestamp": {
 					"type": "date",
 					"format": "epoch_millis"

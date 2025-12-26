@@ -15,16 +15,13 @@ import com.xcurenet.logvault.exception.InsaMappingException;
 import com.xcurenet.logvault.exception.ParsingException;
 import com.xcurenet.logvault.loader.type.UserInfo;
 import com.xcurenet.logvault.module.ScanData;
-import com.xcurenet.logvault.opensearch.AegisRoomDoc;
+import com.xcurenet.logvault.module.util.ActionType;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationContext;
-import org.springframework.data.elasticsearch.NoSuchIndexException;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -49,6 +46,7 @@ public class MSGWorker extends AbstractWorker {
 		try {
 			EmassDoc doc = new EmassDoc();
 			doc.setMsgid(msg.getMsgid());
+			doc.setAction(ActionType.valueOf(msg.getAction()));
 			doc.setRootMtr(msg.getRootMtr());
 			doc.setParentMtr(msg.getParentMtr());
 
@@ -72,12 +70,13 @@ public class MSGWorker extends AbstractWorker {
 			setSize(doc);
 
 			String mlUsed = "N";
-			if (conf.isMlApiEnable() && Common.isEquals(doc.getService().getSvc3(), "S")) mlUsed = "P";
-			doc.setProcessStatus(EmassDoc.ProcessStatus.builder().ocr("N").ml(mlUsed).build()); //기본 OCR, ML 처리 대상여부, 처리 상태 값
+			if (Common.isNotEquals(msg.getAction(), "BLOCK") && conf.isMlApiEnable() && Common.isEquals(doc.getService().getSvc3(), "S")) mlUsed = "P";
+			doc.setProcessStatus(EmassDoc.ProcessStatus.builder().ocr("N").ml(mlUsed).build()); //기본 OCR, ML 처리 대상여부, 처리 상태 값, 차단은 첨부 없어서 OCR은 대상아님.
 
 			if (doc.getService() != null) { //생성형 AI 서비스중 수신 서비스의 경우 1밀리세컨드를 추가하여 Sort 처리를 한다.
-				if (Common.isEquals("R", doc.getService().getSvc3()))
+				if (Common.isEquals("R", doc.getService().getSvc3())) {
 					doc.getTimestamp().setTime(doc.getTimestamp().getTime() + 1);
+				}
 			}
 			data.setEmassDoc(doc);
 		} catch (Exception e) {

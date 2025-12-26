@@ -48,6 +48,9 @@
 				"msgid": {
 					"type": "keyword"
 				},
+				"action": {
+					"type": "keyword"
+				},
 				"root_mtr": {
 					"type": "keyword"
 				},

@@ -23,6 +23,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+import java.io.File;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +57,7 @@ public class LogVaultApplication implements CommandLineRunner {
 	public static final int QUEUE_CAPACITY = 1000;
 	private final AtomicBoolean run = new AtomicBoolean(true);
 	private final PriorityBlockingQueue<ScanData> wmailQueue = new PriorityBlockingQueue<>(QUEUE_CAPACITY, new FileTimeComparator());
+	private final PriorityBlockingQueue<ScanData> wmailBlockQueue = new PriorityBlockingQueue<>(QUEUE_CAPACITY, new FileTimeComparator());
 
 	public static void main(String[] args) {
 		SpringApplication application = new SpringApplication(LogVaultApplication.class);
@@ -99,6 +101,7 @@ public class LogVaultApplication implements CommandLineRunner {
 	}
 
 	private void startScanner() {
+		if (conf.isEnableWmailBlock()) startScanner(conf.getDirWmailBlock(), wmailBlockQueue);
 		if (conf.isEnableWmail()) startScanner(conf.getDirWmail(), wmailQueue);
 		log.info("START_SCAN | LOAD END\n");
 	}
@@ -111,7 +114,7 @@ public class LogVaultApplication implements CommandLineRunner {
 		int split = conf.getDecoderSplitDir();
 		int fileWaitTime = conf.getInterval();
 
-		ExecutorService executor = Executors.newFixedThreadPool(1);
+		ExecutorService executor = Executors.newFixedThreadPool(2, new NamedThreadFactory(new File(dir).getName()));
 		executor.execute(new FileScanner(dir, queue, run, waitingSec, dataPath, split, fileWaitTime));
 		executor.shutdown();
 
@@ -123,12 +126,13 @@ public class LogVaultApplication implements CommandLineRunner {
 	}
 
 	private void startWorker(final List<AbstractWorker> workers) throws Exception {
-		if (conf.isEnableWmail()) startWorker(workers, wmailQueue, conf.getWorkerSizeWmail(), MSGWorker.class);
+		if (conf.isEnableWmailBlock()) startWorker(workers, wmailBlockQueue, conf.getWorkerSizeWmailBlock(), MSGWorker.class, "BLOCK");
+		if (conf.isEnableWmail()) startWorker(workers, wmailQueue, conf.getWorkerSizeWmail(), MSGWorker.class, "WMAIL");
 		log.info("START_WORKER | LOAD END\n");
 	}
 
-	private void startWorker(final List<AbstractWorker> workers, final PriorityBlockingQueue<ScanData> queue, int workerSize, Class<? extends AbstractWorker> workerClass) throws Exception {
-		ExecutorService executor = Executors.newFixedThreadPool(workerSize, new NamedThreadFactory(workerClass.getSimpleName()));
+	private void startWorker(final List<AbstractWorker> workers, final PriorityBlockingQueue<ScanData> queue, int workerSize, Class<? extends AbstractWorker> workerClass, final String name) throws Exception {
+		ExecutorService executor = Executors.newFixedThreadPool(workerSize, new NamedThreadFactory(name));
 		for (int i = 0; i < workerSize; i++) {
 			AbstractWorker worker = workerClass.getDeclaredConstructor(ApplicationContext.class, PriorityBlockingQueue.class, AtomicBoolean.class).newInstance(context, queue, run);
 			workers.add(worker);

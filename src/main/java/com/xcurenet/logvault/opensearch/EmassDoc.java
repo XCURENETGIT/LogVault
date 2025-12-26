@@ -1,6 +1,7 @@
 package com.xcurenet.logvault.opensearch;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.xcurenet.logvault.module.util.ActionType;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
@@ -17,6 +18,9 @@ public class EmassDoc {
 	@Id
 	@Field("msgid")
 	private String msgid;
+
+	@Field("action")
+	private ActionType action;
 
 	@Field("test_message")
 	private boolean testMessage = false;

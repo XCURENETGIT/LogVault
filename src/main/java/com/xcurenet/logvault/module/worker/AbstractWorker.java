@@ -107,6 +107,7 @@ public abstract class AbstractWorker implements Runnable {
 						try {
 							insaMapping(data);              // 인사정보 연동
 							roomId(data);                   // 생성형AI 룸 번호 생성 (서비스 IAS_사용자 아이디 OR SRC_IP  BASE64)
+							transToInfo(data);              // INFO 정보 전송
 							transToBody(data);              // 본문 전송 (프롬프트 내용)
 							transToAttach(data);            // 첨부파일 전송
 							transToAttachEmbedded(data);    // 첨부내 객체 전송
@@ -150,7 +151,7 @@ public abstract class AbstractWorker implements Runnable {
 				log.debug("{}", data.getFilePath(), e);
 				removePermissions(data.getFilePath());
 			} catch (final Exception e) {
-				log.warn("{} | {} | filePath={} err={}", ErrorCode.UNKNOWN_ERROR, ErrorCode.fromCode(ErrorCode.UNKNOWN_ERROR), data.getFilePath(), e.toString());
+				log.warn("{} | {} | filePath={} err={}", ErrorCode.UNKNOWN_ERROR, ErrorCode.fromCode(ErrorCode.UNKNOWN_ERROR), data.getFilePath(), e.toString(), e);
 				removePermissions(data.getFilePath());
 			} finally {
 				MDC.remove("msgId");
@@ -261,6 +262,31 @@ public abstract class AbstractWorker implements Runnable {
 			} catch (Exception e) {
 				throw ExFactory.ex(FileSendException::new, ErrorCode.EMBED_SEND_FAIL, Map.of("src", srcPath.toString(), "dst", destPath.toString()), e);
 			}
+		}
+	}
+
+
+	protected void transToInfo(ScanData data) throws FileSendException {
+		MSGData msg = data.getMsgData();
+		if (msg.getInfoFilePath() == null) return;
+
+		Path srcPath = Paths.get(msg.getInfoFilePath());
+		if (!Files.exists(srcPath)) return;
+
+		String destStr = conf.getDestPath(msg.getCtime(), msg.getMsgid(), srcPath.getFileName().toString());
+		Path destPath = Paths.get(destStr);
+		try {
+			if (fileSystem.exists(destStr)) {
+				log.info("MSG_SKIP | {} already exists. Skipping copy.", conf.getDestPathSmall(destStr));
+				return;
+			}
+
+			StopWatch sw = DateUtils.start();
+			fileSystem.write(srcPath.toString(), destPath.toString(), srcPath.getFileName().toString());
+			long size = Files.size(srcPath);
+			log.info("MSG_SEND | {} ({}) | {}", conf.getDestPathSmall(destStr), Common.convertFileSize(size), DateUtils.stop(sw));
+		} catch (Exception e) {
+			throw ExFactory.ex(FileSendException::new, ErrorCode.FILE_MSG_SEND_FAIL, Map.of("src", srcPath.toString(), "dest", destPath.toString()), e);
 		}
 	}
 

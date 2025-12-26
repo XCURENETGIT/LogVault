@@ -30,7 +30,7 @@ public class UserAgentAnalysis {
 
 		MSGData msg = scanData.getMsgData();
 		if (msg.getHeader() == null) {
-			log.warn("{} | {}", ErrorCode.UA_HEADER_PATH_NULL, ErrorCode.fromCode(ErrorCode.UA_HEADER_PATH_NULL));
+			log.debug("{} | {}", ErrorCode.UA_HEADER_PATH_NULL, ErrorCode.fromCode(ErrorCode.UA_HEADER_PATH_NULL));
 			return;
 		}
 

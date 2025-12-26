@@ -9,6 +9,7 @@ import com.xcurenet.logvault.loader.KeywordLoader;
 import com.xcurenet.logvault.loader.PatternLoader;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.module.task.service.TaskMessageRepository;
+import com.xcurenet.logvault.module.util.ActionType;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -69,6 +70,7 @@ public class AlertService {
 		try {
 			AlertInfo result = new AlertInfo();
 			result.setMsgid(doc.getMsgid());
+			result.setActionType(doc.getAction());
 			result.setTimestamp(doc.getTimestamp().getTime());
 			result.setCtime(doc.getCtime());
 			result.setService(doc.getService());
@@ -116,6 +118,7 @@ public class AlertService {
 	@Data
 	public static class AlertInfo {
 		private String msgid;
+		private ActionType actionType;
 		private long timestamp;
 		private String ctime;
 		private EmassDoc.Service service;

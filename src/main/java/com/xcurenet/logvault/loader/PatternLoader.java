@@ -3,6 +3,7 @@ package com.xcurenet.logvault.loader;
 import com.xcurenet.common.regex.DetectOptions;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.logvault.loader.mapper.InfoLoaderMapper;
+import com.xcurenet.logvault.loader.service.InfoLoaderService;
 import com.xcurenet.logvault.loader.type.PatternInfo;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -26,10 +27,10 @@ public class PatternLoader {
 	public final AtomicReference<Set<String>> PATTERN_ALARM_REF = new AtomicReference<>();
 	public final AtomicReference<Set<String>> PATTERN_SYSLOG_REF = new AtomicReference<>();
 
-	private final InfoLoaderMapper mapper;
+	private final InfoLoaderService infoLoaderService;
 
 	public void load() {
-		List<PatternInfo> datas = mapper.getPatternInfo();
+		List<PatternInfo> datas = infoLoaderService.getPatternInfo();
 		log.info("INFO_LOAD | Pattern Size: {}", datas.size());
 
 		Map<String, Integer> fresh = new LinkedHashMap<>();
@@ -37,7 +38,7 @@ public class PatternLoader {
 		Set<String> alarmSet = new HashSet<>();
 		Set<String> syslogSet = new HashSet<>();
 		for (PatternInfo item : datas) {
-			if (item == null) continue;
+			if (item == null || Common.isEquals(item.getUseYn(), "N")) continue;
 
 			if (Common.isEquals(item.getPatternType(), "N")) { // 미리 정의된 패턴 (주민번호, 운전면허번호 등)
 				fresh.put(item.getPatternCd(), item.getMinCount());

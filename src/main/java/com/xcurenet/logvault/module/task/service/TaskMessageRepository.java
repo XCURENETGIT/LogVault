@@ -1,39 +1,84 @@
 package com.xcurenet.logvault.module.task.service;
 
 import com.xcurenet.logvault.module.alert.AlertMessage;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
-import org.springframework.transaction.annotation.Transactional;
+import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
 @Mapper
 public interface TaskMessageRepository {
 
-	@Transactional
+	@Select("""
+			SELECT  MSGID AS msgId, TASK_TYPE AS taskType, STATUS AS status, DATA AS data, ERROR_MESSAGE AS errorMessage, RUN_AT AS runAt, CREATE_DT AS createDt
+			FROM	AI_PROCESSING_QUEUE
+			WHERE	TASK_TYPE = #{taskType}
+			AND		STATUS = 'PENDING'
+			ORDER 	BY MSGID
+			LIMIT	#{limit}
+			FOR 	UPDATE SKIP LOCKED
+			""")
+	@ResultType(TaskMessage.class)
 	List<TaskMessage> claimBatchByType(@Param("taskType") String taskType, @Param("limit") int limit);
 
-	@Transactional
+	@Update("""
+			UPDATE  AI_PROCESSING_QUEUE
+			SET		STATUS = 'PENDING'
+			WHERE	STATUS = 'RUNNING'
+			""")
 	void updateStatusPending();
 
-	@Transactional
+	@Update("""
+			UPDATE	AI_PROCESSING_QUEUE
+			SET 	STATUS  = 'RUNNING',
+					RUN_AT  = NOW()
+			WHERE	MSGID   = #{msgId}
+			AND     TASK_TYPE = #{taskType}
+			""")
 	void updateStatusRunning(@Param("msgId") String id, @Param("taskType") String taskType);
 
-	@Transactional
+	@Update("""
+			DELETE
+			FROM 	AI_PROCESSING_QUEUE
+			WHERE 	MSGID = #{msgId}
+			AND     TASK_TYPE = #{taskType}
+			""")
 	void deleteById(@Param("msgId") String id, @Param("taskType") String taskType);
 
-	@Transactional
+	@Update("""
+			UPDATE  AI_PROCESSING_QUEUE
+			SET		STATUS = 'FAILED',
+					ERROR_MESSAGE = #{err}
+			WHERE 	MSGID = #{msgId}
+			AND     TASK_TYPE = #{taskType}
+			""")
 	void updateStatusFailed(@Param("msgId") String id, @Param("taskType") String taskType, @Param("err") String err);
 
-	@Transactional
+
+	@Update("""
+			UPDATE	AI_PROCESSING_QUEUE
+			SET		STATUS='DONE',
+					ERROR_MESSAGE=NULL
+			WHERE	MSGID= #{msgId}
+			AND     TASK_TYPE = #{taskType}
+			""")
 	void updateStatusDone(@Param("msgId") String id, @Param("taskType") String taskType);
 
-	@Transactional
+	@Insert("""
+			INSERT IGNORE INTO AI_PROCESSING_QUEUE (MSGID, TASK_TYPE, STATUS, `DATA`, ERROR_MESSAGE, RUN_AT, CREATE_DT)
+			VALUES (#{msgId}, #{taskType}, 'PENDING', #{data}, NULL, NULL, CURRENT_TIMESTAMP())
+			""")
 	void insertMessage(TaskMessage message);
 
-	@Transactional
+	@Delete("""
+			DELETE FROM AI_PROCESSING_QUEUE
+			WHERE  STATUS = 'FAILED'
+			AND    CREATE_DT < DATE_SUB(NOW(), INTERVAL 90 DAY)
+			""")
 	void deleteOldFailed();
 
-	@Transactional
+	@Insert("""
+			INSERT IGNORE INTO ALERT_RULE (MSGID, `DATA`, CREATE_DT)
+			VALUES (#{msgId}, #{data}, CURRENT_TIMESTAMP())
+			""")
 	void insertAlertRule(AlertMessage message);
 }

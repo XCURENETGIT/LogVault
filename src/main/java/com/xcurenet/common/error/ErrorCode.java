@@ -29,7 +29,7 @@ public enum ErrorCode {
 	PARSER_URL_NULL("LVT-1009", "MSG URL is null"), // URL 정보 없음
 	PARSER_QUERY_NULL("LVT-1010", "MSG Query is null"), // URL Query 정보 없음
 
-	PARSER_QUERY_TOO_LONG("LVT-1010", "MSG URL query is too long"),// URL Query 길이가 허용 범위를 초과함
+	PARSER_QUERY_TOO_LONG("LVT-1011", "MSG URL query is too long"),// URL Query 길이가 허용 범위를 초과함
 	PARSER_MSGFILE_NULL("LVT-1012", "MSG MSG FILE (body) is null"), // MSG 본문(body) 파일이 없음
 	PARSER_STYPE_NULL("LVT-1013", "MSG STYPE is null or cannot be derived"), // 서비스 타입(STYPE) 정보 없음 또는 추론 불가
 

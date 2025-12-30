@@ -8,11 +8,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
-import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -96,21 +98,23 @@ public class MinioFileSystem implements FileSystemService {
 	}
 
 	@Override
-	public void write(final String src, final String dst, final String fileName) throws Exception {
-		try (FileInputStream in = new FileInputStream(src)) {
-			write(dst, in, fileName);
-		}
+	public void write(String path, final String dst, final String fileName) throws Exception {
+		write(path, dst, fileName, true);
 	}
 
 	@Override
-	public void writeText(String path, String text) throws Exception {
-		try (ByteArrayInputStream in = new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8))) {
-			write(path, in, null);
+	public void write(final String src, final String dst, final String fileName, final boolean encrypt) throws Exception {
+		try (FileInputStream in = new FileInputStream(src)) {
+			write(dst, in, fileName, encrypt);
 		}
 	}
 
 	@Override
 	public void write(String path, InputStream is, String fileName) throws Exception {
+		write(path, is, fileName, true);
+	}
+
+	public void write(String path, InputStream is, String fileName, final boolean encrypt) throws Exception {
 		StopWatch sw = DateUtils.start();
 		try {
 			minioClient.putObject(PutObjectArgs.builder().bucket(conf.getMinioBucket()).object(path).stream(is, -1, 10485760).build());
@@ -118,6 +122,13 @@ public class MinioFileSystem implements FileSystemService {
 		} catch (Exception e) {
 			log.error("", e);
 			throw new IOException(e);
+		}
+	}
+
+	@Override
+	public void writeText(String path, String text) throws Exception {
+		try (ByteArrayInputStream in = new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8))) {
+			write(path, in, null);
 		}
 	}
 

@@ -75,7 +75,7 @@ public class MSGParser {
 		if (data.getDestinationIp() == null) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_DIP_NULL, Map.of("context", input, "info", filePath));
 		if (Common.isEmpty(data.getHost())) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_HOST_NULL, Map.of("context", input, "info", filePath));
 		if (Common.isEmpty(data.getUrl())) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_URL_NULL, Map.of("context", input, "info", filePath));
-		if (Common.isNotEmpty(data.getQuery()) && data.getQuery().length() > 4000) {
+		if (Common.isNotEmpty(data.getQuery()) && data.getQuery().length() > 10000) {
 			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_QUERY_TOO_LONG, Map.of("context", Common.nvl(data.getQuery().length()), "info", filePath));
 		}
 		if (Common.isEmpty(data.getSvc())) throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_STYPE_NULL, Map.of("context", input, "info", filePath));

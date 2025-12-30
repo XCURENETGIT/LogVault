@@ -100,8 +100,14 @@ public class LocalFileSystem implements FileSystemService {
 		return false;
 	}
 
+
 	@Override
 	public void write(final String src, final String dst, final String fileName) throws Exception {
+		write(src, dst, fileName, true);
+	}
+
+	@Override
+	public void write(final String src, final String dst, final String fileName, final boolean encrypt) throws Exception {
 		StopWatch sw = DateUtils.start();
 
 		Path srcPath = Paths.get(src);
@@ -113,25 +119,13 @@ public class LocalFileSystem implements FileSystemService {
 		long srcSize = Files.size(srcPath);
 		try (InputStream fis = Files.newInputStream(srcPath, StandardOpenOption.READ);
 		     OutputStream fos = Files.newOutputStream(dstPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-			if (conf.isEncryptEnable()) {
+			if (conf.isEncryptEnable() && encrypt) {
 				Common.copy(fis, false, Constants.SHA256, conf.getEncyptCipher(), conf.getEncryptKey(), srcSize, fos, null);
 			} else {
 				fis.transferTo(fos);
 			}
 			log.debug("AT_WRITE | {} {} | {} | {} | {}", fileName, src, dst, Common.convertFileSize(srcSize), DateUtils.stop(sw));
 		}
-	}
-
-	@Override
-	public void writeText(final String path, final String text) throws Exception {
-		StopWatch sw = DateUtils.start();
-		Path p = Paths.get(path);
-
-		if (p.getParent() != null) {
-			Files.createDirectories(p.getParent());
-		}
-		Files.writeString(p, text, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-		log.debug("AT_WRITE | {} | {} | {}", path, Common.convertFileSize(text.length()), DateUtils.stop(sw));
 	}
 
 	@Override
@@ -151,6 +145,18 @@ public class LocalFileSystem implements FileSystemService {
 			}
 			log.debug("AT_WRITE | {} | {} | {}", fileName, path, DateUtils.stop(sw));
 		}
+	}
+
+	@Override
+	public void writeText(final String path, final String text) throws Exception {
+		StopWatch sw = DateUtils.start();
+		Path p = Paths.get(path);
+
+		if (p.getParent() != null) {
+			Files.createDirectories(p.getParent());
+		}
+		Files.writeString(p, text, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+		log.debug("AT_WRITE | {} | {} | {}", path, Common.convertFileSize(text.length()), DateUtils.stop(sw));
 	}
 
 	@Override

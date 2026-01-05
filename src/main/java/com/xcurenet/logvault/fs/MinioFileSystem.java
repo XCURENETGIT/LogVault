@@ -96,12 +96,12 @@ public class MinioFileSystem implements FileSystemService {
 			return false;
 		}
 	}
-
+	
 	@Override
 	public void write(String path, final String dst, final String fileName) throws Exception {
 		write(path, dst, fileName, true);
 	}
-
+	
 	@Override
 	public void write(final String src, final String dst, final String fileName, final boolean encrypt) throws Exception {
 		try (FileInputStream in = new FileInputStream(src)) {

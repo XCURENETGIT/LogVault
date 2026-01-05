@@ -48,8 +48,6 @@ public class JasyptConfig {
 
 			encryptor.setConfig(config);
 			cachedEncryptor = encryptor;
-
-			log.info("JASYPT Encryptor initialized successfully.");
 			return cachedEncryptor;
 		} catch (EncryptException e) {
 			throw e;

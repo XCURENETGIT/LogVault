@@ -46,6 +46,9 @@
 				"action": {
 					"type": "keyword"
 				},
+				"reason": {
+					"type": "keyword"
+				},
 				"@timestamp": {
 					"type": "date",
 					"format": "epoch_millis"

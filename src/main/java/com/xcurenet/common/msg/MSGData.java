@@ -105,6 +105,9 @@ public class MSGData {
 	@FieldKey("REASON") //정책 차단 사유
 	private String reason;
 
+	@FieldKey("DETECTIONS") //정책 차단 상세내용
+	private String detections;
+
 	@FieldKey("RESULT") // EP 전용 (GOOD, BAD) MysingleActor (http_decoder)
 	private String result;
 

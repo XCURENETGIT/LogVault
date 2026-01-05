@@ -25,12 +25,12 @@ public class ReasonAnalysis {
 	 * ========================= */
 	public void setReason(final ScanData data) {
 		MSGData msg = data.getMsgData();
-		if (msg.getReason() == null) return;
+		if (msg.getDetections() == null) return;
 
-		log.info("REASON   | {}", msg.getReason());
+		log.info("DETECTIONS | {}", msg.getDetections());
 
 		EmassDoc doc = data.getEmassDoc();
-		List<String> items = Common.split(msg.getReason(), ",");
+		List<String> items = Common.split(msg.getDetections(), ",");
 		for (String item : items) {
 			List<String> reason = Common.split(item, ";");
 			if (reason.size() != 3) continue;

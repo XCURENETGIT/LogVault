@@ -5,10 +5,10 @@
 
 set -o pipefail
 
-JAR="/users/jdk-21/bin/jar"
-JAVA="/users/jdk-21/bin/java"
-WAR="LogVault-0.0.1.war"
-MAIN_CLASS="com.xcurenet.logvault.tool.encrypt.EncryptTool"
+JAR="../jdk/bin/jar"
+JAVA="../jdk/bin/java"
+WAR="../lib/logvault-1.0.0.war"
+MAIN_CLASS="com.xcurenet.logvault.tool.cli.ToolCLI"
 
 error() { echo "$*" >&2; exit 1; }
 info()  { echo "$*"; }

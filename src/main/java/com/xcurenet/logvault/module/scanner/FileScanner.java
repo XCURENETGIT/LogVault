@@ -140,6 +140,7 @@ public class FileScanner implements Runnable {
 			return true;
 		} catch (IOException e) {
 			log.warn("SCANNER | Error reading file: {}", path, e);
+			Common.removeAllPermissions(path.toFile()); // 파싱 오류는 중복 처리 불가함.
 			return false;
 		}
 	}

@@ -1,5 +1,6 @@
 package com.xcurenet.logvault.tool.cli;
 
+import com.xcurenet.logvault.tool.cli.crypto.CreateKey;
 import com.xcurenet.logvault.tool.cli.crypto.Decrypt;
 import com.xcurenet.logvault.tool.cli.crypto.Encrypt;
 import com.xcurenet.logvault.tool.cli.sample.InternalDataSampler;
@@ -14,6 +15,7 @@ import picocli.CommandLine;
 		version = "Version : 1.0",
 		description = "XCURENET Dev Toolbox",
 		subcommands = {
+				CreateKey.class,
 				Encrypt.class,
 				Decrypt.class,
 				Base64Tool.class,

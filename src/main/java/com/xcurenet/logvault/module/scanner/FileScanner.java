@@ -8,13 +8,19 @@ import com.xcurenet.logvault.exception.ScanException;
 import com.xcurenet.logvault.module.ScanData;
 import lombok.extern.log4j.Log4j2;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -129,21 +135,32 @@ public class FileScanner implements Runnable {
 	 * @return true if the file is valid; false otherwise
 	 */
 	private boolean isFileValid(final Path path, final long lastModified) {
-		try (Stream<String> lines = Files.lines(path, StandardCharsets.UTF_8)) {
-			Optional<Path> missingFile = lines.filter(line -> TARGET_KEYS.stream().anyMatch(line::contains)).map(this::getFieldValue).filter(Common::isNotEmpty).map(val -> Paths.get(getPath(val))).filter(Files::notExists).findFirst();
-
-			if (missingFile.isPresent()) {
-				long elapsed = System.currentTimeMillis() - lastModified;
-				if (elapsed < fileWaitTime) return false; // 대기 시간이 남았다면 유효하지 않음(false)으로 처리
-				log.info("NOTFOUND | {} | Referenced file missing: {} ({}s over)", path, missingFile.get(), fileWaitTime / 1000);
+		CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(Files.newInputStream(path), decoder))) {
+			String line;
+			while ((line = br.readLine()) != null) {
+				for (String key : TARGET_KEYS) {
+					if (line.contains(key)) {
+						String val = getFieldValue(line);
+						if (Common.isNotEmpty(val)) {
+							Path ref = Paths.get(getPath(val));
+							if (Files.notExists(ref)) {
+								long elapsed = System.currentTimeMillis() - lastModified;
+								if (elapsed < fileWaitTime) return false;
+								log.info("NOTFOUND | {} | Referenced file missing: {}", path, ref);
+							}
+						}
+					}
+				}
 			}
 			return true;
-		} catch (IOException e) {
-			log.warn("SCANNER | Error reading file: {}", path, e);
-			Common.removeAllPermissions(path.toFile()); // 파싱 오류는 중복 처리 불가함.
+		} catch (Exception e) {
+			log.warn("SCANNER | Error Reading File: {}", path, e);
+			Common.removeAllPermissions(path.toFile());
 			return false;
 		}
 	}
+
 
 	public String getPath(final String fileName) {
 		return Common.makeFilepath(dataPath, Long.toString(Common.getSplitNum(fileName, split)), fileName);

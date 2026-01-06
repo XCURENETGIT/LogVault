@@ -400,7 +400,7 @@
 
 								<copydir src="${project.basedir}\dist\" dest="${project.basedir}\target\dist\"/>
 
-								<copy file="${project.basedir}\target\${project.artifactId}-${project.version}.war" tofile="${project.basedir}\target\dist\lib\${program.name}-${project.version}.war" />
+								<copy file="${project.basedir}\target\${project.artifactId}-${project.version}.war" tofile="${project.basedir}\target\dist\lib\${program.name}.war" />
 								<copy file="${project.basedir}\target\classes\application.properties" tofile="${project.basedir}\target\dist\conf\application.properties" />
 								<copy file="${project.basedir}\target\classes\logback-spring.xml" tofile="${project.basedir}\target\dist\conf\logback-spring.xml" />
 								<copy file="${project.basedir}\target\classes\extension.properties" tofile="${project.basedir}\target\dist\conf\extension.properties" />

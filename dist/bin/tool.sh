@@ -5,29 +5,21 @@
 
 set -o pipefail
 
-JAR="../jdk/bin/jar"
-JAVA="../jdk/bin/java"
-WAR="../lib/logvault-1.0.0.war"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+JAR="$BASE_DIR/jdk/bin/jar"
+JAVA="$BASE_DIR/jdk/bin/java"
+WAR="$BASE_DIR/lib/logvault.war"
 MAIN_CLASS="com.xcurenet.logvault.tool.cli.ToolCLI"
 
 error() { echo "$*" >&2; exit 1; }
 info()  { echo "$*"; }
 ok()    { echo "$*"; }
 
-# 1) 인자 체크
-if [ $# -lt 1 ]; then
-  cat <<EOF
-Usage: $(basename "$0") <args...>
-  ex) $(basename "$0") encrypt xcurenet1
-EOF
-  exit 2
-fi
-
-# 2) 기본 환경 체크
 [ -x "$JAVA" ] || error "JAVA 실행 파일 없음: $JAVA"
 [ -f "$WAR" ]  || error "WAR 파일 없음: $WAR"
 
-# 3) WAR 구조 판별 (BOOT-INF vs WEB-INF)
 if "$JAVA" -jar "$JAVA_HOME_DOES_NOT_EXIST" >/dev/null 2>&1; then :; fi  # no-op to keep shellcheck happy
 
 if "$JAVA" -jar "$JAVA" >/dev/null 2>&1; then :; fi  # dummy to avoid false positives; harmless
@@ -42,7 +34,6 @@ else
   error "WAR 내부에서 BOOT-INF/classes 또는 WEB-INF/classes 를 찾을 수 없습니다."
 fi
 
-# 4) 실행 클래스 존재 확인
 CLASS_PATH_IN_WAR="${MAIN_CLASS//.//}.class"
 if ! "$JAR" tf "$WAR" | grep -q "$CLASS_PATH_IN_WAR"; then
   info "경고: WAR 내부에서 ${CLASS_PATH_IN_WAR} 파일을 찾지 못했습니다."
@@ -50,9 +41,9 @@ if ! "$JAR" tf "$WAR" | grep -q "$CLASS_PATH_IN_WAR"; then
   info "  - 멀티모듈/의존성 scope(provided)로 빠지지 않았는지 확인하세요."
 fi
 
-# 5) 실행
 CMD=(
   "$JAVA"
+  -Dlogback.statusListenerClass=ch.qos.logback.core.status.NopStatusListener
   -cp "$WAR"
   "-Dloader.path=${LOADER_PATH}"
   "-Dloader.main=${MAIN_CLASS}"

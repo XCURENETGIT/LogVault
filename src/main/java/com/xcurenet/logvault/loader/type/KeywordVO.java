@@ -11,23 +11,23 @@ import org.springframework.data.elasticsearch.annotations.Field;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class KeywordVO {
 	@Field("keywordNm")
-	@JsonProperty("KEYWORD_NM")
+	@JsonProperty("keywordName")
 	private String keywordNm;
 
 	@Field("minCnt")
-	@JsonProperty("MIN_CNT")
+	@JsonProperty("minCnt")
 	private int minCnt;
 
 	@Field("alarmYn")
-	@JsonProperty("ALARM_YN")
+	@JsonProperty("alarmYn")
 	private String alarmYn;
 
 	@Field("syslogYn")
-	@JsonProperty("SYSLOG_YN")
+	@JsonProperty("syslogYn")
 	private String syslogYn;
 
 	@Field("useYn")
-	@JsonProperty("USE_YN")
+	@JsonProperty("useYn")
 	private String useYn;
 
 }

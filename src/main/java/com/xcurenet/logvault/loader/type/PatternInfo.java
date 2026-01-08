@@ -13,34 +13,34 @@ import org.springframework.data.elasticsearch.annotations.Field;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PatternInfo {
 	@Field("patternCd")
-	@JsonProperty("PATTERN_CD")
+	@JsonProperty("patternCd")
 	private String patternCd;
 
 	@Field("patternNm")
-	@JsonProperty("PATTERN_NM")
+	@JsonProperty("patternName")
 	private String patternNm;
 
 	@Field("patternType")
-	@JsonProperty("PATTERN_TYPE")
+	@JsonProperty("patternType")
 	private String patternType;
 
 	@Field("regex")
-	@JsonProperty("REGEX")
+	@JsonProperty("regex")
 	private String regex;
 
 	@Field("minCount")
-	@JsonProperty("MIN_CNT")
+	@JsonProperty("minCnt")
 	private int minCount;
 
 	@Field("alarmYn")
-	@JsonProperty("ALARM_YN")
+	@JsonProperty("alarmYn")
 	private String alarmYn;
 
 	@Field("syslogYn")
-	@JsonProperty("SYSLOG_YN")
+	@JsonProperty("syslogYn")
 	private String syslogYn;
 
 	@Field("useYn")
-	@JsonProperty("USE_YN")
+	@JsonProperty("useYn")
 	private String useYn;
 }

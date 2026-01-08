@@ -30,14 +30,16 @@ public class PatternLoader {
 	private final InfoLoaderService infoLoaderService;
 
 	public void load() {
-		List<PatternInfo> datas = infoLoaderService.getPatternInfo();
-		log.info("INFO_LOAD | Pattern Size: {}", datas.size());
+		long version = infoLoaderService.getPatternVersion();
+		List<PatternInfo> datas = infoLoaderService.getPatternInfo(version);
+		log.info("INFO_LOAD | Rule Version : {} | Pattern Size: {}", version, datas.size());
 
 		Map<String, Integer> fresh = new LinkedHashMap<>();
 		Map<String, DetectOptions> user = new LinkedHashMap<>();
 		Set<String> alarmSet = new HashSet<>();
 		Set<String> syslogSet = new HashSet<>();
 		for (PatternInfo item : datas) {
+			log.debug("INFO_LOAD | Pattern: {}", item);
 			if (item == null || Common.isEquals(item.getUseYn(), "N")) continue;
 
 			if (Common.isEquals(item.getPatternType(), "N")) { // 미리 정의된 패턴 (주민번호, 운전면허번호 등)

@@ -12,19 +12,19 @@ import org.springframework.data.elasticsearch.annotations.Field;
 public class ServiceVO {
 
 	@Field("serviceCd")
-	@JsonProperty("SERVICE_CD")
+	@JsonProperty("serviceCd")
 	private String serviceCd;
 
 	@Field("serviceName")
-	@JsonProperty("SERVICE_NAME")
+	@JsonProperty("serviceName")
 	private String serviceName;
 
 	@Field("useYn")
-	@JsonProperty("USE_YN")
+	@JsonProperty("useYn")
 	private String useYn;
 
 	@Field("loggingYn")
-	@JsonProperty("LOGGING_YN")
+	@JsonProperty("loggingYn")
 	private String loggingYn;
 
 }

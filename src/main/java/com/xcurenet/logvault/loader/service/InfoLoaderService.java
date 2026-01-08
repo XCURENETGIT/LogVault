@@ -8,20 +8,37 @@ import com.xcurenet.logvault.loader.type.PatternInfo;
 import com.xcurenet.logvault.loader.type.RuleContentWrapper;
 import com.xcurenet.logvault.loader.type.ServiceVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class InfoLoaderService {
+	private static final String UI_KEYWORD = "UI_KEYWORD";
+	private static final String UI_PATTERN = "UI_PATTERN";
+	private static final String UI_SERVICE = "UI_SERVICE";
 	private final InfoLoaderMapper mapper;
 
-	public List<KeywordVO> getKeyword() {
+	public long getKeywordVersion() {
+		return mapper.getLastVersion(UI_KEYWORD);
+	}
+
+	public long getPatternVersion() {
+		return mapper.getLastVersion(UI_PATTERN);
+	}
+
+	public long getServiceVersion() {
+		return mapper.getLastVersion(UI_SERVICE);
+	}
+
+	public List<KeywordVO> getKeyword(long version) {
 		JsonTypeContext.set(new TypeReference<List<KeywordVO>>() {});
 
-		RuleContentWrapper wrapper = mapper.getRuleHistory("UI_KEYWORD");
+		RuleContentWrapper wrapper = mapper.getRuleHistory(UI_KEYWORD, version);
 		if (wrapper == null) return Collections.emptyList();
 
 		@SuppressWarnings("unchecked")
@@ -29,10 +46,10 @@ public class InfoLoaderService {
 		return result;
 	}
 
-	public List<PatternInfo> getPatternInfo() {
+	public List<PatternInfo> getPatternInfo(long version) {
 		JsonTypeContext.set(new TypeReference<List<PatternInfo>>() {});
 
-		RuleContentWrapper wrapper = mapper.getRuleHistory("UI_PATTERN");
+		RuleContentWrapper wrapper = mapper.getRuleHistory(UI_PATTERN, version);
 		if (wrapper == null) return mapper.getPatternInfo(); // 최초 설치 후 Rule이 없다면...
 
 		@SuppressWarnings("unchecked")
@@ -40,10 +57,10 @@ public class InfoLoaderService {
 		return result;
 	}
 
-	public List<ServiceVO> getService() {
+	public List<ServiceVO> getService(long version) {
 		JsonTypeContext.set(new TypeReference<List<ServiceVO>>() {});
 
-		RuleContentWrapper wrapper = mapper.getRuleHistory("UI_SERVICE");
+		RuleContentWrapper wrapper = mapper.getRuleHistory(UI_SERVICE, version);
 		if (wrapper == null) return mapper.getService(); // 최초 설치 후 Rule이 없다면...
 
 		@SuppressWarnings("unchecked")

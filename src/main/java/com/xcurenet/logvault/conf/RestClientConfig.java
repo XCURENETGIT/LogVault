@@ -15,7 +15,7 @@ public class RestClientConfig {
 
 	@Bean
 	public RestClient restClient(Config conf) {
-		log.info("REST_INIT | timeout: {}sec", conf.getExtractTextTimeoutSec());
+		log.info("REST_INIT | setConnectTimeout : 5sec | setReadTimeout: {}sec", conf.getExtractTextTimeoutSec());
 		SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
 		factory.setConnectTimeout(5_000);
 		factory.setReadTimeout(conf.getExtractTextTimeoutSec() * 1000);

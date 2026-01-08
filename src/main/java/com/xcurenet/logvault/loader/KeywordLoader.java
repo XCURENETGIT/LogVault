@@ -27,11 +27,13 @@ public class KeywordLoader {
 	public final AtomicReference<Set<String>> KEYWORD_SYSLOG_REF = new AtomicReference<>();
 
 	public void load() {
-		List<KeywordVO> keywords = infoLoaderService.getKeyword();
+		long version = infoLoaderService.getKeywordVersion();
+		List<KeywordVO> keywords = infoLoaderService.getKeyword(version);
 		KeywordMatcher keywordMatcher = new KeywordMatcher();
 		Set<String> alarmSet = new HashSet<>();
 		Set<String> syslogSet = new HashSet<>();
 		for (KeywordVO item : keywords) {
+			log.debug("INFO_LOAD | Keyword: {}", item);
 			if (Common.isEmpty(item.getKeywordNm()) || Common.isEquals(item.getUseYn(), "N")) continue;
 
 			keywordMatcher.addKeyword(item.getKeywordNm(), item.getMinCnt());
@@ -47,7 +49,7 @@ public class KeywordLoader {
 		KEYWORD_ALARM_REF.set(alarmSet);
 		KEYWORD_SYSLOG_REF.set(syslogSet);
 
-		log.info("INFO_LOAD | Keyword Size: {}", keywords.size());
+		log.info("INFO_LOAD | Rule Version : {} | Keyword Size: {}", version, keywords.size());
 	}
 
 	public Set<String> getKeywordAlert() {

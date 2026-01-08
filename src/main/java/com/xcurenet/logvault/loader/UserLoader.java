@@ -26,12 +26,15 @@ public class UserLoader {
 	}
 
 	public void loadUser() {
-		List<UserInfo> users = mapper.getUserInfo();
-		log.info("INFO_LOAD | User Info Size: {}", users.size());
+		long version = mapper.getLastUserInfo();
+		List<UserInfo> users = mapper.getUserInfo(version);
+		log.info("INFO_LOAD | Rule Version : {} | User Info Size: {}", version, users.size());
 		data.clear();
 		for (UserInfo user : users) {
-			data.putUserID(user.getUserId(), user);
 			log.debug("INFO_LOAD | User Info: {}", user);
+
+			data.putUserID(user.getUserId(), user);
+
 			String[] ips = Common.toArray(user.getIp(), ",");
 			for (String ipStr : ips) {
 				if (ipStr == null || Common.isEmpty(ipStr)) continue; //사용자가 없는 IP 혹은 IP 정보가 없으면 무시
@@ -43,6 +46,12 @@ public class UserLoader {
 				} catch (IOException e) {
 					log.warn("INFO_LOAD | ip error: user:{}, input:{} message:{}", user.getName(), ipStr, e.getMessage());
 				}
+			}
+
+			String[] emails = Common.toArray(user.getEmail(), ",");
+			for (String emailStr : emails) {
+				if (emailStr == null || Common.isEmpty(emailStr)) continue;
+				user.addEmail(emailStr);
 			}
 		}
 	}

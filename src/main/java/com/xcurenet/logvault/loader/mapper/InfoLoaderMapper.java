@@ -10,21 +10,28 @@ import java.util.List;
 public interface InfoLoaderMapper {
 
 	@Select("""
-			SELECT	A.USER_CD AS userId,
-					A.USER_NM AS name,
-					A.GROUP_CD AS deptCd,
-					B.GROUP_NM AS deptNm,
-					A.JIKGUB_CD AS jikgubCd,
-					C.JIKGUB_NM AS jikgubNm,
-					A.IP AS ip,
-					A.IS_CEO AS ceo
-			FROM	UI_USERS A
-					LEFT JOIN UI_GROUPS B ON (A.GROUP_CD  = B.GROUP_CD)
-					LEFT JOIN UI_JIKGUB C  ON (A.JIKGUB_CD = C.JIKGUB_CD)
-			ORDER	BY A.USER_CD
+			SELECT IFNULL(MAX(RULE_VERSION),0) AS RULE_VERSION
+			FROM UI_USERS_RULE;
+			""")
+	@ResultType(Long.class)
+	long getLastUserInfo();
+
+	@Select("""
+			SELECT	USER_CD AS userId,
+					USER_NM AS name,
+					EMAIL AS email,
+					GROUP_CD AS deptCd,
+					GROUP_NM AS deptNm,
+					JIKGUB_CD AS jikgubCd,
+					JIKGUB_NM AS jikgubNm,
+					IP AS ip,
+					IS_CEO AS ceo
+			FROM	UI_USERS_RULE
+			WHERE	RULE_VERSION = #{ruleVersion}
+			ORDER	BY USER_CD
 			""")
 	@ResultType(UserInfo.class)
-	List<UserInfo> getUserInfo();
+	List<UserInfo> getUserInfo(@Param("ruleVersion") long ruleVersion);
 
 	@Select("""
 			SELECT  (SELECT  VAL FROM UI_CONF WHERE CONF_ID = 'work.day') AS wDay,
@@ -49,7 +56,7 @@ public interface InfoLoaderMapper {
 
 	@Select("""
 			SELECT	SERVICE_CD AS serviceCd, SERVICE_NAME AS serviceName
-			FROM	AEGISAI.UI_SERVICE
+			FROM	UI_SERVICE
 			WHERE	LOGGING_YN = 'Y'
 			AND		USE_YN = 'Y'
 			""")
@@ -60,10 +67,19 @@ public interface InfoLoaderMapper {
 			SELECT	RULE_CONTENT AS ruleContent
 			FROM	UI_RULE_HISTORY
 			WHERE	RULE_TABLE_NAME = #{ruleTableName}
-			ORDER	BY RULE_VERSION DESC
+			AND		RULE_VERSION = #{ruleVersion}
 			LIMIT	1
 			""")
 	@Result(column = "ruleContent", property = "ruleContent", typeHandler = GenericJsonListTypeHandler.class)
 	@ResultType(RuleContentWrapper.class)
-	RuleContentWrapper getRuleHistory(@Param("ruleTableName") String ruleTableName);
+	RuleContentWrapper getRuleHistory(@Param("ruleTableName") String ruleTableName, @Param("ruleVersion") long ruleVersion);
+
+
+	@Select("""
+			SELECT	IFNULL(MAX(RULE_VERSION),0) AS RULE_VERSION
+			FROM	UI_RULE_HISTORY
+			WHERE	RULE_TABLE_NAME = #{ruleTableName}
+			""")
+	@ResultType(Long.class)
+	long getLastVersion(@Param("ruleTableName") String ruleTableName);
 }

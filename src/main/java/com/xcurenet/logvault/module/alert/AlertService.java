@@ -70,7 +70,7 @@ public class AlertService {
 		try {
 			AlertInfo result = new AlertInfo();
 			result.setMsgid(doc.getMsgid());
-			result.setActionType(doc.getAction());
+			result.setAction(doc.getAction());
 			result.setTimestamp(doc.getTimestamp().getTime());
 			result.setCtime(doc.getCtime());
 			result.setService(doc.getService());
@@ -118,7 +118,7 @@ public class AlertService {
 	@Data
 	public static class AlertInfo {
 		private String msgid;
-		private ActionType actionType;
+		private ActionType action;
 		private long timestamp;
 		private String ctime;
 		private EmassDoc.Service service;

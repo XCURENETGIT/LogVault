@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 
 @Log4j2
@@ -46,6 +48,12 @@ public class FilterService {
 					log.info("FILT_SVC | {}", msg.getSvc());
 					return true;
 				}
+			}
+
+			//본문, 첨부 둘다 없는 경우는 필터 대상
+			if (Common.isEmpty(msg.getMsgFile()) && msg.getAppFile().isEmpty()) {
+				log.info("FILT_SVC | body is empty, attach is empty : {}", msg.getSvc());
+				return true;
 			}
 		} catch (Exception e) {
 			throw ExFactory.ex(IndexerException::new, ErrorCode.INDEX_SAVE_FAIL, Map.of("svc", msg.getSvc()), e);

@@ -3,6 +3,7 @@
 
 	<property name="PATTERN" value="%d{HH:mm:ss.SSS} | %-5level | %47X{msgId} | %23.23F{1}%4L | %msg%n"/>
 	<property name="CONSOLE_PATTERN" value="%d{HH:mm:ss.SSS} | %-5level | %18.18thread | %47X{msgId} | %24.24F{1}%4L | %msg%n"/>
+	<property name="UPLOAD_FILE_PATTERN" value="%d{HH:mm:ss.SSS} | %-5level | %18.18thread | %30.30F{1}%4L | %msg%n"/>
 	<property name="TOOL_PATTERN" value="%d{HH:mm:ss.SSS} | %-5level | %18.18thread | %24.24F{1}%4L | %msg%n"/>
 
 	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -56,6 +57,19 @@
 		</sift>
 	</appender>
 
+	<appender name="UPLOAD_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>logs/upload.log</file>
+		<encoder>
+			<pattern>${UPLOAD_FILE_PATTERN}</pattern>
+		</encoder>
+		<rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+			<fileNamePattern>logs/upload.%d{yyyyMMdd}.%i.log.gz</fileNamePattern>
+			<maxFileSize>2GB</maxFileSize>
+			<maxHistory>30</maxHistory>
+			<totalSizeCap>20GB</totalSizeCap>
+		</rollingPolicy>
+	</appender>
+
 	<appender name="TOOL_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
 		<file>logs/tool.log</file>
 		<encoder>
@@ -86,6 +100,11 @@
 		<appender-ref ref="TOOL_FILE"/>
 		<appender-ref ref="CONSOLE_TOOL"/>
 	</logger>
+
+	<logger name="com.xcurenet.logvault.upload" level="INFO" additivity="false">
+		<appender-ref ref="UPLOAD_FILE"/>
+	</logger>
+
 	<root level="INFO">
 		<appender-ref ref="CONSOLE"/>
 		<appender-ref ref="APP_FILE"/>

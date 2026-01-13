@@ -87,21 +87,13 @@ public class DateUtils {
 	}
 
 	public static DateTime getDateTime(String day) {
-		DateTimeFormatter formatter = null;
-		switch (day.length()) {
-			case YYYYMMDD_SIZE:
-				formatter = DateTimeFormat.forPattern("yyyyMMdd").withZoneUTC();
-				break;
-			case YYYYMMDDHH_SIZE:
-				formatter = DateTimeFormat.forPattern("yyyyMMddHH").withZoneUTC();
-				break;
-			case YYYYMMDDHHMM_SIZE:
-				formatter = DateTimeFormat.forPattern("yyyyMMddHHmm").withZoneUTC();
-				break;
-			case YYYYMMDDHHMMSS_SIZE:
-				formatter = DateTimeFormat.forPattern("yyyyMMddHHmmss").withZoneUTC();
-				break;
-		}
+		DateTimeFormatter formatter = switch (day.length()) {
+			case YYYYMMDD_SIZE -> DateTimeFormat.forPattern("yyyyMMdd").withZoneUTC();
+			case YYYYMMDDHH_SIZE -> DateTimeFormat.forPattern("yyyyMMddHH").withZoneUTC();
+			case YYYYMMDDHHMM_SIZE -> DateTimeFormat.forPattern("yyyyMMddHHmm").withZoneUTC();
+			case YYYYMMDDHHMMSS_SIZE -> DateTimeFormat.forPattern("yyyyMMddHHmmss").withZoneUTC();
+			default -> null;
+		};
 		assert formatter != null;
 		return formatter.parseDateTime(day);
 	}

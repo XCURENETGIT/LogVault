@@ -15,6 +15,7 @@ import com.xcurenet.crypto.CryptoInputStream;
 import com.xcurenet.crypto.CryptoOutputStream;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.exception.ProcessDataException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.binary.Base64;
@@ -1335,5 +1336,13 @@ public final class Common {
 
 	public static int getBase64Size(final String base64) {
 		return Base64.decodeBase64(base64).length;
+	}
+
+	public static String getClientIp(HttpServletRequest request) {
+		String xf = request.getHeader("X-Forwarded-For");
+		if (xf != null && !xf.isBlank()) {
+			return xf.split(",")[0].trim();
+		}
+		return request.getRemoteAddr();
 	}
 }

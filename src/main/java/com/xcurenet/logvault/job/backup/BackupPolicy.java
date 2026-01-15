@@ -6,6 +6,8 @@ import com.github.luben.zstd.ZstdInputStream;
 import com.github.luben.zstd.ZstdOutputStream;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
+import com.xcurenet.crypto.Crypto;
+import com.xcurenet.crypto.CryptoInputStream;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.opensearch.IndexService;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ import org.springframework.util.StopWatch;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +64,7 @@ public class BackupPolicy {
 	@Scheduled(cron = "0 0 3 * * *")
 	private void backup() throws IOException {
 		if (Common.isWindow()) return;
+		if (!conf.isBackupEnable()) return;
 
 		DateTime yesterday = DateTime.now().minusDays(1);
 		backupRun(yesterday);
@@ -69,7 +73,6 @@ public class BackupPolicy {
 	public boolean backupRun(final DateTime dateTime) throws IOException {
 		final String date = dateTime.toString(DateUtils.F_YYYYMMDD);
 		log.info("BACKUP_INFO | isBackupEnable:{} | path:{}", conf.isBackupEnable(), conf.getBackupPath());
-		if (!conf.isBackupEnable()) return false;
 		FileUtils.forceMkdir(new File(conf.getBackupPath()));
 
 		boolean result = indexBackup(date);

@@ -116,7 +116,7 @@ public class BackupPolicy {
 
 	private void attachBackup(final String yesterday) throws IOException {
 		File src = new File(Objects.requireNonNull(Common.makeFilepath(conf.getAttachRoot(), yesterday))); //첨부, 본문 저장 원본 위치
-		File dest = new File(Objects.requireNonNull(Common.makeFilepath(conf.getBackupPath(), "attach"))); //첨부, 본문 백업 위치
+		File dest = new File(Objects.requireNonNull(Common.makeFilepath(conf.getBackupPath(), "attach", yesterday))); //첨부, 본문 백업 위치
 		if (src.exists()) {
 			FileUtils.forceMkdir(dest);
 			StopWatch sw = DateUtils.start();

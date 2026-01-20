@@ -43,8 +43,9 @@ public class FileScanner implements Runnable {
 	private final String dataPath;
 	private final int split;
 	private final int fileWaitTime;
+	private final String nokRoot;
 
-	public FileScanner(final String dir, final PriorityBlockingQueue<ScanData> queue, final AtomicBoolean run, final int scanningWaitingSec, final String dataPath, final int split, final int fileWaitTime) {
+	public FileScanner(final String dir, final PriorityBlockingQueue<ScanData> queue, final AtomicBoolean run, final int scanningWaitingSec, final String dataPath, final int split, final int fileWaitTime, final String nokRoot) {
 		this.startDirectory = Paths.get(Objects.requireNonNull(dir, "dir must not be null"));
 		this.queue = Objects.requireNonNull(queue, "queue must not be null");
 		this.run = Objects.requireNonNull(run, "run must not be null");
@@ -53,6 +54,7 @@ public class FileScanner implements Runnable {
 		this.dataPath = dataPath;
 		this.split = split;
 		this.fileWaitTime = fileWaitTime;
+		this.nokRoot = nokRoot;
 
 		final String threadName = startDirectory.getFileName() + "_scan";
 		Thread.currentThread().setName(threadName);
@@ -94,11 +96,11 @@ public class FileScanner implements Runnable {
 							data = new ScanData(path, scannerCount);
 						} catch (ScanException e) {
 							log.debug("SCANNER | Error : {}", path, e);
-							Common.removeAllPermissions(path.toFile()); // 파싱 오류는 중복 처리 불가함.
+							Common.moveNok(path, this.nokRoot);
 							removeFromQueue(path.toAbsolutePath().toString());  // 에러 발생시에도 임시 캐시는 초기화
 						} catch (Exception e) {
 							log.error("SCANNER | File parsing error. Set no-permission to avoid reprocessing: {}", path, e);
-							Common.removeAllPermissions(path.toFile()); // 파싱 오류는 중복 처리 불가함.
+							Common.moveNok(path, this.nokRoot);
 							removeFromQueue(path.toAbsolutePath().toString());  // 에러 발생시에도 임시 캐시는 초기화
 						}
 
@@ -156,7 +158,7 @@ public class FileScanner implements Runnable {
 			return true;
 		} catch (Exception e) {
 			log.warn("SCANNER | Error Reading File: {}", path, e);
-			Common.removeAllPermissions(path.toFile());
+			Common.moveNok(path, this.nokRoot);
 			return false;
 		}
 	}
@@ -230,7 +232,7 @@ public class FileScanner implements Runnable {
 
 		int lastDot = fileName.lastIndexOf('.');
 		String[] parts = fileName.substring(0, lastDot).split("-", 10);
-		if (parts.length < 8) { // LVT-5002: 구성 요소 개수 불일치
+		if (parts.length < 7) { // LVT-5002: 구성 요소 개수 불일치
 			throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_PART_COUNT, Map.of("count", parts.length + ", Expected: 8", "file", fileName));
 		}
 

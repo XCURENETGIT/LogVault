@@ -39,6 +39,8 @@ public enum ErrorCode {
 	PARSER_INVALID("LVT-1998", "Invalid parser"), // 유효하지 않은 파서 요청
 	PARSER_MSG_FAIL("LVT-1999", "EDCDoc Parsing Failed"), // EDCDoc 전체 파싱 실패
 
+	FILTER_FAIL("LVT-1599", "Filter Failed"), // EDCDoc Filter 기능 오류
+
 	/* =========================
 	 * Index
 	 * ========================= */

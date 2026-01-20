@@ -38,6 +38,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
@@ -1344,5 +1345,15 @@ public final class Common {
 			return xf.split(",")[0].trim();
 		}
 		return request.getRemoteAddr();
+	}
+
+	public static void moveNok(Path filePath, String nokRoot) {
+		try {
+			String dest = Common.makeFilepath(nokRoot, DateUtils.getCurrentDate(), filePath.getFileName().toString());
+			if (dest != null) {
+				Files.move(filePath, Path.of(dest), StandardCopyOption.ATOMIC_MOVE);
+			}
+		} catch (Exception ignored) {
+		}
 	}
 }

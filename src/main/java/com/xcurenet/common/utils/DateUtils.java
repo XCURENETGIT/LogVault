@@ -98,10 +98,8 @@ public class DateUtils {
 		return formatter.parseDateTime(day);
 	}
 
-	public static Date getCurrentTime() {
-		DateTime currentTime = DateTime.now();
-		DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
-		return currentTime.toDate();
+	public static String getCurrentDate() {
+		return DateTime.now().toString(YYYYMMDD);
 	}
 
 	public static String duration(long startTimeMillis) {

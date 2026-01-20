@@ -115,7 +115,7 @@ public class LogVaultApplication implements CommandLineRunner {
 		int fileWaitTime = conf.getInterval();
 
 		ExecutorService executor = Executors.newFixedThreadPool(2, new NamedThreadFactory(new File(dir).getName()));
-		executor.execute(new FileScanner(dir, queue, run, waitingSec, dataPath, split, fileWaitTime));
+		executor.execute(new FileScanner(dir, queue, run, waitingSec, dataPath, split, fileWaitTime, conf.getNokRoot()));
 		executor.shutdown();
 
 //		WatchServiceScanner scanner = WatchServiceScanner.ofDefault(dir, queue, run, scannerCount, false);

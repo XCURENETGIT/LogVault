@@ -56,7 +56,7 @@ public class FilterService {
 				return true;
 			}
 		} catch (Exception e) {
-			throw ExFactory.ex(IndexerException::new, ErrorCode.INDEX_SAVE_FAIL, Map.of("svc", msg.getSvc()), e);
+			throw ExFactory.ex(FilterException::new, ErrorCode.FILTER_FAIL, Map.of("svc", msg.getSvc()), e);
 		}
 		return false;
 	}

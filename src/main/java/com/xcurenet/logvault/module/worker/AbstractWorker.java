@@ -121,6 +121,7 @@ public abstract class AbstractWorker implements Runnable {
 							Common.sleep(2000);
 						}
 					}
+					if (!success) return; // 실패 시 종료 (로직의 실패로 간주 하고 재 처리)
 
 					while (retryCnt <= 3) {
 						try {
@@ -135,7 +136,6 @@ public abstract class AbstractWorker implements Runnable {
 							Common.sleep(2000);
 						}
 					}
-					if (!success) return;
 
 					metrics.increment();
 					LogVaultApplication.getMinuteBy1Count().incrementAndGet();
@@ -147,25 +147,18 @@ public abstract class AbstractWorker implements Runnable {
 			} catch (final SkipFileException e) {
 				log.info("WAIT_SEC | {} | {} seconds\n", e.getMessage(), this.conf.getInterval() / 1000);
 				Common.sleep(3000);
-			} catch (final ProcessDataException | ParsingException e) {
+			} catch (final ProcessDataException | ParsingException | FilterException e) { // 파싱오류, 필터링 오류 등의 문제 발생 시 MSG 파일의 문제로 간주 하고 NOK 디렉토리로 이동
 				log.debug("{}", data.getFilePath(), e);
-				removePermissions(data.getFilePath());
-			} catch (final Exception e) {
+				Common.moveNok(data.getFilePath(), conf.getNokRoot());
+			} catch (final Exception e) { // 이 경우도 MSG 파일의 문제로 간주 하고 NOK 디렉토리로 이동
 				log.warn("{} | {} | filePath={} err={}", ErrorCode.UNKNOWN_ERROR, ErrorCode.fromCode(ErrorCode.UNKNOWN_ERROR), data.getFilePath(), e.toString(), e);
-				removePermissions(data.getFilePath());
+				Common.moveNok(data.getFilePath(), conf.getNokRoot());
 			} finally {
 				MDC.remove("msgId");
 				data.decrementCount();
 				FileScanner.removeFromQueue(data.getFilePath().toAbsolutePath().toString());
 				inprogress.set(false);
 			}
-		}
-	}
-
-	private void removePermissions(Path filePath) {
-		try {
-			Files.setPosixFilePermissions(filePath, Collections.emptySet());
-		} catch (Exception ignored) {
 		}
 	}
 

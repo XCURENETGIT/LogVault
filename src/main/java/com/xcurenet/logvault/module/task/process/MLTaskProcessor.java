@@ -60,7 +60,7 @@ public class MLTaskProcessor implements TaskProcessor {
 			setAttachMLResult(doc);
 			setSummaryMLResult(doc);
 		} catch (Exception e) {
-			log.warn("{} | {} | {}", ErrorCode.ML_ANALYSIS_ERROR, ErrorCode.fromCode(ErrorCode.ML_ANALYSIS_ERROR), e.toString());
+			log.warn("{} | {}", ErrorCode.ML_ANALYSIS_ERROR, e.toString());
 		} finally {
 			if (doc != null) {
 				updateIndex(doc);
@@ -81,7 +81,7 @@ public class MLTaskProcessor implements TaskProcessor {
 				if (mlResult != null) doc.getBody().setMlResult(mlResult);
 			}
 		} catch (Exception e) {
-			log.warn("{} | {} | {} | {}", ErrorCode.ML_ANALYSIS_BODY_ERROR, ErrorCode.fromCode(ErrorCode.ML_ANALYSIS_BODY_ERROR), doc.getBody().getSize(), e.toString());
+			log.warn("{} | {} | {}", ErrorCode.ML_ANALYSIS_BODY_ERROR.toString(), doc.getBody().getSize(), e.toString());
 		}
 	}
 
@@ -98,7 +98,7 @@ public class MLTaskProcessor implements TaskProcessor {
 					if (mlResult != null) attach.setMlResult(mlResult);
 				}
 			} catch (Exception e) {
-				log.warn("{} | {} | {} | {} | {}", ErrorCode.ML_ANALYSIS_ATTACH_ERROR, ErrorCode.fromCode(ErrorCode.ML_ANALYSIS_ATTACH_ERROR), attach.getSize(), conf.getDestPathSmall(attach.getPath()), e.toString());
+				log.warn("{} | {} | {} | {}", ErrorCode.ML_ANALYSIS_ATTACH_ERROR, attach.getSize(), conf.getDestPathSmall(attach.getPath()), e.toString());
 			}
 		}
 	}

@@ -24,19 +24,19 @@ public class UserAgentAnalysis {
 
 	public void detect(final ScanData scanData) {
 		if (scanData.getMsgData() == null) {
-			log.warn("{} | {}", ErrorCode.UA_MSGDATA_NULL, ErrorCode.fromCode(ErrorCode.UA_MSGDATA_NULL));
+			log.warn("{}", ErrorCode.UA_MSGDATA_NULL.toString());
 			return;
 		}
 
 		MSGData msg = scanData.getMsgData();
 		if (msg.getHeader() == null) {
-			log.debug("{} | {}", ErrorCode.UA_HEADER_PATH_NULL, ErrorCode.fromCode(ErrorCode.UA_HEADER_PATH_NULL));
+			log.debug("{}", ErrorCode.UA_HEADER_PATH_NULL.toString());
 			return;
 		}
 
 		String headerPath = conf.getPath(msg.getHeader());
 		if (!Files.exists(Paths.get(headerPath))) {
-			log.warn("{} | {} | path={}", ErrorCode.UA_HEADER_FILE_NOT_FOUND, ErrorCode.fromCode(ErrorCode.UA_HEADER_FILE_NOT_FOUND), headerPath);
+			log.warn("{} | PATH:{}", ErrorCode.UA_HEADER_FILE_NOT_FOUND.toString(), headerPath);
 			return;
 		}
 
@@ -46,11 +46,11 @@ public class UserAgentAnalysis {
 			try {
 				httpHeader = HttpHeaderUtil.parserHeader(raw);
 			} catch (Exception e) {
-				log.warn("{} | {} | path={} err={}", ErrorCode.UA_HEADER_PARSE_FAIL, ErrorCode.fromCode(ErrorCode.UA_HEADER_PARSE_FAIL), headerPath, e.toString());
+				log.warn("{} | PATH:{} ERR:{}", ErrorCode.UA_HEADER_PARSE_FAIL.toString(), headerPath, e.toString());
 				return;
 			}
 			if (scanData.getEmassDoc() == null || scanData.getEmassDoc().getHttp() == null) {
-				log.warn("{} | {}", ErrorCode.UA_EMASSDOC_HTTP_NULL, ErrorCode.fromCode(ErrorCode.UA_EMASSDOC_HTTP_NULL));
+				log.warn("{}", ErrorCode.UA_EMASSDOC_HTTP_NULL.toString());
 				return;
 			}
 
@@ -73,11 +73,11 @@ public class UserAgentAnalysis {
 					scanData.getEmassDoc().getHttp().setAgent(agent);
 				}
 			} catch (Exception e) {
-				log.warn("{} | {} | err={}", ErrorCode.UA_AGENT_PARSE_FAIL, ErrorCode.fromCode(ErrorCode.UA_AGENT_PARSE_FAIL), e.toString());
+				log.warn("{} | ERR:{}", ErrorCode.UA_AGENT_PARSE_FAIL.toString(), e.toString());
 			}
 			scanData.getEmassDoc().setTestMessage(isTestMessage(raw));
 		} catch (Exception e) {
-			log.warn("{} | {} | msgid={} err={}", ErrorCode.UA_ANALYSIS_FAIL, ErrorCode.fromCode(ErrorCode.UA_ANALYSIS_FAIL), msg.getMsgid(), e.toString());
+			log.warn("{} | ERR:{}", ErrorCode.UA_ANALYSIS_FAIL.toString(), e.toString());
 		}
 	}
 

@@ -38,12 +38,12 @@ public class CheckWorkingDay {
 
 		DateTime ctime = data.getMsgData().getCtime();
 		if (ctime == null) {
-			log.warn("{} | {}", ErrorCode.WORKDAY_CTIME_NULL, ErrorCode.fromCode(ErrorCode.WORKDAY_CTIME_NULL));
+			log.warn("{}", ErrorCode.WORKDAY_CTIME_NULL.toString());
 			return;
 		}
 
 		if (data.getEmassDoc() == null) {
-			log.warn("{} | {}", ErrorCode.WORKDAY_EMASSDOC_NULL, ErrorCode.fromCode(ErrorCode.WORKDAY_EMASSDOC_NULL));
+			log.warn("{}", ErrorCode.WORKDAY_EMASSDOC_NULL.toString());
 			return;
 		}
 
@@ -51,7 +51,7 @@ public class CheckWorkingDay {
 			String work = getWorkingType(ctime).name();
 			data.getEmassDoc().setDay(EmassDoc.Day.builder().work(work).week(ctime.getWeekOfWeekyear()).build());
 		} catch (Exception e) {
-			log.warn("{} | {} | msgid={} err={}", ErrorCode.WORKDAY_SET_FAIL, ErrorCode.fromCode(ErrorCode.WORKDAY_SET_FAIL), data.getMsgData().getMsgid(), e.toString());
+			log.warn("{} | MSGID:{} ERR:{}", ErrorCode.WORKDAY_SET_FAIL.toString(), data.getMsgData().getMsgid(), e.toString());
 		}
 	}
 }

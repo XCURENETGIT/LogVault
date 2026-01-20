@@ -95,24 +95,24 @@ public class FileScanner implements Runnable {
 
 							data = new ScanData(path, scannerCount);
 						} catch (ScanException e) {
-							log.debug("SCANNER | Error : {}", path, e);
-							Common.moveNok(path, this.nokRoot);
+							log.error("{} | FILE:{}", ErrorCode.SCANNER_FILE_INVALID.toString(), path, e);
+							Common.moveNok(path, this.nokRoot, dataPath, split);
 							removeFromQueue(path.toAbsolutePath().toString());  // 에러 발생시에도 임시 캐시는 초기화
 						} catch (Exception e) {
-							log.error("SCANNER | File parsing error. Set no-permission to avoid reprocessing: {}", path, e);
-							Common.moveNok(path, this.nokRoot);
+							log.error("{} | FILE:{}", ErrorCode.SCANNER_SCAN_FAIL.toString(), path, e);
+							Common.moveNok(path, this.nokRoot, dataPath, split);
 							removeFromQueue(path.toAbsolutePath().toString());  // 에러 발생시에도 임시 캐시는 초기화
 						}
 
 						try {
 							if (data != null) addQueue(data);
 						} catch (Exception e) {
-							log.error("SCANNER | queue add fail: {}", path, e);
+							log.error("{} | FILE:{}", ErrorCode.SCANNER_QUEUE_ADD_FAIL.toString(), path, e);
 							removeFromQueue(path.toAbsolutePath().toString());  // 에러 발생 시 임시 캐싱 영역의 파일 경로를 제거해줌. 재 처리를 해야하므로
 						}
 					});
 		} catch (IOException e) {
-			log.error("SCANNER | Error : {}", rootDir, e);
+			log.error("{} | ROOTDIR:{}", ErrorCode.SCANNER_SCAN_FAIL.toString(), rootDir, e);
 		}
 	}
 
@@ -124,7 +124,7 @@ public class FileScanner implements Runnable {
 			if (!Common.filePermission(path.toFile())) return false; //0755 권한 검사
 			return isFileValid(path, attrs.lastModifiedTime().toMillis());
 		} catch (IOException | SecurityException e) {
-			log.warn("SCANNER | Invalid file access: {} - {}", path, e.getMessage()); // 파일 접근 불가, 삭제됨, 권한 없음 등의 상황
+			log.warn("{} | {} | file={}", ErrorCode.SCANNER_FILE_READ_FAIL.toString(), path, e);
 			return false;
 		}
 	}
@@ -148,8 +148,10 @@ public class FileScanner implements Runnable {
 							Path ref = Paths.get(getPath(val));
 							if (Files.notExists(ref)) {
 								long elapsed = System.currentTimeMillis() - lastModified;
-								if (elapsed < fileWaitTime) return false;
-								log.info("NOTFOUND | {} | Referenced file missing: {}", path, ref);
+								if (elapsed < fileWaitTime) {
+									log.warn("{} | MSGFILE:{} REFFILE:{}", ErrorCode.SCANNER_REF_FILE_MISSING.toString(), path, ref);
+									return false;
+								}
 							}
 						}
 					}
@@ -157,8 +159,8 @@ public class FileScanner implements Runnable {
 			}
 			return true;
 		} catch (Exception e) {
-			log.warn("SCANNER | Error Reading File: {}", path, e);
-			Common.moveNok(path, this.nokRoot);
+			log.warn("{} | FILE:{}", ErrorCode.SCANNER_FILE_READ_FAIL.toString(), path, e);
+			Common.moveNok(path, this.nokRoot, dataPath, split);
 			return false;
 		}
 	}

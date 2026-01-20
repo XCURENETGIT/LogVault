@@ -244,10 +244,10 @@ public class IndexService {
 					log.info("IDX_DELETE | index={} not found (treated OK)", indexName);
 					return true;
 				}
-				log.warn("{} | {} | index={} status={} err={}", ErrorCode.INDEX_DEL_FAIL, ErrorCode.fromCode(ErrorCode.INDEX_DEL_FAIL), indexName, status, ose.toString());
+				log.warn("{} | INDEX:{} STATUS:{} ERR:{}", ErrorCode.INDEX_DEL_FAIL.toString(), indexName, status, ose.toString());
 				return false;
 			} catch (Exception e) {
-				log.warn("{} | {} | index={} err={}", ErrorCode.INDEX_DEL_FAIL, ErrorCode.fromCode(ErrorCode.INDEX_DEL_FAIL), indexName, e.toString());
+				log.warn("{} | INDEX:{} ERR:{}", ErrorCode.INDEX_DEL_FAIL.toString(), indexName, e.toString());
 				return false;
 			}
 		});

@@ -1,5 +1,6 @@
 package com.xcurenet.logvault.job.delete;
 
+import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
@@ -37,7 +38,14 @@ public class FileCleanupService {
 	}
 
 	public void runCleanup(final int term) {
-		List<Map<String, String>> indices = indexService.getIndices();
+		List<Map<String, String>> indices;
+		try {
+			indices = indexService.getIndices();
+		} catch (Exception e) {
+			log.error("{}", ErrorCode.CLEANUP_INDEX_LIST_FAIL.toString(), e);
+			return;
+		}
+
 		if (indices == null || indices.isEmpty()) {
 			log.info("END_EMPTY | No more index to delete.");
 			return;
@@ -57,14 +65,29 @@ public class FileCleanupService {
 	}
 
 	private void delete(String date, String index) {
-		boolean attachDeleted = fileProcessor.deleteDirectory(Common.makeFilepath(conf.getAttachRoot(), date));
-		log.info("DEL_FILES | Path:{} | AttachDeleted:{}", Common.makeFilepath(conf.getAttachRoot(), date), attachDeleted);
-		if (attachDeleted) {
-			if (indexService.deleteIndices(index)) { //인덱스 삭제
-				log.info("DEL_INDEX | Index:{} | Date:{}", index, DateUtils.parseDateTimeYYYYMMDD(date));
+		String attachPath = Common.makeFilepath(conf.getAttachRoot(), date);
+		boolean attachDeleted;
+		try {
+			attachDeleted = fileProcessor.deleteDirectory(attachPath);
+		} catch (Exception e) {
+			log.error("{} | PATH:{}", ErrorCode.CLEANUP_ATTACH_DELETE_FAIL.toString(), attachPath, e);
+			return;
+		}
+
+		log.info("DEL_FILES | PATH:{} | DELETED:{}", attachPath, attachDeleted);
+		if (!attachDeleted) {
+			log.warn("{} | PATH:{}", ErrorCode.CLEANUP_ATTACH_DELETE_FAIL.toString(), attachPath);
+			return;
+		}
+
+		try {
+			if (indexService.deleteIndices(index)) {
+				log.info("DEL_INDEX_OK | INDEX:{} | DATE:{}", index, date);
 			} else {
-				log.warn("DEL_INDEX | Index:{} | Date:{}", index, DateUtils.parseDateTimeYYYYMMDD(date));
+				log.warn("{} | INDEX:{} | DATE:{}", ErrorCode.CLEANUP_INDEX_DELETE_FAIL.toString(), index, date);
 			}
+		} catch (Exception e) {
+			log.error("{} | INDEX:{} | DATE:{}", ErrorCode.CLEANUP_INDEX_DELETE_FAIL.toString(), index, date, e);
 		}
 	}
 
@@ -84,9 +107,14 @@ public class FileCleanupService {
 			return;
 		}
 
-
 		for (Map<String, String> item : indices) {
-			double before = currentUsageFraction(dir);
+			double before;
+			try {
+				before = currentUsageFraction(dir);
+			} catch (Exception e) {
+				log.error("{} | DIR:{}", ErrorCode.CLEANUP_DISK_USAGE_FAIL.toString(), dir, e);
+				return;
+			}
 			if (before <= targetUsageFraction) {
 				log.info("OK_USAGE | Disk Usage {} <= Target {}. Stop cleanup.", fmt(before), fmt(targetUsageFraction));
 				return;
@@ -101,11 +129,17 @@ public class FileCleanupService {
 	}
 
 	private double currentUsageFraction(final String dir) {
-		long total = fileProcessor.getTotalSpace(dir);
-		long usable = fileProcessor.getUsableSpace(dir);      // 남은 공간
-		long used = total - usable;                // 사용 중인 공간
-		return (total > 0) ? (double) used / (double) total : 0.0;
+		try {
+			long total = fileProcessor.getTotalSpace(dir);
+			long usable = fileProcessor.getUsableSpace(dir);
+			long used = total - usable;
+			return (total > 0) ? (double) used / (double) total : 0.0;
+		} catch (Exception e) {
+			log.error("{} | DIR:{}", ErrorCode.CLEANUP_DISK_USAGE_FAIL.toString(), dir, e);
+			throw e;
+		}
 	}
+
 
 	private String fmt(double v) {
 		return String.format("%.2f", v * 100);

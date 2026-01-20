@@ -78,6 +78,9 @@ public class Config {
 	@Value("${nok.root:/data01/nok}") //MSG 파일의 파싱 등의 오류 발생 시 백업 디렉토리
 	private String nokRoot;
 
+	@Value("${nok.retention.days:90}") //MSG 파일의 파싱 등의 오류 발생 시 백업 디렉토리 삭제일 (default 90일)
+	private int nokRetentionDays;
+
 	@Value("${decoder.split.dir:100}") //디코더 디렉토리 분산 - 운영중 설정 변경 불가 (재시작필요)
 	private int decoderSplitDir;
 

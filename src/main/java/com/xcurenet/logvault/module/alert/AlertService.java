@@ -32,7 +32,7 @@ public class AlertService {
 
 	public void send(final ScanData data) {
 		if (data == null || data.getEmassDoc() == null) {
-			log.warn("{} | {} | ScanData or EmassDoc is null", ErrorCode.ALERT_DOC_NULL, ErrorCode.fromCode(ErrorCode.ALERT_DOC_NULL));
+			log.warn("{} | ScanData or EmassDoc is null", ErrorCode.ALERT_DOC_NULL.toString());
 			return;
 		}
 		send(data.getEmassDoc());
@@ -40,7 +40,7 @@ public class AlertService {
 
 	public void send(final EmassDoc doc) {
 		if (doc == null) {
-			log.warn("{} | {} | EmassDoc is null", ErrorCode.ALERT_DOC_NULL, ErrorCode.fromCode(ErrorCode.ALERT_DOC_NULL));
+			log.warn("{} | EmassDoc is null", ErrorCode.ALERT_DOC_NULL.toString());
 			return;
 		}
 
@@ -59,10 +59,10 @@ public class AlertService {
 				repository.insertAlertRule(message);
 				log.info("ALT_SEND | keyword_alarm:{} | keyword_syslog:{} | privacy_alarm:{} | privacy_syslog:{} | {}", alertInfo.getKeywordAlarmTotal(), alertInfo.getKeywordSyslogTotal(), alertInfo.getPrivacyAlarmTotal(), alertInfo.getPrivacySyslogTotal(), DateUtils.stop(sw));
 			} catch (Exception e) {
-				log.error("{} | {} | msgid={} | {}", ErrorCode.ALERT_REPOSITORY_FAIL, ErrorCode.fromCode(ErrorCode.ALERT_REPOSITORY_FAIL), doc.getMsgid(), e.toString(), e);
+				log.error("{} | {}", ErrorCode.ALERT_REPOSITORY_FAIL.toString(), e.toString(), e);
 			}
 		} catch (Exception e) {
-			log.error("{} | {} | msgid={} | {}", ErrorCode.ALERT_INTERNAL_ERROR, ErrorCode.fromCode(ErrorCode.ALERT_INTERNAL_ERROR), doc.getMsgid(), e.toString(), e);
+			log.error("{} | {}", ErrorCode.ALERT_INTERNAL_ERROR.toString(), e.toString(), e);
 		}
 	}
 

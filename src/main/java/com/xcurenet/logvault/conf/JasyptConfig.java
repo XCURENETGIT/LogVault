@@ -64,14 +64,14 @@ public class JasyptConfig {
 		try {
 			return getEncryptorInstance().decrypt(cipher);
 		} catch (EncryptException e) {
-			System.err.println(ErrorCode.ENC_DECRYPT_FAIL + " | " + ErrorCode.fromCode(ErrorCode.ENC_DECRYPT_FAIL));
+			System.err.println(ErrorCode.ENC_DECRYPT_FAIL);
 			e.printStackTrace(System.err);
-			log.fatal("{} | {} | {}", ErrorCode.ENC_DECRYPT_FAIL, ErrorCode.fromCode(ErrorCode.ENC_DECRYPT_FAIL), e);
+			log.fatal("{} | {}", ErrorCode.ENC_DECRYPT_FAIL, e);
 			throw ExFactory.ex(EncryptException::new, ErrorCode.ENC_DECRYPT_FAIL, Map.of("cipher", cipher));
 		} catch (Exception e) {
-			System.err.println(ErrorCode.ENC_INTERNAL_ERROR + " | " + ErrorCode.fromCode(ErrorCode.ENC_INTERNAL_ERROR));
+			System.err.println(ErrorCode.ENC_INTERNAL_ERROR);
 			e.printStackTrace(System.err);
-			log.fatal("{} | {} | {}", ErrorCode.ENC_INTERNAL_ERROR, ErrorCode.fromCode(ErrorCode.ENC_INTERNAL_ERROR), e);
+			log.fatal("{} |", ErrorCode.ENC_INTERNAL_ERROR, e);
 			throw ExFactory.ex(EncryptException::new, ErrorCode.ENC_INTERNAL_ERROR, Map.of("cipher", cipher, "exception", e.getMessage()));
 		}
 	}

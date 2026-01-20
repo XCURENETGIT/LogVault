@@ -35,10 +35,7 @@ import java.lang.reflect.Constructor;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
@@ -51,6 +48,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -1347,13 +1345,72 @@ public final class Common {
 		return request.getRemoteAddr();
 	}
 
-	public static void moveNok(Path filePath, String nokRoot) {
+	public static void moveNok(Path metaFile, String nokRoot, String dataPath, int splitNum) {
+		if (metaFile == null || !Files.exists(metaFile)) {
+			log.warn("{} | METAFILE:{}", ErrorCode.NOK_META_INVALID.toString(), metaFile);
+			return;
+		}
+
 		try {
-			String dest = Common.makeFilepath(nokRoot, DateUtils.getCurrentDate(), filePath.getFileName().toString());
-			if (dest != null) {
-				Files.move(filePath, Path.of(dest), StandardCopyOption.ATOMIC_MOVE);
+			Path destDir = Path.of(Objects.requireNonNull(Common.makeFilepath(nokRoot, DateUtils.getCurrentDate())));
+			ensureDirectory(destDir);
+			moveNokFiles(metaFile, dataPath, splitNum, destDir); //본문, 헤더, 첨부파일의 이동
+			moveFile(metaFile, destDir.resolve(metaFile.getFileName()));
+		} catch (Exception e) {
+			log.error("{} | METAFILE:{}", ErrorCode.NOK_MOVE_FAIL.toString(), metaFile, e);
+		}
+	}
+
+	private static void moveNokFiles(Path metaFile, String dataPath, int splitNum, Path destDir) {
+		try (Stream<String> lines = Files.lines(metaFile, StandardCharsets.UTF_8)) {
+			lines.filter(line -> line.startsWith("HDRFILE") || line.startsWith("MSGFILE") || line.startsWith("APPFILE"))
+					.map(line -> line.split(":", 2))
+					.filter(parts -> parts.length == 2)
+					.map(parts -> resolveSourcePath(parts[1].trim(), dataPath, splitNum))
+					.filter(Objects::nonNull)
+					.forEach(src -> {
+						Path dest = destDir.resolve(src.getFileName());
+						moveFile(src, dest);
+					});
+		} catch (Exception e) {
+			log.warn("{} | METAFILE:{}", ErrorCode.NOK_REF_READ_FAIL.toString(), metaFile, e);
+		}
+	}
+
+	public static String getPath(final String fileName, final String dataPath, final int splitNum) {
+		if (Common.isEmpty(fileName)) return null;
+		String split = Long.toString(getSplitNum(fileName, splitNum));
+		return Common.makeFilepath(dataPath, split, fileName);
+	}
+
+	private static Path resolveSourcePath(String fileName, String dataPath, int splitNum) {
+		String fullPath = getPath(fileName, dataPath, splitNum);
+		return fullPath == null ? null : Path.of(fullPath);
+	}
+
+	private static void moveFile(Path src, Path dest) {
+		try {
+			if (!Files.exists(src)) {
+				log.warn("{} | SRC:{}", ErrorCode.NOK_SRC_NOT_FOUND.toString(), src);
+				return;
 			}
-		} catch (Exception ignored) {
+			Files.move(src, dest, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+			log.info("NOK_MOVE_OK | {} > {}", src, dest);
+		} catch (AtomicMoveNotSupportedException e) {
+			try {
+				Files.move(src, dest, StandardCopyOption.REPLACE_EXISTING);
+				log.info("NOK_MOVE_OK_FALLBACK | {} > {}", src, dest);
+			} catch (Exception ex) {
+				log.error("{} | SRC:{} DEST:{}", ErrorCode.NOK_MOVE_FAIL.toString(), src, dest, ex);
+			}
+		} catch (Exception e) {
+			log.error("{} | {} | SRC:{} DEST:{}", ErrorCode.NOK_MOVE_FAIL.toString(), src, dest, e);
+		}
+	}
+
+	private static void ensureDirectory(Path dir) throws IOException {
+		if (!Files.exists(dir)) {
+			Files.createDirectories(dir);
 		}
 	}
 }

@@ -31,8 +31,6 @@ import org.springframework.util.StopWatch;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -149,10 +147,10 @@ public abstract class AbstractWorker implements Runnable {
 				Common.sleep(3000);
 			} catch (final ProcessDataException | ParsingException | FilterException e) { // 파싱오류, 필터링 오류 등의 문제 발생 시 MSG 파일의 문제로 간주 하고 NOK 디렉토리로 이동
 				log.debug("{}", data.getFilePath(), e);
-				Common.moveNok(data.getFilePath(), conf.getNokRoot());
+				Common.moveNok(data.getFilePath(), conf.getNokRoot(), conf.getDataPath(), conf.getDecoderSplitDir());
 			} catch (final Exception e) { // 이 경우도 MSG 파일의 문제로 간주 하고 NOK 디렉토리로 이동
-				log.warn("{} | {} | filePath={} err={}", ErrorCode.UNKNOWN_ERROR, ErrorCode.fromCode(ErrorCode.UNKNOWN_ERROR), data.getFilePath(), e.toString(), e);
-				Common.moveNok(data.getFilePath(), conf.getNokRoot());
+				log.warn("{} | FILEPATH:{} ERR:{}", ErrorCode.UNKNOWN_ERROR.toString(), data.getFilePath(), e.toString(), e);
+				Common.moveNok(data.getFilePath(), conf.getNokRoot(), conf.getDataPath(), conf.getDecoderSplitDir());
 			} finally {
 				MDC.remove("msgId");
 				data.decrementCount();

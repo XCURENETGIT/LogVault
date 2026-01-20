@@ -50,7 +50,7 @@ public class AttachAnalysis {
 			imgPath = Common.makeFilepath(conf.getMemoryDiskPath(), options.getMsgId(), TextFilter.IMG_DIR);
 			FileUtils.forceMkdir(new File(Objects.requireNonNull(imgPath)));
 		} catch (Exception e) {
-			log.warn("{} | {} | msgId={} | {}", ErrorCode.ATTACH_MKDIR_FAIL, ErrorCode.fromCode(ErrorCode.ATTACH_MKDIR_FAIL), options.getMsgId(), e.getMessage(), e);
+			log.warn("{} | MSGID:{} | {}", ErrorCode.ATTACH_MKDIR_FAIL.toString(), options.getMsgId(), e.getMessage(), e);
 		}
 		return imgPath;
 	}
@@ -72,7 +72,7 @@ public class AttachAnalysis {
 		try {
 			return fileService.processText(options.getFilePath(), options.getFileName(), options, false);
 		} catch (Exception e) {
-			log.warn("{} | {} | path={} | name={} | {}", ErrorCode.ATTACH_TEXT_EXTRACT_FAIL, ErrorCode.fromCode(ErrorCode.ATTACH_TEXT_EXTRACT_FAIL), filePath, fileName, e.getMessage(), e);
+			log.warn("{} | PATH:{} | NAME:{} | {}", ErrorCode.ATTACH_TEXT_EXTRACT_FAIL.toString(), filePath, fileName, e.getMessage(), e);
 		}
 		return null;
 	}
@@ -82,7 +82,7 @@ public class AttachAnalysis {
 	 * ========================= */
 	public void setAttachText(final ScanData msg) {
 		if (msg == null || msg.getEmassDoc() == null) {
-			log.warn("{} | {}", ErrorCode.ATTACH_MSGDATA_NULL, ErrorCode.fromCode(ErrorCode.ATTACH_MSGDATA_NULL));
+			log.warn("{}", ErrorCode.ATTACH_MSGDATA_NULL.toString());
 			return;
 		}
 
@@ -99,7 +99,7 @@ public class AttachAnalysis {
 			attach.setEncrypted(false);
 
 			if (!attach.isExist()) {
-				log.warn("{} | {} | path={}", ErrorCode.ATTACH_FILE_NOT_EXIST, ErrorCode.fromCode(ErrorCode.ATTACH_FILE_NOT_EXIST), attach.getSrcPath());
+				log.warn("{} | PATH:{}", ErrorCode.ATTACH_FILE_NOT_EXIST.toString(), attach.getSrcPath());
 				continue;
 			}
 
@@ -126,7 +126,7 @@ public class AttachAnalysis {
 
 				log.info("ATT_TEXT | {} | TXT_LEN:{} | {}", conf.getDataPathSmall(attach.getSrcPath()), Common.nvl(attach.getText()).length(), DateUtils.stop(sw));
 			} else {
-				log.warn("{} | {} | path={}", ErrorCode.ATTACH_TEXT_EXTRACT_FAIL, ErrorCode.fromCode(ErrorCode.ATTACH_TEXT_EXTRACT_FAIL), conf.getDataPathSmall(attach.getSrcPath()));
+				log.warn("{} | DATA_PATH:{}", ErrorCode.ATTACH_TEXT_EXTRACT_FAIL.toString(), conf.getDataPathSmall(attach.getSrcPath()));
 			}
 		}
 	}
@@ -165,7 +165,7 @@ public class AttachAnalysis {
 				}
 			}
 		} catch (Exception e) {
-			log.warn("{} | {} | path={} | {}", ErrorCode.ATTACH_IMAGE_EXTRACT_FAIL, ErrorCode.fromCode(ErrorCode.ATTACH_IMAGE_EXTRACT_FAIL), conf.getDataPathSmall(attach.getSrcPath()), e.getMessage(), e);
+			log.warn("{} | PATH:{} | {}", ErrorCode.ATTACH_IMAGE_EXTRACT_FAIL.toString(), conf.getDataPathSmall(attach.getSrcPath()), e.getMessage(), e);
 		}
 	}
 
@@ -198,7 +198,7 @@ public class AttachAnalysis {
 				attach.setSheetInfo(info);
 			}
 		} catch (Exception e) {
-			log.warn("{} | {} | path={} | {}", ErrorCode.ATTACH_SHEET_INFO_FAIL, ErrorCode.fromCode(ErrorCode.ATTACH_SHEET_INFO_FAIL), conf.getDataPathSmall(attach.getSrcPath()), e.getMessage(), e);
+			log.warn("{} | PATH:{} | {}", ErrorCode.ATTACH_SHEET_INFO_FAIL.toString(), conf.getDataPathSmall(attach.getSrcPath()), e.getMessage(), e);
 		}
 	}
 
@@ -210,14 +210,14 @@ public class AttachAnalysis {
 			Path path = Paths.get(filePath);
 			return Files.size(path) > limitSize;
 		} catch (IOException e) {
-			log.warn("{} | {} | path={} err={}", ErrorCode.FILE_ANALYSIS_SIZE, ErrorCode.fromCode(ErrorCode.FILE_ANALYSIS_SIZE), filePath, e.toString());
+			log.warn("{} | PATH:{} ERR:{}", ErrorCode.FILE_ANALYSIS_SIZE, filePath, e.toString());
 			return true;
 		}
 	}
 
 	public void setAttachThumbnail(final ScanData msg) {
 		if (msg == null || msg.getEmassDoc() == null) {
-			log.warn("{} | {}", ErrorCode.ATTACH_MSGDATA_NULL, ErrorCode.fromCode(ErrorCode.ATTACH_MSGDATA_NULL));
+			log.warn("{}", ErrorCode.ATTACH_MSGDATA_NULL.toString());
 			return;
 		}
 
@@ -242,7 +242,7 @@ public class AttachAnalysis {
 				}
 			}
 		} catch (Exception e) {
-			log.warn("{} | {} | {}", ErrorCode.ATTACH_THUMBNAIL_FAIL, ErrorCode.fromCode(ErrorCode.ATTACH_THUMBNAIL_FAIL), e.getMessage(), e);
+			log.warn("{} | {}", ErrorCode.ATTACH_THUMBNAIL_FAIL.toString(), e.getMessage(), e);
 		}
 	}
 

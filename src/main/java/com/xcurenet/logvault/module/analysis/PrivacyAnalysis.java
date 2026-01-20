@@ -39,14 +39,14 @@ public class PrivacyAnalysis {
 	 * ========================= */
 	public void detect(final ScanData scanData) {
 		if (scanData == null || scanData.getEmassDoc() == null) {
-			log.warn("{} | {}", ErrorCode.PRIVACY_MSGDATA_NULL, ErrorCode.fromCode(ErrorCode.PRIVACY_MSGDATA_NULL));
+			log.warn("{}", ErrorCode.PRIVACY_MSGDATA_NULL.toString());
 			return;
 		}
 
 		try {
 			detect(scanData.getEmassDoc());
 		} catch (Exception e) {
-			log.warn("{} | {} | {}", ErrorCode.PRIVACY_UNKNOWN_ERROR, ErrorCode.fromCode(ErrorCode.PRIVACY_UNKNOWN_ERROR), e.getMessage(), e);
+			log.warn("{} | {}", ErrorCode.PRIVACY_UNKNOWN_ERROR.toString(), e.getMessage(), e);
 		}
 	}
 
@@ -84,14 +84,14 @@ public class PrivacyAnalysis {
 		try {
 			api = pattern.scan(text);
 		} catch (Exception e) {
-			log.warn("{} | {} | text.length={} | {}", ErrorCode.PRIVACY_REGEX_SCAN_FAIL, ErrorCode.fromCode(ErrorCode.PRIVACY_REGEX_SCAN_FAIL), text.length(), e.getMessage(), e);
+			log.warn("{} | text.length={} | {}", ErrorCode.PRIVACY_REGEX_SCAN_FAIL.toString(), text.length(), e.getMessage(), e);
 			return 0;
 		}
 
 		log.debug("REG_DATA | {}", api);
 
 		if (api == null) {
-			log.warn("{} | {}", ErrorCode.PRIVACY_REGEX_RESULT_NULL, ErrorCode.fromCode(ErrorCode.PRIVACY_REGEX_RESULT_NULL));
+			log.warn("{}", ErrorCode.PRIVACY_REGEX_RESULT_NULL.toString());
 			return 0;
 		}
 
@@ -123,7 +123,7 @@ public class PrivacyAnalysis {
 	 * ========================= */
 	private EmassDoc.PrivacyInfo toPrivacyInfo(String key, String type, String attachName, List<MatchResult> arr) {
 		if (!PatternLoader.isDetectCode(key)) {
-			log.debug("{} | {} | key={}", ErrorCode.PRIVACY_DETECT_CODE_INVALID, ErrorCode.fromCode(ErrorCode.PRIVACY_DETECT_CODE_INVALID), key);
+			log.debug("{} | KEY:{}", ErrorCode.PRIVACY_DETECT_CODE_INVALID.toString(), key);
 			return null;
 		}
 
@@ -141,7 +141,7 @@ public class PrivacyAnalysis {
 
 		int threshold = PatternLoader.getCodeValueOrDefault(key, 1);
 		if (items.size() < threshold) {
-			log.debug("{} | {} | key={} count={} threshold={}", ErrorCode.PRIVACY_THRESHOLD_NOT_MET, ErrorCode.fromCode(ErrorCode.PRIVACY_THRESHOLD_NOT_MET), key, items.size(), threshold);
+			log.debug("{} | KEY:{} COUNT:{} THRESHOLD:{}", ErrorCode.PRIVACY_THRESHOLD_NOT_MET.toString(), key, items.size(), threshold);
 			return null;
 		}
 
@@ -170,7 +170,7 @@ public class PrivacyAnalysis {
 			byte[] cipherTextBytes = crypto.encrypt(text, 0, text.length);
 			return Base64.getEncoder().encodeToString(cipherTextBytes);
 		} catch (Exception e) {
-			log.warn("{} | {} | {}", ErrorCode.PRIVACY_ENCRYPT_FAIL, ErrorCode.fromCode(ErrorCode.PRIVACY_ENCRYPT_FAIL), e.getMessage(), e);
+			log.warn("{} | {}", ErrorCode.PRIVACY_ENCRYPT_FAIL.toString(), e.getMessage(), e);
 		}
 		return null;
 	}
@@ -203,21 +203,21 @@ public class PrivacyAnalysis {
 				attempt++;
 				JSONObject rs = restClient.post().uri(conf.getMlPrivacyApiUrl()).contentType(MediaType.APPLICATION_JSON).body(body).retrieve().body(JSONObject.class);
 				if (rs == null || rs.getJSONArray("results") == null) {
-					log.warn("{} | {} | text.length={}", ErrorCode.PRIVACY_ML_RESPONSE_INVALID, ErrorCode.fromCode(ErrorCode.PRIVACY_ML_RESPONSE_INVALID), text.length());
+					log.warn("{} | TEXT.LENGTH:{}", ErrorCode.PRIVACY_ML_RESPONSE_INVALID.toString(), text.length());
 					return false;
 				}
 
 				JSONObject object = rs.getJSONArray("results").getJSONObject(0);
-				log.info("ML_PII | text.length:{} | {} | {}", text.length(), object.getBoolean("is_pii"), DateUtils.stop(sw));
+				log.info("ML_PII | TEXT.LENGTH:{} | {} | {}", text.length(), object.getBoolean("is_pii"), DateUtils.stop(sw));
 				return object.getBoolean("is_pii");
 			} catch (Exception e) {
-				log.warn("{} | {} | ({}/{}) | text.length={} | {}", ErrorCode.PRIVACY_ML_API_ERROR, ErrorCode.fromCode(ErrorCode.PRIVACY_ML_API_ERROR), attempt, maxRetries, text.length(), e.getMessage());
+				log.warn("{} | ({}/{}) | TEXT.LENGTH:{} | {}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), attempt, maxRetries, text.length(), e.getMessage());
 				if (attempt < maxRetries) {
 					Common.sleep(1000);
 				}
 			}
 		}
-		log.warn("{} | {} | text.length={}", ErrorCode.PRIVACY_ML_VERIFY_FAIL, ErrorCode.fromCode(ErrorCode.PRIVACY_ML_VERIFY_FAIL), text.length());
+		log.warn("{} | TEXT.LENGTH:{}", ErrorCode.PRIVACY_ML_VERIFY_FAIL.toString(), text.length());
 		return false;
 	}
 }

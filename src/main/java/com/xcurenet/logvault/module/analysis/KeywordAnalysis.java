@@ -24,7 +24,7 @@ public class KeywordAnalysis {
 
 	public void detect(final ScanData scanData) {
 		if (scanData == null || scanData.getEmassDoc() == null) {
-			log.warn("{} | {} | scanData or emassDoc is null", ErrorCode.KEYWORD_MSGDATA_NULL, ErrorCode.fromCode(ErrorCode.KEYWORD_MSGDATA_NULL));
+			log.warn("{} | scanData or emassDoc is null", ErrorCode.KEYWORD_MSGDATA_NULL.toString());
 			return;
 		}
 		detect(scanData.getEmassDoc());
@@ -32,7 +32,7 @@ public class KeywordAnalysis {
 
 	public void detect(final EmassDoc doc) {
 		if (doc == null) {
-			log.warn("{} | {} | EmassDoc is null", ErrorCode.KEYWORD_MSGDATA_NULL, ErrorCode.fromCode(ErrorCode.KEYWORD_MSGDATA_NULL));
+			log.warn("{} | EmassDoc is null", ErrorCode.KEYWORD_MSGDATA_NULL.toString());
 			return;
 		}
 		EmassDoc.Body body = doc.getBody();

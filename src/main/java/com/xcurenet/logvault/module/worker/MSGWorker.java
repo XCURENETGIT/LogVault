@@ -111,7 +111,7 @@ public class MSGWorker extends AbstractWorker {
 			}
 		} catch (Exception e) {
 			//필수 srcip값이 있는 상황의 로직의 오류는 기본 처리는 하도록 한다.
-			log.warn("{} | {} | SRCIP={} err={}", ErrorCode.INSA_MAPPING_FAIL, ErrorCode.fromCode(ErrorCode.INSA_MAPPING_FAIL), data.getMsgData().getSourceIp(), e.toString(), e);
+			log.warn("{} | SRCIP={} err={}", ErrorCode.INSA_MAPPING_FAIL.toString(), data.getMsgData().getSourceIp(), e.toString(), e);
 		}
 		data.getEmassDoc().setUser(user);
 	}

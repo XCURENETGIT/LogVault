@@ -36,8 +36,17 @@ public enum ErrorCode {
 	PARSER_FILENAME_FAIL("LVT-1014", "MSG File Name Parsing Failed"), // 파일명 규칙 파싱 실패
 	PARSER_SVC_NULL("LVT-1015", "MSG File SVC is null"), // 서비스(SVC) 정보 없음
 	PARSER_SVC_INVALID("LVT-1016", "MSG File SVC is invalid"), // 서비스(SVC) 값이 유효하지 않음
+
+	NOK_META_INVALID("LVT-1301", "NOK meta file is invalid or does not exist"),
+	NOK_REF_READ_FAIL("LVT-1302", "Failed to read NOK meta file"),
+	NOK_SRC_NOT_FOUND("LVT-1303", "NOK source file does not exist"),
+	NOK_MOVE_FAIL("LVT-1304", "Failed to move NOK file"),
+	NOK_DIR_CREATE_FAIL("LVT-1305", "Failed to create NOK directory"),
+
+
 	PARSER_INVALID("LVT-1998", "Invalid parser"), // 유효하지 않은 파서 요청
 	PARSER_MSG_FAIL("LVT-1999", "EDCDoc Parsing Failed"), // EDCDoc 전체 파싱 실패
+
 
 	FILTER_FAIL("LVT-1599", "Filter Failed"), // EDCDoc Filter 기능 오류
 
@@ -67,6 +76,12 @@ public enum ErrorCode {
 	FILE_MSG_SEND_FAIL("LVT-3003", "Failed to send MSG file"), // MSG 파일 전송 실패
 	FILE_BODY_SEND_FAIL("LVT-3004", "Failed to send body file"), // 본문 파일 전송 실패
 
+	CLEANUP_INDEX_LIST_FAIL("LVT-3201", "Failed to fetch index list"),
+	CLEANUP_ATTACH_DELETE_FAIL("LVT-3202", "Failed to delete attach directory"),
+	CLEANUP_INDEX_DELETE_FAIL("LVT-3203", "Failed to delete index"),
+	CLEANUP_DISK_USAGE_FAIL("LVT-3204", "Failed to read disk usage"),
+	CLEANUP_INVALID_PARAM("LVT-3205", "Invalid cleanup parameter"),
+
 	FILE_SEND_FAIL("LVT-3998", "Failed to send file"), // 파일 전송 실패
 	EMBED_SEND_FAIL("LVT-3999", "Failed to send file"), // 파일 전송 실패
 
@@ -88,6 +103,12 @@ public enum ErrorCode {
 	SCAN_NAME_PORT_FORMAT("LVT-5006", "File name Port is not numeric: {value}"),
 	SCAN_NAME_SEQ_INVALID("LVT-5007", "File name Sequence is not numeric: {value}"),
 	SCAN_NAME_HOST_EMPTY("LVT-5008", "File name Host field is empty: {field}"),
+
+	SCANNER_SCAN_FAIL("LVT-5101", "Directory scan failed"),
+	SCANNER_FILE_INVALID("LVT-5102", "Invalid scan file"),
+	SCANNER_FILE_READ_FAIL("LVT-5103", "Failed to read scan file"),
+	SCANNER_QUEUE_ADD_FAIL("LVT-5104", "Failed to enqueue scan data"),
+	SCANNER_REF_FILE_MISSING("LVT-5105", "Referenced file does not exist"),
 
 	/* =========================
 	 * File Analysis
@@ -176,14 +197,8 @@ public enum ErrorCode {
 		this.messageTemplate = messageTemplate;
 	}
 
-	public static String fromCode(ErrorCode code) {
-		if (code == null) return UNKNOWN_ERROR.getCode();
-		String codeVal = code.getCode();
-		for (ErrorCode e : values()) {
-			if (e.code.equalsIgnoreCase(codeVal)) {
-				return e.getCode();
-			}
-		}
-		return UNKNOWN_ERROR.getCode();
+	@Override
+	public String toString() {
+		return code + " | " + messageTemplate;
 	}
 }

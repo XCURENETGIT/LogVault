@@ -8,9 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
 
-@CommandLine.Command(
-		name = "createkey",
-		description = "Encryption Key Generation Utility")
+@CommandLine.Command(name = "createkey", description = "Encryption Key Generation Utility")
 public class CreateKey implements Callable<Integer> {
 
 	@CommandLine.Parameters(

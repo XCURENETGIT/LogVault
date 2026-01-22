@@ -5,9 +5,7 @@ import picocli.CommandLine;
 
 import java.util.concurrent.Callable;
 
-@CommandLine.Command(
-		name = "decrypt",
-		description = "String Decryption Utility")
+@CommandLine.Command(name = "decrypt", description = "String Decryption Utility")
 public class Decrypt implements Callable<Integer> {
 
 	@CommandLine.Parameters(

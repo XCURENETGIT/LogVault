@@ -25,6 +25,7 @@ import org.opensearch.common.settings.Settings;
 import org.opensearch.data.client.orhlc.NativeSearchQuery;
 import org.opensearch.data.client.orhlc.NativeSearchQueryBuilder;
 import org.opensearch.data.client.orhlc.OpenSearchRestTemplate;
+import org.opensearch.index.query.BoolQueryBuilder;
 import org.opensearch.index.query.QueryBuilders;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -32,6 +33,7 @@ import org.springframework.data.elasticsearch.NoSuchIndexException;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.document.Document;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
+import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.data.elasticsearch.core.query.UpdateQuery;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
@@ -64,6 +66,45 @@ public class IndexService {
 
 	public <T> T get(final String msgId, final Class<T> clazz, final String indexName) {
 		return template.get(msgId, clazz, IndexCoordinates.of(indexName));
+	}
+
+	public long countByRange(final String queryString, final String from, final String to) {
+		try {
+			BoolQueryBuilder bool = QueryBuilders.boolQuery().must(QueryBuilders.rangeQuery("ctime").gte(from).lt(to));
+			if (StringUtils.hasText(queryString) && !"*:*".equals(queryString)) {
+				bool.must(QueryBuilders.queryStringQuery(queryString));
+			}
+			NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(bool).build();
+			IndexCoordinates index = IndexCoordinates.of(conf.getIndexName() + "*");
+			long cnt = template.count(query, EmassDoc.class, index);
+			log.info("MG_COUNT | range {} ~ {} | {}", from, to, cnt);
+			return cnt;
+		} catch (Exception e) {
+			log.error("MG_COUNT_RANGE_FAIL", e);
+			return 0;
+		}
+	}
+
+	public long count(final String queryString) {
+		Query query = new NativeSearchQueryBuilder().withQuery(QueryBuilders.queryStringQuery(queryString)).build();
+		IndexCoordinates index = IndexCoordinates.of(conf.getIndexName() + "*");
+		return template.count(query, index);
+	}
+
+	public SearchHits<Document> search(final String queryString, int size) throws IndexerException {
+		try {
+			NativeSearchQuery query = new NativeSearchQueryBuilder()
+					.withQuery(QueryBuilders.queryStringQuery(queryString))
+					.withTrackTotalHits(true)
+					.withPageable(PageRequest.of(0, size))
+					.withSort(Sort.by(Sort.Order.desc("@timestamp"))).build();
+
+			IndexCoordinates index = IndexCoordinates.of(conf.getIndexName() + "*");
+			return template.search(query, Document.class, index);
+		} catch (Exception e) {
+			log.error("MG_SEARCH_FAIL | query:{}", queryString, e);
+			return null;
+		}
 	}
 
 

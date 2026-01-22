@@ -7,7 +7,7 @@ import java.util.concurrent.Callable;
 
 @CommandLine.Command(
 		name = "encrypt",
-		description = "Encrypt Utilities")
+		description = "String Encryption Utility")
 public class Encrypt implements Callable<Integer> {
 
 	@CommandLine.Parameters(

@@ -3,6 +3,7 @@ package com.xcurenet.logvault.opensearch;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.xcurenet.common.ResponseVO;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.job.backup.BackupPolicy;
 import com.xcurenet.logvault.job.backup.RestoreManager;
@@ -14,9 +15,13 @@ import lombok.RequiredArgsConstructor;
 import org.joda.time.DateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,31 +34,81 @@ public class OpenSearchController {
 	private final BackupPolicy backupPolicy;
 	private final RestoreManager restoreManager;
 
+	//Tool 용도로 return 값을 그대로 처리
+	@Operation(summary = "OpenSearch emass index 쿼리 조회", description = "OpenSearch emass index 쿼리 조회")
+	@ApiResponses({@ApiResponse(responseCode = "200", description = "성공적으로 목록 반환"), @ApiResponse(responseCode = "500", description = "서버 내부 오류")})
+	@ResponseBody
+	@GetMapping(value = "/search")
+	public ResponseEntity<Object> search(@RequestParam(value = "query", required = false, defaultValue = "*:*") final String query, @RequestParam(value = "size", required = false, defaultValue = "0") final int size) {
+		if (size > 5000) return ResponseEntity.badRequest().body(new ResponseVO(false, 400, null, "Invalid size less 5000"));
+		if (size == 0) return ResponseEntity.status(200).body(indexService.count(query));
+		else return ResponseEntity.status(200).body(indexService.search(query, size));
+	}
+
+	//Tool 용도로 return 값을 그대로 처리
+	@Operation(summary = "OpenSearch emass 특정일자 시간별 건수 조회", description = "OpenSearch emass 특정일자 시간별 건수 조회")
+	@ApiResponses({@ApiResponse(responseCode = "200", description = "성공적으로 목록 반환"), @ApiResponse(responseCode = "500", description = "서버 내부 오류")})
+	@ResponseBody
+	@GetMapping(value = "/hour_count")
+	public ResponseEntity<Object> hourCount(@RequestParam(value = "query", required = false) final String query, @RequestParam(value = "day", required = false) String day) {
+		if (!StringUtils.hasText(day)) {
+			day = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+		}
+		if (!day.matches("^\\d{8}$")) {
+			return ResponseEntity.badRequest().body("Invalid day format (yyyyMMdd)");
+		}
+		try {
+			LocalDate.parse(day, DateTimeFormatter.ofPattern("yyyyMMdd"));
+		} catch (Exception e) {
+			return ResponseEntity.badRequest().body("Invalid date value");
+		}
+		Map<String, Long> hourMap = new LinkedHashMap<>();
+		for (int i = 0; i < 24; i++) {
+			String hour = String.format("%02d", i);
+
+			String from = day + hour + "0000";
+			String to;
+			if (i == 23) {
+				LocalDate d = LocalDate.parse(day, DateTimeFormatter.ofPattern("yyyyMMdd"));
+				to = d.plusDays(1).format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "0000";
+			} else {
+				to = day + String.format("%02d", i + 1) + "0000";
+			}
+
+			long cnt = indexService.countByRange(query, from, to);
+			hourMap.put(day + hour, cnt);
+		}
+		return ResponseEntity.ok(hourMap);
+	}
+
+	//Tool 용도로 return 값을 그대로 처리
 	@Operation(summary = "OpenSearch Cluster 상태 정보 조회", description = "OpenSearch Cluster 상태 정보 조회")
 	@ApiResponses({@ApiResponse(responseCode = "200", description = "성공적으로 목록 반환"), @ApiResponse(responseCode = "500", description = "서버 내부 오류")})
 	@ResponseBody
 	@GetMapping(value = "/clusterHealth")
 	public ResponseEntity<Object> getClusterHealth() {
 		JSONObject result = indexService.getClusterHealth();
-		return ResponseEntity.status(200).body(new ResponseVO(true, 200, result, null));
+		return ResponseEntity.status(200).body(result);
 	}
 
+	//Tool 용도로 return 값을 그대로 처리
 	@Operation(summary = "OpenSearch Index 상태 정보 조회", description = "OpenSearch Index 상태 정보 조회")
 	@ApiResponses({@ApiResponse(responseCode = "200", description = "성공적으로 목록 반환"), @ApiResponse(responseCode = "500", description = "서버 내부 오류")})
 	@ResponseBody
 	@GetMapping(value = "/indexStatus")
 	public ResponseEntity<Object> indexStatus() {
 		List<Map<String, String>> result = indexService.getIndices();
-		return ResponseEntity.status(200).body(new ResponseVO(true, 200, result, null));
+		return ResponseEntity.status(200).body(result);
 	}
 
+	//Tool 용도로 return 값을 그대로 처리
 	@Operation(summary = "OpenSearch Shard 상태 정보 조회", description = "OpenSearch Shard 상태 정보 조회")
 	@ApiResponses({@ApiResponse(responseCode = "200", description = "성공적으로 목록 반환"), @ApiResponse(responseCode = "500", description = "서버 내부 오류")})
 	@ResponseBody
 	@GetMapping(value = "/shardStatus")
 	public ResponseEntity<Object> getShardStatus() {
 		JSONArray result = indexService.getShardStatus();
-		return ResponseEntity.status(200).body(new ResponseVO(true, 200, result, null));
+		return ResponseEntity.status(200).body(result);
 	}
 
 

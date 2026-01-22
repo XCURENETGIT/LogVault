@@ -7,7 +7,7 @@ import java.util.concurrent.Callable;
 
 @CommandLine.Command(
 		name = "decrypt",
-		description = "Decrypt Utilities")
+		description = "String Decryption Utility")
 public class Decrypt implements Callable<Integer> {
 
 	@CommandLine.Parameters(

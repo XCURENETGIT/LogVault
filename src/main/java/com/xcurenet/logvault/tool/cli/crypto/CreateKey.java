@@ -10,7 +10,7 @@ import java.util.concurrent.Callable;
 
 @CommandLine.Command(
 		name = "createkey",
-		description = "Create Encrypt key Utilities")
+		description = "Encryption Key Generation Utility")
 public class CreateKey implements Callable<Integer> {
 
 	@CommandLine.Parameters(

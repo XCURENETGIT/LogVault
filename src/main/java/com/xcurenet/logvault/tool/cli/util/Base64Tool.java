@@ -9,7 +9,7 @@ import java.util.concurrent.Callable;
 
 @CommandLine.Command(
 		name = "base64",
-		description = "Base64 encode/decode")
+		description = "Base64 Encode/Decode Utility")
 public class Base64Tool implements Callable<Integer> {
 	private enum Mode {encode, decode}
 

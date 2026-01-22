@@ -5,9 +5,7 @@ import picocli.CommandLine;
 
 import java.util.concurrent.Callable;
 
-@CommandLine.Command(
-		name = "encrypt",
-		description = "String Encryption Utility")
+@CommandLine.Command(name = "encrypt", description = "String Encryption Utility")
 public class Encrypt implements Callable<Integer> {
 
 	@CommandLine.Parameters(

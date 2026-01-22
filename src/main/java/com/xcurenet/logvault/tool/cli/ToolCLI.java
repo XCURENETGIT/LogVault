@@ -1,5 +1,6 @@
 package com.xcurenet.logvault.tool.cli;
 
+import com.xcurenet.logvault.tool.cli.attach.DecryptFile;
 import com.xcurenet.logvault.tool.cli.crypto.CreateKey;
 import com.xcurenet.logvault.tool.cli.crypto.Decrypt;
 import com.xcurenet.logvault.tool.cli.crypto.Encrypt;
@@ -23,7 +24,8 @@ import picocli.CommandLine;
 				CountIndex.class,
 				DayOfHourIndex.class,
 				SearchId.class,
-				SearchIndex.class
+				SearchIndex.class,
+				DecryptFile.class
 		}
 )
 public class ToolCLI implements Runnable {

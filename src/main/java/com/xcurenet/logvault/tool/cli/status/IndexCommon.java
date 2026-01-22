@@ -19,6 +19,12 @@ import java.security.cert.X509Certificate;
 @Log4j2
 public class IndexCommon {
 
+	public static String getCipher() throws IOException {
+		ConfigurableEnvironment env = new StandardEnvironment();
+		env.getPropertySources().addLast(new ResourcePropertySource(new ClassPathResource("application.properties")));
+		return env.getProperty("encrypt.cipher") == null ? "ARIA_256_CBC" : env.getProperty("encrypt.cipher");
+	}
+
 	public static String getPort() throws IOException {
 		ConfigurableEnvironment env = new StandardEnvironment();
 		env.getPropertySources().addLast(new ResourcePropertySource(new ClassPathResource("application.properties")));

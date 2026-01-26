@@ -24,7 +24,7 @@ public class InsaManager {
 		return getUserInfoByIp(msg.getMsgData().getSourceIp());
 	}
 
-	protected UserInfo getUserInfoByIp(final IP ip) {
+	public UserInfo getUserInfoByIp(final IP ip) {
 		return userInsaInfo.getUserByIP(ip);
 	}
 

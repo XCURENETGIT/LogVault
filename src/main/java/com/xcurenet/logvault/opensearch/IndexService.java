@@ -3,6 +3,7 @@ package com.xcurenet.logvault.opensearch;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.JSONWriter;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xcurenet.common.error.ErrorCode;
@@ -209,6 +210,20 @@ public class IndexService {
 		} catch (Exception e) {
 			return -1;
 		}
+	}
+
+	/**
+	 * Updates user document in index if inputs valid
+	 */
+	public boolean updateUser(String index, String id, EmassDoc.User user) {
+		if (index == null || id == null || user == null) {
+			log.warn("{} | INDEX:{} ID:{} USER:{}", ErrorCode.INDEX_UPSERT_FAIL.toString(), index, id, user);
+			return false;
+		}
+		String json = JSON.toJSONString(Map.of("user", user), JSONWriter.Feature.WriteMapNullValue);
+		UpdateQuery query = UpdateQuery.builder(id).withDocument(Document.parse(json)).build();
+		template.update(query, IndexCoordinates.of(index));
+		return true;
 	}
 
 

@@ -3,10 +3,10 @@ package com.xcurenet.logvault.opensearch;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.xcurenet.common.ResponseVO;
-import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.job.backup.BackupPolicy;
 import com.xcurenet.logvault.job.backup.RestoreManager;
+import com.xcurenet.logvault.module.reprocess.ReProcessInsa;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ public class OpenSearchController {
 	private final IndexService indexService;
 	private final BackupPolicy backupPolicy;
 	private final RestoreManager restoreManager;
+	private final ReProcessInsa reProcessInsa;
 
 	//Tool 용도로 return 값을 그대로 처리
 	@Operation(summary = "OpenSearch emass index 쿼리 조회", description = "OpenSearch emass index 쿼리 조회")
@@ -182,5 +184,30 @@ public class OpenSearchController {
 	public ResponseEntity<Object> getBackupList() throws IOException {
 		JSONArray result = backupPolicy.getBackupList();
 		return ResponseEntity.status(200).body(new ResponseVO(true, 200, result, null));
+	}
+
+	@Operation(summary = "인사정보 갱신", description = "지정된 기간에 해당하는 인사정보를 최신 정보로 갱신")
+	@ApiResponses({@ApiResponse(responseCode = "200", description = "성공적으로 목록 반환"), @ApiResponse(responseCode = "500", description = "서버 내부 오류")})
+	@GetMapping("/reprocessinsa")
+	public ResponseEntity<Object> reProcessInsa(@RequestParam("start") final String start, @RequestParam("end") final String end) {
+		if (start == null || end == null || start.length() != 8 || end.length() != 8) {
+			return ResponseEntity.badRequest().body(new ResponseVO(false, 400, null, "Invalid start end date format {yyyymmdd}"));
+		}
+
+		LocalDate startDate;
+		LocalDate toDate;
+		try {
+			startDate = LocalDate.parse(start, DateUtils.YYYYMMDD_F);
+			toDate = LocalDate.parse(end, DateUtils.YYYYMMDD_F);
+		} catch (DateTimeParseException e) {
+			return ResponseEntity.badRequest().body(new ResponseVO(false, 400, null, "Invalid start end date format {yyyymmdd}"));
+		}
+
+		if (startDate.isAfter(toDate)) {
+			return ResponseEntity.badRequest().body(new ResponseVO(false, 400, null, "Invalid date range."));
+		}
+
+		ReProcessInsa.Response response = reProcessInsa.reProcessUser(startDate, toDate);
+		return ResponseEntity.status(200).body(new ResponseVO(true, 200, response, null));
 	}
 }

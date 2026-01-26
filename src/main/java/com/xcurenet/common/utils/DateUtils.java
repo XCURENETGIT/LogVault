@@ -16,7 +16,6 @@ import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Duration;
-import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,7 +30,7 @@ public class DateUtils {
 	public static final DateTimeFormatter YYYYMMDDHHMMSS = DateTimeFormat.forPattern("yyyyMMddHHmmss");
 	public static final DateTimeFormatter DATETIME_CTIME = DateTimeFormat.forPattern("yyyy/MM/dd HH:mm:ss");
 	public static final DateTimeFormatter F_YYYYMMDD = DateTimeFormat.forPattern("yyyyMMdd");
-
+	public static final java.time.format.DateTimeFormatter YYYYMMDD_F = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd");
 	public static final String YYYYMMDD = "yyyyMMdd";
 	public static final String YYYYMMDDHHMMSSSSS = "yyyyMMddHHmmssSSS";
 	private static final int YYYYMMDD_SIZE = 8;

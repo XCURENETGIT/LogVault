@@ -61,6 +61,7 @@ public enum ErrorCode {
 	INDEX_DEL_INVALID("LVT-2006", "Refusing to delete '*' or '_all'"), // 전체 인덱스 삭제 시도 차단
 	INDEX_DEL_SYSTEM("LVT-2007", "Refusing to delete system/hidden indices"), // 시스템/히든 인덱스 삭제 차단
 	INDEX_DEL_FAIL("LVT-2009", "Refusing to delete system/hidden indices"), // 인덱스 삭제 처리 실패
+	INDEX_UPSERT_FAIL("LVT-2010", "index, id, user must not be null"), // 인덱스 업데이트 파라미터 NULL
 	OPENSEARCH_INIT_FAIL("LVT-2100", "OpenSearch initialization failed."), // OpenSearch 초기화 전체 실패
 	OPENSEARCH_POLICY_DELETE_FAIL("LVT-2101", "Failed to delete ISM policy."), // ISM 정책 삭제 실패
 	OPENSEARCH_POLICY_CREATE_FAIL("LVT-2102", "Failed to create ISM policy."), // ISM 정책 생성 실패

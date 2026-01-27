@@ -13,9 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class CustomErrorController implements ErrorController {
 
 
-
-
-
 	@RequestMapping("/error")
 	public ResponseEntity<ResponseVO> handleError(HttpServletRequest request) {
 		Object status = request.getAttribute("jakarta.servlet.error.status_code");

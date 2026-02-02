@@ -43,6 +43,7 @@ fi
 
 CMD=(
   "$JAVA"
+  -Djava.security.egd=file:/dev/./urandom
   -Dlogback.statusListenerClass=ch.qos.logback.core.status.NopStatusListener
   -cp "$WAR"
   "-Dloader.path=${LOADER_PATH}"

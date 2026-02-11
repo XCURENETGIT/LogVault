@@ -39,6 +39,11 @@
 			"name": "upload.basic.password",
 			"type": "java.lang.String",
 			"description": "Description for upload.basic.password."
+		},
+		{
+			"name": "manager.host",
+			"type": "java.lang.String",
+			"description": "Description for manager.host."
 		}
 	]
 }

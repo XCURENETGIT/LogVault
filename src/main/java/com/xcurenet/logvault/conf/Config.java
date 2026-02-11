@@ -140,7 +140,7 @@ public class Config {
 	@Value("${check.excel.hidden.sheet.enable:false}") //엑셀 숨김 시트 탐지 여부
 	private boolean checkExcelHiddenSheet;
 
-	@Value("${ocr.api.enable:false}") //OCR Rest API ENABLE
+	@Value("${ocr.api.enable:true}") //OCR Rest API ENABLE
 	private boolean ocrApiEnable;
 
 	@Value("${ocr.embedded.enable:false}") //파일 내부의 이미지도 OCR 처리를 할것인지 유무
@@ -149,10 +149,10 @@ public class Config {
 	@Value("${ocr.api.type:LC}") //OCR TYPE (SY: Synap OCR, LG: Local GPU, LC:Local CPU)
 	private String ocrApiType;
 
-	@Value("${ocr.api.host:127.0.0.1}") //OCR Rest API Host
+	@Value("${ocr.api.host:xgenai-manager}") //OCR Rest API Host
 	private String ocrApiHost;
 
-	@Value("${ocr.api.port:62975}") //OCR Rest API PORT
+	@Value("${ocr.api.port:8000}") //OCR Rest API PORT
 	private String ocrApiPort;
 
 	@Value("${ocr.api.local.gpu.model:/models/allenai/olmOCR-2-7B-1025-FP8}") //OCR LOCAL Model
@@ -181,16 +181,16 @@ public class Config {
 	@Value("${ocr.limit.size:20485760}") //OCR 파일 사이즈 LIMIT (default 20MB)
 	private int ocrLimitSize;
 
-	@Value("${ml.privacy.api.enable:true}") //ML Privacy Rest API ENABLE
+	@Value("${ml.privacy.api.enable:false}") //ML Privacy Rest API ENABLE
 	private boolean mlPrivacyApiEnable;
 
-	@Value("${ml.privacy.api.url:http://127.0.0.1:8005/verify}") //ML Privacy Rest API URL
+	@Value("${ml.privacy.api.url:http://xgenai-manager:8005/verify}") //ML Privacy Rest API URL
 	private String mlPrivacyApiUrl;
 
-	@Value("${ml.api.enable:true}") //ML Rest API ENABLE
+	@Value("${ml.api.enable:false}") //ML Rest API ENABLE
 	private boolean mlApiEnable;
 
-	@Value("${ml.api.url:http://127.0.0.1:15000/api/data-analyze}") //ML Rest API URL
+	@Value("${ml.api.url:http://xgenai-manager:15000/api/data-analyze}") //ML Rest API URL
 	private String mlApiUrl;
 
 	@Value("${ml.api.timeout:600}") //ML Rest API TimeOut
@@ -208,7 +208,7 @@ public class Config {
 	@Value("${ml.api.text.limit:200000}") //ML TEXT LIMIT
 	private int mlApiTextLimit;
 
-	@Value("${spring.minio.url:http://127.0.0.1:9000}")
+	@Value("${spring.minio.url:http://xgenai-manager:9000}")
 	private String minioUrl;
 
 	@Value("${spring.minio.bucket:emass}")

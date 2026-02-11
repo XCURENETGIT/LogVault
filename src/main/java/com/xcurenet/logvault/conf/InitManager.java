@@ -5,8 +5,10 @@ import com.xcurenet.logvault.loader.InfoLoader;
 import com.xcurenet.logvault.module.task.service.TaskDispatcherService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
+@Log4j2
 @Component
 @RequiredArgsConstructor
 public class InitManager {
@@ -22,7 +24,11 @@ public class InitManager {
 		cryptoLoad.loadEncryptKey();
 		openSearchInitializer.init();
 		fileProcessor.init();
-		infoLoader.init();
+		try {
+			infoLoader.init();
+		} catch (Exception e) {
+			log.error("Failed to initialize info loader", e);
+		}
 		taskDispatcherService.init();
 	}
 

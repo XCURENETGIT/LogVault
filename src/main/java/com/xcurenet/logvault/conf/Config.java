@@ -106,7 +106,7 @@ public class Config {
 	@Value("${scan.dir.wmail:/users/las/msg/info/wmail}") //WMAIL 스캔 경로 - 운영중 설정 변경 불가 (재시작필요)
 	private String dirWmail;
 
-	@Value("${worker.size.wmail:5}") //WORKER 동시 처리 수 - 운영중 설정 변경 불가 (재시작필요)
+	@Value("${worker.size.wmail:1}") //WORKER 동시 처리 수 - 운영중 설정 변경 불가 (재시작필요)
 	private int workerSizeWmail;
 
 	@Value("${scan.dir.enable.wmail.block:true}") //WMAIL 차단 경로 스캔 여부 - 운영중 설정 변경 불가 (재시작필요)

@@ -1404,21 +1404,16 @@ public final class Common {
 
 	private static void moveFile(Path src, Path dest) {
 		try {
-			if (!Files.exists(src)) {
-				log.warn("{} | SRC:{}", ErrorCode.NOK_SRC_NOT_FOUND.toString(), src);
-				return;
-			}
-			Files.move(src, dest, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-			log.info("NOK_MOVE_OK | {} > {}", src, dest);
-		} catch (AtomicMoveNotSupportedException e) {
+			Files.createDirectories(dest.getParent());
 			try {
+				Files.move(src, dest, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+				log.info("NOK_MOVE_OK | {} > {}", src, dest);
+			} catch (AtomicMoveNotSupportedException e) {
 				Files.move(src, dest, StandardCopyOption.REPLACE_EXISTING);
 				log.info("NOK_MOVE_OK_FALLBACK | {} > {}", src, dest);
-			} catch (Exception ex) {
-				log.error("{} | SRC:{} DEST:{}", ErrorCode.NOK_MOVE_FAIL.toString(), src, dest, ex);
 			}
-		} catch (Exception e) {
-			log.error("{} | {} | SRC:{} DEST:{}", ErrorCode.NOK_MOVE_FAIL.toString(), src, dest, e);
+		} catch (IOException e) {
+			log.error("{} | SRC:{} DEST:{}", ErrorCode.NOK_MOVE_FAIL.toString(), src, dest, e);
 		}
 	}
 

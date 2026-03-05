@@ -56,7 +56,6 @@ public class AlertService {
 			AlertMessage message = new AlertMessage();
 			message.setMsgId(doc.getMsgid());
 			message.setData(JSONObject.toJSONString(alertInfo, JSONWriter.Feature.FieldBased));
-			log.info(JSONObject.toJSONString(alertInfo, JSONWriter.Feature.FieldBased));
 			try {
 				repository.insertAlertRule(message);
 				log.info("ALT_SEND | KEYWORD_ALARM:{} | KEYWORD_SYSLOG:{} | PRIVACY_ALARM:{} | PRIVACY_SYSLOG:{} | {}", alertInfo.getKeywordAlarmTotal(), alertInfo.getKeywordSyslogTotal(), alertInfo.getPrivacyAlarmTotal(), alertInfo.getPrivacySyslogTotal(), DateUtils.stop(sw));

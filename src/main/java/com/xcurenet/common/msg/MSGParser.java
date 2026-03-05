@@ -37,7 +37,7 @@ public class MSGParser {
 		Path filePath = scanData.getFilePath();
 		String input;
 		try {
-			input = Files.readString(filePath, StandardCharsets.UTF_8);
+			input = Common.readFileSafe(filePath);
 		} catch (Exception e) {
 			throw ExFactory.ex(ProcessDataException::new, ErrorCode.PARSER_READ_FAIL, Map.of("context", filePath), e);
 		}

@@ -190,6 +190,9 @@ public class Config {
 	@Value("${guardrail.api.url:http://xgenai-manager:9901/guardrail}") //guardrail Rest API URL
 	private String guardRailApiUrl;
 
+	@Value("${guardrail.limit.rate:70}") //guardrail Rest API URL
+	private int guardRailLimitRate;
+
 	@Value("${ml.api.enable:false}") //ML Rest API ENABLE
 	private boolean mlApiEnable;
 

@@ -34,6 +34,8 @@ import java.lang.management.ManagementFactory;
 import java.lang.reflect.Constructor;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.PosixFilePermission;
@@ -1420,6 +1422,18 @@ public final class Common {
 	private static void ensureDirectory(Path dir) throws IOException {
 		if (!Files.exists(dir)) {
 			Files.createDirectories(dir);
+		}
+	}
+
+	public static String readFileSafe(Path path) throws IOException {
+		CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE);
+		try (Reader reader = new InputStreamReader(Files.newInputStream(path), decoder); StringWriter writer = new StringWriter()) {
+			char[] buffer = new char[8192];
+			int n;
+			while ((n = reader.read(buffer)) != -1) {
+				writer.write(buffer, 0, n);
+			}
+			return writer.toString();
 		}
 	}
 }

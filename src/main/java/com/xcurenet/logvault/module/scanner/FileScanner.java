@@ -137,7 +137,7 @@ public class FileScanner implements Runnable {
 	 * @return true if the file is valid; false otherwise
 	 */
 	private boolean isFileValid(final Path path, final long lastModified) {
-		CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);
+		CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE);
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(Files.newInputStream(path), decoder))) {
 			String line;
 			while ((line = br.readLine()) != null) {

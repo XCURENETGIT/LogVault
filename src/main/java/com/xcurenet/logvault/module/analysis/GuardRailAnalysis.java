@@ -72,6 +72,11 @@ public class GuardRailAnalysis {
 				if (!obj.isEmpty()) {
 					Map.Entry<String, Object> maxEntry = obj.entrySet().stream().max(Comparator.comparingDouble(e -> Double.parseDouble(e.getValue().toString().replace("%", "")))).orElse(null);
 					if (maxEntry.getKey() != null) {
+						double val = Double.parseDouble(maxEntry.getValue().toString().replace("%", ""));
+						if (conf.getGuardRailLimitRate() > val) {
+							log.info("MG_GUARD | {} | {} > {} | {}", type, maxEntry.getKey(), "SAFE", maxEntry.getValue());
+							return "SAFE";
+						}
 						log.info("MG_GUARD | {} | {} | {}", type, maxEntry.getKey(), maxEntry.getValue());
 						return maxEntry.getKey();
 					}

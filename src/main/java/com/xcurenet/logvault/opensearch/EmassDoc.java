@@ -186,35 +186,27 @@ public class EmassDoc {
 	@Data
 	public static class User {
 		@Field("ip")
-		@JSONField(name = "ip")
 		private String ip;
 
 		@Field("id")
-		@JSONField(name = "id")
 		private String id;
 
 		@Field("name")
-		@JSONField(name = "name")
 		private String name;
 
 		@Field("is_ceo")
-		@JSONField(name = "is_ceo")
 		private boolean ceo;
 
 		@Field("dept_code")
-		@JSONField(name = "dept_code")
 		private String deptCode;
 
 		@Field("dept_name")
-		@JSONField(name = "dept_name")
 		private String deptName;
 
 		@Field("jikgub_code")
-		@JSONField(name = "jikgub_code")
 		private String jikgubCode;
 
 		@Field("jikgub_name")
-		@JSONField(name = "jikgub_name")
 		private String jikgubName;
 	}
 

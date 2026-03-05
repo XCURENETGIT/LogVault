@@ -150,6 +150,16 @@ public enum ErrorCode {
 	PRIVACY_UNKNOWN_ERROR("LVT-7299", "Privacy unknown failed"),
 
 	/* =========================
+	 * GUARDRAIL ✅ 신규
+	 * ========================= */
+	GUARDRAIL_MSGDATA_NULL("LVT-7701", "ScanData or EmassDoc is null"),
+	GUARDRAIL_REGEX_RESULT_NULL("LVT-7702", "Guardrail result is null"),
+	GUARDRAIL_DETECT_CODE_INVALID("LVT-7703", "Guardrail detect code is not allowed"),
+	GUARDRAIL_ML_API_ERROR("LVT-7704", "Guardrail API request failed"),
+	GUARDRAIL_ML_RESPONSE_INVALID("LVT-7705", "Guardrail API response is invalid"),
+	GUARDRAIL_UNKNOWN_ERROR("LVT-7799", "Guardrail unknown failed"),
+
+	/* =========================
 	 * Workday
 	 * ========================= */
 	WORKDAY_MSGDATA_NULL("LVT-8001", "ScanData.msgData is null"),

@@ -1,6 +1,7 @@
 package com.xcurenet.logvault.module.alert;
 
 import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.JSONWriter;
 import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.common.utils.ExFactory;
@@ -54,10 +55,10 @@ public class AlertService {
 
 			AlertMessage message = new AlertMessage();
 			message.setMsgId(doc.getMsgid());
-			message.setData(JSONObject.toJSONString(alertInfo));
+			message.setData(JSONObject.toJSONString(alertInfo, JSONWriter.Feature.FieldBased));
 			try {
 				repository.insertAlertRule(message);
-				log.info("ALT_SEND | keyword_alarm:{} | keyword_syslog:{} | privacy_alarm:{} | privacy_syslog:{} | {}", alertInfo.getKeywordAlarmTotal(), alertInfo.getKeywordSyslogTotal(), alertInfo.getPrivacyAlarmTotal(), alertInfo.getPrivacySyslogTotal(), DateUtils.stop(sw));
+				log.info("ALT_SEND | KEYWORD_ALARM:{} | KEYWORD_SYSLOG:{} | PRIVACY_ALARM:{} | PRIVACY_SYSLOG:{} | {}", alertInfo.getKeywordAlarmTotal(), alertInfo.getKeywordSyslogTotal(), alertInfo.getPrivacyAlarmTotal(), alertInfo.getPrivacySyslogTotal(), DateUtils.stop(sw));
 			} catch (Exception e) {
 				log.error("{} | {}", ErrorCode.ALERT_REPOSITORY_FAIL.toString(), e.toString(), e);
 			}

@@ -10,7 +10,7 @@ import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.fs.FileProcessor;
 import com.xcurenet.logvault.module.alert.AlertService;
 import com.xcurenet.logvault.module.analysis.KeywordAnalysis;
-import com.xcurenet.logvault.module.analysis.PrivacyAnalysis;
+import com.xcurenet.logvault.module.analysis.PrivacyAIAnalysis;
 import com.xcurenet.logvault.module.task.service.TaskDispatcherService;
 import com.xcurenet.logvault.module.task.service.TaskMessage;
 import com.xcurenet.logvault.module.task.service.TaskMessageRepository;
@@ -56,7 +56,7 @@ public class OcrTaskProcessor implements TaskProcessor {
 	private final FileProcessor fileProcessor;
 	protected final IndexService indexService;
 	private final KeywordAnalysis keywordAnalysis;
-	private final PrivacyAnalysis privacyAnalysis;
+	private final PrivacyAIAnalysis privacyAnalysis;
 	private final TaskMessageRepository repository;
 	private final RestTemplate restTemplate;
 	private final AlertService alertService;
@@ -64,7 +64,7 @@ public class OcrTaskProcessor implements TaskProcessor {
 	private static final String OCR_STATUS_SUCCESS = "S";
 	private static final String OCR_STATUS_ERROR = "E";
 
-	public OcrTaskProcessor(Config conf, ObjectMapper mapper, FileProcessor fileProcessor, IndexService indexService, KeywordAnalysis keywordAnalysis, PrivacyAnalysis privacyAnalysis, TaskMessageRepository repository, @Qualifier("ocrRestTemplate") RestTemplate restTemplate, AlertService alertService) {
+	public OcrTaskProcessor(Config conf, ObjectMapper mapper, FileProcessor fileProcessor, IndexService indexService, KeywordAnalysis keywordAnalysis, PrivacyAIAnalysis privacyAnalysis, TaskMessageRepository repository, @Qualifier("ocrRestTemplate") RestTemplate restTemplate, AlertService alertService) {
 		this.conf = conf;
 		this.mapper = mapper;
 		this.fileProcessor = fileProcessor;
@@ -152,7 +152,7 @@ public class OcrTaskProcessor implements TaskProcessor {
 	private void processAttachment(EmassDoc.Attach attach, OcrResult result) {
 		String pathSmall = conf.getDestPathSmall(attach.getPath());
 		StopWatch sw = DateUtils.start();
-		log.info("OCR_START | {} | {} | {}", attach.getExtension(), attach.getSize(), pathSmall);
+		log.info("OCR_START | {} | {} Byte | {}", attach.getExtension(), attach.getSize(), pathSmall);
 
 		try (InputStream in = fileProcessor.open(attach.getPath())) {
 			String text = process(in, attach.getName());

@@ -16,9 +16,10 @@ public class AnalysisService {
 	private final AttachAnalysis attachAnalysis;
 	private final UserAgentAnalysis userAgentAnalysis;
 	private final KeywordAnalysis keywordAnalysis;
-	private final PrivacyAnalysis privacyAnalysis;
+	private final PrivacyAIAnalysis privacyAnalysis;
 	private final CheckWorkingDay checkWorkingDay;
 	private final ReasonAnalysis reasonAnalysis;
+	private final GuardRailAnalysis guardRailAnalysis;
 
 	public void analyse(final ScanData data) {
 		try {
@@ -32,6 +33,7 @@ public class AnalysisService {
 				attachAnalysis.setAttachThumbnail(data); // 파일의 썸네일 생성
 				keywordAnalysis.detect(data);            // 키워드 탐지
 				privacyAnalysis.detect(data);            // 개인정보 탐지
+				guardRailAnalysis.detect(data);          // GuardRail 탐지
 				userAgentAnalysis.detect(data);          // 사용자의 OS, Agent 정보를 탐지 및 추가
 			}
 		} catch (Exception e) {

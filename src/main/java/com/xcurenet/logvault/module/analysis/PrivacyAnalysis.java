@@ -131,7 +131,7 @@ public class PrivacyAnalysis {
 		for (MatchResult it : arr) {
 			if (it == null || it.matchString() == null) continue;
 
-			String encrypted = encString(it.matchString().getBytes(StandardCharsets.UTF_8));
+			String encrypted = Common.encString(it.matchString().getBytes(StandardCharsets.UTF_8), conf.getEncryptKey(), conf.getEncyptCipher());
 			if (encrypted != null) {
 				items.add(encrypted);
 			}
@@ -159,20 +159,6 @@ public class PrivacyAnalysis {
 			doc.setPrivacyInfo(new ArrayList<>());
 		}
 		return doc.getPrivacyInfo();
-	}
-
-	/* =========================
-	 * Encrypt
-	 * ========================= */
-	public String encString(byte[] text) {
-		try {
-			Crypto crypto = new Crypto(conf.getEncryptKey(), conf.getEncyptCipher());
-			byte[] cipherTextBytes = crypto.encrypt(text, 0, text.length);
-			return Base64.getEncoder().encodeToString(cipherTextBytes);
-		} catch (Exception e) {
-			log.warn("{} | {}", ErrorCode.PRIVACY_ENCRYPT_FAIL.toString(), e.getMessage(), e);
-		}
-		return null;
 	}
 
 	/* =========================

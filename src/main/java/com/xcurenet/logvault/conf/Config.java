@@ -112,7 +112,7 @@ public class Config {
 	@Value("${scan.dir.enable.wmail.block:true}") //WMAIL 차단 경로 스캔 여부 - 운영중 설정 변경 불가 (재시작필요)
 	private boolean enableWmailBlock;
 
-	@Value("${scan.dir.wmail.block:/users/xcn-nginx/block}") //WMAIL 차단 스캔 경로 - 운영중 설정 변경 불가 (재시작필요)
+	@Value("${scan.dir.wmail.block:/run/ngpii}") //WMAIL 차단 스캔 경로 - 운영중 설정 변경 불가 (재시작필요)
 	private String dirWmailBlock;
 
 	@Value("${worker.size.wmail.block:1}") //WORKER 차단 동시 처리 수 - 운영중 설정 변경 불가 (재시작필요)
@@ -184,8 +184,11 @@ public class Config {
 	@Value("${ml.privacy.api.enable:false}") //ML Privacy Rest API ENABLE
 	private boolean mlPrivacyApiEnable;
 
-	@Value("${ml.privacy.api.url:http://xgenai-manager:8005/verify}") //ML Privacy Rest API URL
+	@Value("${ml.privacy.api.url:http://xgenai-manager:8005/pii/detect}") //ML Privacy Rest API URL
 	private String mlPrivacyApiUrl;
+
+	@Value("${guardrail.api.url:http://xgenai-manager:9901/guardrail}") //guardrail Rest API URL
+	private String guardRailApiUrl;
 
 	@Value("${ml.api.enable:false}") //ML Rest API ENABLE
 	private boolean mlApiEnable;

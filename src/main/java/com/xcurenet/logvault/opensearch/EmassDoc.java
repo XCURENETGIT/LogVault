@@ -228,6 +228,8 @@ public class EmassDoc {
 		private String extension;
 		@Field("text")
 		private String text;
+		@Field("guardrail_category")
+		private String guardrailCategory;
 		@Field("ml_result")
 		private MLResult mlResult;
 	}
@@ -266,6 +268,9 @@ public class EmassDoc {
 		private String path;
 		@Field("text")
 		private String text;
+
+		@Field("guardrail_category")
+		private String guardrailCategory;
 
 		@Field("image_extractor_info")
 		private List<ImageExtractorInfo> imageExtractorInfo;

@@ -24,11 +24,11 @@
 		<encoding>UTF-8</encoding>
 		<main.class>com.xcurenet.logvault.LogVaultApplication</main.class>
 
-		<release.version>10</release.version>
+		<release.version>14</release.version>
 		<build.version>${project.version}-${release.version}</build.version>
 		<arch>x86_64</arch>
 
-		<host>10.200.10.64</host>
+		<host>10.200.10.222</host>
 		<port>22</port>
 		<user>root</user>
 		<password>Xcurenet1!</password>
@@ -133,7 +133,7 @@
 		<dependency>
 			<groupId>org.jsoup</groupId>
 			<artifactId>jsoup</artifactId>
-			<version>1.21.2</version>
+			<version>1.22.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
@@ -187,7 +187,7 @@
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
-			<version>4.2.5.Final</version>
+			<version>4.2.10.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -202,7 +202,7 @@
 		<dependency>
 			<groupId>commons-validator</groupId>
 			<artifactId>commons-validator</artifactId>
-			<version>1.9.0</version>
+			<version>1.10.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.mybatis.spring.boot</groupId>

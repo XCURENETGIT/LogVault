@@ -1333,6 +1333,20 @@ public final class Common {
 		return Common.toHexString(Crypto.loadKeyFile(keyFile.toString()));
 	}
 
+	/* =========================
+	 * Encrypt
+	 * ========================= */
+	public static String encString(byte[] text, byte[] key, Crypto.CIPHER cipher) {
+		try {
+			Crypto crypto = new Crypto(key, cipher);
+			byte[] cipherTextBytes = crypto.encrypt(text, 0, text.length);
+			return java.util.Base64.getEncoder().encodeToString(cipherTextBytes);
+		} catch (Exception e) {
+			log.warn("{} | {}", ErrorCode.PRIVACY_ENCRYPT_FAIL.toString(), e.getMessage(), e);
+		}
+		return null;
+	}
+
 	public static int getBase64Size(final String base64) {
 		return Base64.decodeBase64(base64).length;
 	}

@@ -29,6 +29,8 @@ public class FilterService {
 		MSGData msg = data.getMsgData();
 		boolean rs;
 		try {
+			if (Common.isEquals(msg.getAction(), "BLOCK")) return false;
+
 			if (!isLoggingService(data.getEmassDoc())) {
 				log.info("FILT_SVC | {}", msg.getSvc());
 				return true;

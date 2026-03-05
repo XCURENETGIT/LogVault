@@ -2,6 +2,7 @@ package com.xcurenet.logvault.module.analysis;
 
 import com.xcurenet.common.msg.MSGData;
 import com.xcurenet.common.utils.Common;
+import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +17,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ReasonAnalysis {
-	private final PrivacyAnalysis privacyAnalysis;
+	private final Config conf;
 
 	/* =========================
 	 * 차단인 경우 사유가 들어온다.
@@ -27,7 +28,7 @@ public class ReasonAnalysis {
 		MSGData msg = data.getMsgData();
 		if (msg.getDetections() == null) return;
 
-		log.info("DETECTIONS | {}", msg.getDetections());
+		log.info("MGREASON | {}", msg.getDetections());
 
 		EmassDoc doc = data.getEmassDoc();
 		List<String> items = Common.split(msg.getDetections(), ",");
@@ -85,7 +86,7 @@ public class ReasonAnalysis {
 	private void appendPrivacy(EmassDoc doc, int id, int confidence, String detectStr) {
 		if (id > 8) return;
 
-		String encrypted = privacyAnalysis.encString(Common.decodeBase64ToString(detectStr).getBytes(StandardCharsets.UTF_8));
+		String encrypted = Common.encString(Common.decodeBase64ToString(detectStr).getBytes(StandardCharsets.UTF_8), conf.getEncryptKey(), conf.getEncyptCipher());
 		String piId = getId(id);
 		List<EmassDoc.PrivacyInfo> privacyInfos = doc.getPrivacyInfo();
 		if (doc.getPrivacyInfo() == null) privacyInfos = new ArrayList<>();

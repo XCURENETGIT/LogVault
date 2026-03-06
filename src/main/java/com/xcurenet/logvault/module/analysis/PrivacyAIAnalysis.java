@@ -1,7 +1,9 @@
 package com.xcurenet.logvault.module.analysis;
 
+import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.JSONWriter;
 import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
@@ -101,9 +103,9 @@ public class PrivacyAIAnalysis {
 			sb.append(key).append(":").append(info.getCount()).append(" ");
 		}
 		if (Common.isNotEmpty(sb.toString())) {
-			log.info("REG_DONE | {} | {} | {}", type, sb.toString(), DateUtils.stop(sw));
+			log.info("REG_DONE | {} | {} | TEXT.LENGTH:{} | {}", type, sb.toString(), text.length(), DateUtils.stop(sw));
 		} else {
-			log.info("REG_DONE | {} | PII_NONE | {}", type, DateUtils.stop(sw));
+			log.info("REG_DONE | {} | PII_NONE | TEXT.LENGTH:{} | {}", type, text.length(), DateUtils.stop(sw));
 		}
 		doc.setPrivacyInfo(bucket);
 		return added;
@@ -115,8 +117,7 @@ public class PrivacyAIAnalysis {
 			return null;
 		}
 
-		// ✅ overlap으로 인해 동일 matchString이 중복될 수 있으니 dedup
-		LinkedHashSet<String> items = new LinkedHashSet<>();
+		List<String> items = new ArrayList<>();
 		for (int i = 0; i < datas.size(); i++) {
 			JSONObject it = datas.getJSONObject(i);
 			if (it == null) continue;
@@ -157,7 +158,7 @@ public class PrivacyAIAnalysis {
 			JSONObject param = new JSONObject();
 			param.put("text", text);
 			param.put("max_results_per_type", max);
-			byte[] body = param.toJSONString().getBytes(StandardCharsets.UTF_8);
+			byte[] body = JSON.toJSONBytes(param, JSONWriter.Feature.LargeObject);
 
 			HttpURLConnection conn = (HttpURLConnection) new URL(conf.getMlPrivacyApiUrl()).openConnection();
 			conn.setRequestMethod("POST");

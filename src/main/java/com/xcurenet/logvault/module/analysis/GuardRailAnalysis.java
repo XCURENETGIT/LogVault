@@ -1,6 +1,8 @@
 package com.xcurenet.logvault.module.analysis;
 
+import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.JSONWriter;
 import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.logvault.conf.Config;
@@ -55,7 +57,7 @@ public class GuardRailAnalysis {
 		try {
 			JSONObject param = new JSONObject();
 			param.put("text", text);
-			byte[] body = param.toJSONString().getBytes(StandardCharsets.UTF_8);
+			byte[] body = JSON.toJSONBytes(param, JSONWriter.Feature.LargeObject);
 
 			HttpURLConnection conn = (HttpURLConnection) new URL(conf.getGuardRailApiUrl()).openConnection();
 			conn.setRequestMethod("POST");
@@ -73,7 +75,7 @@ public class GuardRailAnalysis {
 					Map.Entry<String, Object> maxEntry = obj.entrySet().stream().max(Comparator.comparingDouble(e -> Double.parseDouble(e.getValue().toString().replace("%", "")))).orElse(null);
 					if (maxEntry.getKey() != null) {
 						double val = Double.parseDouble(maxEntry.getValue().toString().replace("%", ""));
-						if (conf.getGuardRailLimitRate() > val) {
+						if (conf.getGuardRailLimitRate() > val || conf.getGuardRailLimitLength() > text.length()) {
 							log.info("MG_GUARD | {} | {} > {} | {}", type, maxEntry.getKey(), "SAFE", maxEntry.getValue());
 							return "SAFE";
 						}

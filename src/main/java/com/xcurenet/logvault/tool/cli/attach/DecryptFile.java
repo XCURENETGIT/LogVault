@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 
-@CommandLine.Command(name = "dec_file", description = "File Decryption Utility")
+@CommandLine.Command(name = "decrypt_file", description = "File Decryption Utility")
 public class DecryptFile implements Callable<Integer> {
 
 	@CommandLine.Option(names = {"-s", "--src"}, required = true, description = "Download path for decrypted file")

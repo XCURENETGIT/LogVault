@@ -134,16 +134,16 @@ public class Config {
 	@Value("${extract.text.timeout.sec:60}") //첨부파일 텍스트 추출 TimeOut (초)
 	private int extractTextTimeoutSec;
 
-	@Value("${extract.image.enable:false}") //첨부파일의 이미지 추출 여부
+	@Value("${extract.image.enable:true}") //첨부파일의 이미지 추출 여부
 	private boolean extractImage;
 
-	@Value("${check.excel.hidden.sheet.enable:false}") //엑셀 숨김 시트 탐지 여부
+	@Value("${check.excel.hidden.sheet.enable:true}") //엑셀 숨김 시트 탐지 여부
 	private boolean checkExcelHiddenSheet;
 
 	@Value("${ocr.api.enable:true}") //OCR Rest API ENABLE
 	private boolean ocrApiEnable;
 
-	@Value("${ocr.embedded.enable:false}") //파일 내부의 이미지도 OCR 처리를 할것인지 유무
+	@Value("${ocr.embedded.enable:true}") //파일 내부의 이미지도 OCR 처리를 할것인지 유무
 	private boolean ocrEmbeddedImageEnable;
 
 	@Value("${ocr.api.type:LC}") //OCR TYPE (SY: Synap OCR, LG: Local GPU, LC:Local CPU)
@@ -190,8 +190,11 @@ public class Config {
 	@Value("${guardrail.api.url:http://xgenai-manager:9901/guardrail}") //guardrail Rest API URL
 	private String guardRailApiUrl;
 
-	@Value("${guardrail.limit.rate:70}") //guardrail Rest API URL
+	@Value("${guardrail.limit.rate:70}") //guardrail limit rate
 	private int guardRailLimitRate;
+
+	@Value("${guardrail.limit.length:20}") //guardrail limit length
+	private int guardRailLimitLength;
 
 	@Value("${ml.api.enable:false}") //ML Rest API ENABLE
 	private boolean mlApiEnable;

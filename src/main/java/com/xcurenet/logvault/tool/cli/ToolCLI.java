@@ -18,6 +18,7 @@ import picocli.CommandLine;
 				CreateKey.class,
 				Encrypt.class,
 				Decrypt.class,
+				DecryptFile.class,
 				Base64Tool.class,
 				ClusterStatus.class,
 				ShardStatus.class,
@@ -26,7 +27,6 @@ import picocli.CommandLine;
 				DayOfHourIndex.class,
 				SearchId.class,
 				SearchIndex.class,
-				DecryptFile.class,
 				InsaReProcess.class
 		}
 )
@@ -38,7 +38,7 @@ public class ToolCLI implements Runnable {
 	}
 
 	public static void main(String[] args) {
-		System.setProperty("logback.configurationFile", "logback-spring.xml");
+		//System.setProperty("logback.configurationFile", "logback-spring.xml");
 		System.setProperty("spring.profiles.active", "cli");
 		int exitCode = new CommandLine(new ToolCLI())
 				.setCaseInsensitiveEnumValuesAllowed(true)

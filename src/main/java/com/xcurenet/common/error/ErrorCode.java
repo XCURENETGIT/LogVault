@@ -111,6 +111,9 @@ public enum ErrorCode {
 	SCANNER_QUEUE_ADD_FAIL("LVT-5104", "Failed to enqueue scan data"),
 	SCANNER_REF_FILE_MISSING("LVT-5105", "Referenced file does not exist"),
 
+	REMOVE_INVALID_PATH("LVT-5998", "file path is invalid"),
+	REMOVE_FILE_FAIL("LVT-5999", "Failed to remove file"),
+
 	/* =========================
 	 * File Analysis
 	 * ========================= */

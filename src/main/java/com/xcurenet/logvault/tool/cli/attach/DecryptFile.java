@@ -15,10 +15,10 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(name = "decrypt_file", description = "File Decryption Utility")
 public class DecryptFile implements Callable<Integer> {
 
-	@CommandLine.Option(names = {"-s", "--src"}, required = true, description = "Download path for decrypted file")
+	@CommandLine.Option(names = {"-s", "--src"}, required = true, description = "Encrypted Source File Path")
 	private String src;
 
-	@CommandLine.Option(names = {"-d", "--dst"}, required = true, description = "Output path")
+	@CommandLine.Option(names = {"-d", "--dst"}, required = false, description = "Decrypted Output File or Directory Path")
 	private String dst;
 
 	@Override
@@ -29,20 +29,27 @@ public class DecryptFile implements Callable<Integer> {
 			return 0;
 		}
 
-		Path dstPath = Path.of(dst);
-		if (!Files.isDirectory(dstPath) && Files.isRegularFile(dstPath)) {
-			System.out.println("The output directory not found.");
-			return 0;
-		}
+		if (dst != null) {
+			Path dstPath = Path.of(dst);
+			if (!Files.isDirectory(dstPath) && Files.isRegularFile(dstPath)) {
+				System.out.println("The output directory not found.");
+				return 0;
+			}
 
-		if (Files.isDirectory(dstPath)) {
-			dstPath = Path.of(Objects.requireNonNull(Common.makeFilepath(dstPath.toString(), srcPath.getFileName().toString())));
-		}
+			if (Files.isDirectory(dstPath)) {
+				dstPath = Path.of(Objects.requireNonNull(Common.makeFilepath(dstPath.toString(), srcPath.getFileName().toString())));
+			}
 
-		Crypto crypto = new Crypto(Common.hexToBytes(Common.getKey()), Crypto.CIPHER.getCipher(IndexCommon.getCipher()));
-		try (FileInputStream in = new FileInputStream(srcPath.toFile()); FileOutputStream out = new FileOutputStream(dstPath.toFile())) {
-			crypto.decrypt(in, out);
-			System.out.println(dstPath.toFile().getAbsolutePath());
+			Crypto crypto = new Crypto(Common.hexToBytes(Common.getKey()), Crypto.CIPHER.getCipher(IndexCommon.getCipher()));
+			try (FileInputStream in = new FileInputStream(srcPath.toFile()); FileOutputStream out = new FileOutputStream(dstPath.toFile())) {
+				crypto.decrypt(in, out);
+				System.out.println(dstPath.toFile().getAbsolutePath());
+			}
+		} else {
+			Crypto crypto = new Crypto(Common.hexToBytes(Common.getKey()), Crypto.CIPHER.getCipher(IndexCommon.getCipher()));
+			try (FileInputStream in = new FileInputStream(srcPath.toFile());) {
+				crypto.decrypt(in, System.out);
+			}
 		}
 		return 0;
 	}

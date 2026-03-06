@@ -14,6 +14,15 @@ JAVA="$BASE_DIR/jdk/bin/java"
 WAR="$BASE_DIR/lib/logvault.war"
 MAIN_CLASS="com.xcurenet.logvault.tool.cli.ToolCLI"
 
+JAVA_OPTS=(
+  "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
+  "--add-opens=java.base/sun.misc=ALL-UNNAMED"
+  "--add-opens=java.base/java.lang=ALL-UNNAMED"
+  "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED"
+  "-Djava.security.egd=file:/dev/./urandom"
+  "-Dlogback.statusListenerClass=ch.qos.logback.core.status.NopStatusListener"
+)
+
 error() { echo "$*" >&2; exit 1; }
 info()  { echo "$*"; }
 ok()    { echo "$*"; }
@@ -44,6 +53,7 @@ fi
 
 CMD=(
   "$JAVA"
+  "${JAVA_OPTS[@]}"
   -Djava.security.egd=file:/dev/./urandom
   -Dlogback.statusListenerClass=ch.qos.logback.core.status.NopStatusListener
   -cp "$WAR"

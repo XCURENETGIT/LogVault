@@ -2,7 +2,7 @@ package com.xcurenet.logvault.privacy.validator.service;
 
 import com.xcurenet.logvault.privacy.ValidationResult;
 import com.xcurenet.logvault.privacy.validator.PatternValidator;
-import com.xcurenet.privacydetector.validator.service.ssn.DigitValidator;
+import com.xcurenet.logvault.privacy.validator.service.ssn.DigitValidator;
 
 import java.util.List;
 

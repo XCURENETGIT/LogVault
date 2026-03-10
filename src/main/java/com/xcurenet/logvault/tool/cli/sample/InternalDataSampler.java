@@ -142,7 +142,9 @@ public class InternalDataSampler implements Callable<Integer> {
 
 		if (doc.getJSONObject("http").get("header") != null) {
 			sb.append("HDRFILE : ").append(header).append("\n");
-			Files.writeString(Paths.get(getPath(header)), doc.getJSONObject("http").getString("header"), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+			if(Files.exists(Paths.get(getPath(header)))) {
+				Files.writeString(Paths.get(getPath(header)), doc.getJSONObject("http").getString("header"), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+			}
 		}
 
 		if (doc.getJSONObject("body").getInteger("size") > 0) {

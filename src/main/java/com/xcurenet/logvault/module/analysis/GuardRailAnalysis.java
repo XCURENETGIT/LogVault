@@ -5,12 +5,14 @@ import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.JSONWriter;
 import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.utils.Common;
+import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -54,6 +56,8 @@ public class GuardRailAnalysis {
 
 	public String detectGuardrail(String text, String type) {
 		if (Common.isEmpty(text)) return null;
+
+		StopWatch sw = DateUtils.start();
 		try {
 			JSONObject param = new JSONObject();
 			param.put("text", text);
@@ -76,19 +80,19 @@ public class GuardRailAnalysis {
 					if (maxEntry.getKey() != null) {
 						double val = Double.parseDouble(maxEntry.getValue().toString().replace("%", ""));
 						if (conf.getGuardRailLimitRate() > val || conf.getGuardRailLimitLength() > text.length()) {
-							log.info("MG_GUARD | {} | {} > {} | {}", type, maxEntry.getKey(), "SAFE", maxEntry.getValue());
+							log.info("MG_GUARD | {} | {} > {} | {} | {}", type, maxEntry.getKey(), "SAFE", maxEntry.getValue(), DateUtils.stop(sw));
 							return "SAFE";
 						}
-						log.info("MG_GUARD | {} | {} | {}", type, maxEntry.getKey(), maxEntry.getValue());
+						log.info("MG_GUARD | {} | {} | {} | {}", type, maxEntry.getKey(), maxEntry.getValue(), DateUtils.stop(sw));
 						return maxEntry.getKey();
 					}
 				} else {
-					log.warn("MG_GUARD | {} | TEXT.LENGTH:{} | {}", ErrorCode.GUARDRAIL_ML_API_ERROR.toString(), text.length(), response);
+					log.warn("MG_GUARD | {} | TEXT.LENGTH:{} | {} | {}", ErrorCode.GUARDRAIL_ML_API_ERROR.toString(), text.length(), response, DateUtils.stop(sw));
 					return null;
 				}
 			}
 		} catch (Exception e) {
-			log.error("MG_GUARD | {} | TEXT.LENGTH:{}", ErrorCode.GUARDRAIL_UNKNOWN_ERROR.toString(), text.length(), e);
+			log.error("MG_GUARD | {} | TEXT.LENGTH:{} | {}", ErrorCode.GUARDRAIL_UNKNOWN_ERROR.toString(), text.length(), DateUtils.stop(sw), e);
 		}
 		return null;
 	}

@@ -1,4 +1,4 @@
-package com.xcurenet.privacydetector.scan;
+package com.xcurenet.logvault.privacy;
 
 public enum PrivateType {
 	/**주민등록번호**/

@@ -1,4 +1,4 @@
-package com.xcurenet.privacydetector.validator.service.ssn;
+package com.xcurenet.logvault.privacy.validator.service.ssn;
 
 
 import com.xcurenet.logvault.privacy.ValidationResult;

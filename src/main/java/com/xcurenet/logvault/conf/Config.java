@@ -187,6 +187,12 @@ public class Config {
 	@Value("${ml.privacy.api.url:http://xgenai-manager:8005/pii/detect}") //ML Privacy Rest API URL
 	private String mlPrivacyApiUrl;
 
+	@Value("${ml.privacy.grpc.host:xgenai-manager}") //ML Privacy GRPC HOST
+	private String mlPrivacyGrpcHost;
+
+	@Value("${ml.privacy.grpc.port:50055}") //ML Privacy GRPC PORT
+	private int mlPrivacyGrpcPort;
+
 	@Value("${guardrail.api.url:http://xgenai-manager:9901/guardrail}") //guardrail Rest API URL
 	private String guardRailApiUrl;
 

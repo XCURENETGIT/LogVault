@@ -1,6 +1,5 @@
 package com.xcurenet.logvault.opensearch;
 
-import com.alibaba.fastjson2.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.xcurenet.logvault.module.util.ActionType;
 import lombok.Builder;

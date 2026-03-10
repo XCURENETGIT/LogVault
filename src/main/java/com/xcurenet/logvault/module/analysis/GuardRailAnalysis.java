@@ -47,7 +47,7 @@ public class GuardRailAnalysis {
 
 		if (doc.getAttach() != null) {
 			for (EmassDoc.Attach a : doc.getAttach()) {
-				a.setGuardrailCategory(detectGuardrail(a.getText(), "ATTACH | " + a.getName()));
+				a.setGuardrailCategory(detectGuardrail(a.getText(), "ATTACH | " + a.getSrcPath()));
 			}
 		}
 	}

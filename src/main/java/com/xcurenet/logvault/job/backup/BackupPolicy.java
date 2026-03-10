@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * 1. 백업 (날짜별 과거 1일 데이터 백업)
@@ -108,6 +109,8 @@ public class BackupPolicy {
 	}
 
 	private long getCount(File file) throws IOException {
+		if (!file.exists() || file.length() == 0) return 0;
+
 		long lines = 0;
 		try (InputStream fis = Common.zipOpen(file.toPath()); BufferedReader reader = new BufferedReader(new InputStreamReader(fis, StandardCharsets.UTF_8))) {
 			while (reader.readLine() != null) {
@@ -145,18 +148,15 @@ public class BackupPolicy {
 
 		String indexName = conf.getIndexName() + yesterday;
 		IndexCoordinates indexCoordinates = IndexCoordinates.of(indexName);
-		String outFile = Common.makeFilepath(path, yesterday + ".zst");
+		String outFile = Common.makeFilepath(path, yesterday + ".gz");
+
 		try (FileOutputStream out = new FileOutputStream(Objects.requireNonNull(outFile));
-		     ZstdOutputStream zstd = new ZstdOutputStream(out).setLevel(12);
-		     BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(zstd, StandardCharsets.UTF_8), 1 << 20)) {
-
-			NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
-					.withQuery(QueryBuilders.matchAllQuery())
-					.withPageable(PageRequest.of(0, batchSize))
-					.build();
-
+		     GZIPOutputStream gzip = new GZIPOutputStream(out, 1 << 20);
+		     BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(gzip, StandardCharsets.UTF_8), 1 << 20)) {
+			NativeSearchQuery searchQuery = new NativeSearchQueryBuilder().withQuery(QueryBuilders.matchAllQuery()).withPageable(PageRequest.of(0, batchSize)).build();
 			SearchScrollHits<Document> scrollHits = template.searchScrollStart(scrollTtlMs, searchQuery, Document.class, indexCoordinates);
 			String scrollId = scrollHits.getScrollId();
+
 			try {
 				while (!scrollHits.isEmpty()) {
 					for (SearchHit<Document> hit : scrollHits.getSearchHits()) {

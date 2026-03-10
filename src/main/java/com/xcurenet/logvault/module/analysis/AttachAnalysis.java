@@ -124,7 +124,7 @@ public class AttachAnalysis {
 				setEmbeddedImage(doc, msg.getMsgData(), attach, data);
 				setOCRTarget(doc, attach);
 
-				log.info("ATT_TEXT | {} | TXT_LEN:{} | {}", conf.getDataPathSmall(attach.getSrcPath()), Common.nvl(attach.getText()).length(), DateUtils.stop(sw));
+				log.info("ATT_TEXT | {} | TXT_LEN:{} | EXT:{} | {}", conf.getDataPathSmall(attach.getSrcPath()), Common.nvl(attach.getText()).length(), attach.getExtension(), DateUtils.stop(sw));
 			} else {
 				log.warn("{} | DATA_PATH:{}", ErrorCode.ATTACH_TEXT_EXTRACT_FAIL.toString(), conf.getDataPathSmall(attach.getSrcPath()));
 			}
@@ -177,10 +177,12 @@ public class AttachAnalysis {
 
 		String ext = Common.nvl(attach.getExtension());
 		if (!isFileOverSize(attach.getSrcPath(), conf.getOcrLimitSize()) && (conf.getOcrTargetExt().contains(attach.getExpectedExtension()) || conf.getOcrTargetExt().contains(ext))) {
-
 			doc.getProcessStatus().setOcr("P");
 			attach.setOcrStatus("P");
 			attach.setOcrTarget(true);
+		}
+		if (isFileOverSize(attach.getSrcPath(), conf.getOcrLimitSize())) {
+			log.info("OVER_SIZE | OCR_OVER_SIZE | {} ({}) | LIMIT:{}", attach.getSrcPath(), Common.convertFileSize(attach.getSize()), Common.convertFileSize(conf.getOcrLimitSize()));
 		}
 	}
 

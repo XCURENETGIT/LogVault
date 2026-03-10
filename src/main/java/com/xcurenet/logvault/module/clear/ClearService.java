@@ -68,7 +68,7 @@ public class ClearService {
 				return 1;
 			}
 		} catch (InvalidPathException e) {
-			log.warn("{} | INVALID_PATH:{} | ERR:{}", ErrorCode.REMOVE_INVALID_PATH, path, e.toString(), e);
+			//ignore
 		} catch (Exception e) {
 			log.warn("{} | PATH:{} | ERR:{}", ErrorCode.REMOVE_FILE_FAIL, path, e.toString(), e);
 		}

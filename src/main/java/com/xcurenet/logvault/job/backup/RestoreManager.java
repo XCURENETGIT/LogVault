@@ -118,7 +118,7 @@ public class RestoreManager {
 			throw new SecurityException("Invalid date format: " + date);
 		}
 
-		String filePathStr = Common.makeFilepath(conf.getBackupPath(), "index", date, date + ".zst");
+		String filePathStr = Common.makeFilepath(conf.getBackupPath(), "index", date, date + ".gz");
 		if (filePathStr == null) {
 			log.warn("Backup path is null | {}", date);
 			throw new SecurityException("Invalid File Path: " + date);

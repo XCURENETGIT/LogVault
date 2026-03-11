@@ -31,6 +31,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -92,8 +93,10 @@ public class BackupPolicy {
 		File dir = new File(path);
 		File[] backupDirs = dir.listFiles();
 		if (backupDirs == null) return result;
+		Arrays.sort(backupDirs, (a, b) -> b.getName().compareTo(a.getName())); // yyyyMMdd 기준 최신순
 
 		for (File backupDir : backupDirs) {
+			if (!backupDir.isDirectory()) continue;
 			log.info("BACKUP_INFO | path:{}", backupDir.getAbsolutePath());
 			JSONObject item = new JSONObject();
 			item.put("path", backupDir.getAbsolutePath());

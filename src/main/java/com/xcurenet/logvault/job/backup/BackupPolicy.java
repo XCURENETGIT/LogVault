@@ -87,10 +87,11 @@ public class BackupPolicy {
 
 	public JSONArray getBackupList() throws IOException {
 		JSONArray result = new JSONArray();
-		String path = Common.makeFilepath(conf.getBackupPath(), "index");
-		if (path == null) return result;
+		String indexPath = Common.makeFilepath(conf.getBackupPath(), "index");
+		String attachPath = Common.makeFilepath(conf.getBackupPath(), "attach");
+		if (indexPath == null || attachPath == null) return result;
 
-		File dir = new File(path);
+		File dir = new File(indexPath);
 		File[] backupDirs = dir.listFiles();
 		if (backupDirs == null) return result;
 		Arrays.sort(backupDirs, (a, b) -> b.getName().compareTo(a.getName())); // yyyyMMdd 기준 최신순
@@ -104,11 +105,26 @@ public class BackupPolicy {
 			File[] file = backupDir.listFiles();
 			if (file == null || file.length == 0) continue;
 
+			String date = backupDir.getName();
+			long indexSize = file[0].length();
+			long attachSize = getDirectorySize(new File(attachPath, date));
+
 			item.put("count", getCount(file[0]));
-			item.put("size", file[0].length());
+			item.put("indexSize", indexSize);
+			item.put("attachSize", attachSize);
+			item.put("size", indexSize + attachSize);
 			result.add(item);
 		}
 		return result;
+	}
+
+	private long getDirectorySize(final File dir) {
+		if (dir == null || !dir.exists() || !dir.isDirectory()) return 0L;
+		try {
+			return FileUtils.sizeOfDirectory(dir);
+		} catch (IllegalArgumentException e) {
+			return 0L;
+		}
 	}
 
 	private long getCount(File file) throws IOException {

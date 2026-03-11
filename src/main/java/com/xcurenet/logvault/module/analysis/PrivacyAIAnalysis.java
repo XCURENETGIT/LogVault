@@ -27,7 +27,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Log4j2
@@ -36,7 +38,6 @@ import java.util.concurrent.TimeUnit;
 public class PrivacyAIAnalysis {
 
 	private final Config conf;
-
 	private PiiDetectorGrpc.PiiDetectorBlockingStub stub;
 	private ManagedChannel channel;
 
@@ -45,15 +46,6 @@ public class PrivacyAIAnalysis {
 	 * processText()에서 이 순서대로 JSON 배열을 읽는다.
 	 */
 	private static final String[] PI_TYPE = {"SN", "DN", "AN", "PN", "MN", "BN", "EML", "IP", "SSN"};
-
-	/**
-	 * 긴 텍스트 split 처리용 상수
-	 * 현재는 기존 코드와 동일하게 유지.
-	 * 필요 시 추후 processText() 내부에서 분할 호출로 확장 가능.
-	 */
-	private static final int CHUNK_SIZE = 10_000;
-	private static final int OVERLAP = 200;
-	private static final int STEP = CHUNK_SIZE - OVERLAP;
 
 	@PostConstruct
 	public void initGrpcClient() {
@@ -130,17 +122,17 @@ public class PrivacyAIAnalysis {
 		List<EmassDoc.PrivacyInfo> bucket = ensurePrivacyInfoList(doc);
 		int added = 0;
 
-		JSONObject api = detectPII(text);
-		if (api == null) {
+		Map<String, List<Pii.MatchItem>> matchesByType = detectPIIMatches(text, 5000);
+		if (matchesByType == null) {
 			log.info("REG_DONE | {} | PII_API_NULL | TEXT.LENGTH:{} | {}", type, text.length(), DateUtils.stop(sw));
 			return 0;
 		}
 
 		for (String key : PI_TYPE) {
-			JSONArray datas = api.getJSONArray(key);
-			if (datas == null || datas.isEmpty()) continue;
+			List<Pii.MatchItem> matches = matchesByType.get(key);
+			if (matches == null || matches.isEmpty()) continue;
 
-			EmassDoc.PrivacyInfo info = toPrivacyInfo(key, type, attachName, datas);
+			EmassDoc.PrivacyInfo info = toPrivacyInfo(key, type, attachName, matches);
 			if (info == null) continue;
 
 			bucket.add(info);
@@ -158,18 +150,16 @@ public class PrivacyAIAnalysis {
 		return added;
 	}
 
-	private EmassDoc.PrivacyInfo toPrivacyInfo(String key, String type, String attachName, JSONArray datas) {
+	private EmassDoc.PrivacyInfo toPrivacyInfo(String key, String type, String attachName, List<Pii.MatchItem> matches) {
 		if (!PatternLoader.isDetectCode(key)) {
 			log.debug("REG_INFO | {} | KEY:{}", ErrorCode.PRIVACY_DETECT_CODE_INVALID.toString(), key);
 			return null;
 		}
 
 		List<String> items = new ArrayList<>();
-		for (int i = 0; i < datas.size(); i++) {
-			JSONObject it = datas.getJSONObject(i);
-			if (it == null) continue;
-
-			String matchString = it.getString("matchString");
+		for (Pii.MatchItem match : matches) {
+			if (match == null) continue;
+			String matchString = match.getMatchString();
 			if (Common.isEmpty(matchString)) continue;
 
 			String encrypted = Common.encString(matchString.getBytes(StandardCharsets.UTF_8), conf.getEncryptKey(), conf.getEncyptCipher());
@@ -206,6 +196,19 @@ public class PrivacyAIAnalysis {
 			return null;
 		}
 
+		Map<String, List<Pii.MatchItem>> matchesByType = detectPIIMatches(text, max);
+		if (matchesByType == null) {
+			return null;
+		}
+
+		JSONObject result = new JSONObject();
+		for (String key : PI_TYPE) {
+			addMatches(result, key, matchesByType.get(key));
+		}
+		return result;
+	}
+
+	private Map<String, List<Pii.MatchItem>> detectPIIMatches(String text, int max) {
 		try {
 			Pii.DetectRequest req = Pii.DetectRequest.newBuilder().setText(text).setMaxResultsPerType(max).setRuleset("strict").build();
 			Pii.DetectResponse res = stub.detect(req);
@@ -214,17 +217,17 @@ public class PrivacyAIAnalysis {
 				return null;
 			}
 
-			JSONObject result = new JSONObject();
 			Pii.PiiData data = res.getData();
-			addMatches(result, "SN", data.getSnList());
-			addMatches(result, "DN", data.getDnList());
-			addMatches(result, "AN", data.getAnList());
-			addMatches(result, "PN", data.getPnList());
-			addMatches(result, "MN", data.getMnList());
-			addMatches(result, "BN", data.getBnList());
-			addMatches(result, "EML", data.getEmlList());
-			addMatches(result, "IP", data.getIpList());
-			addMatches(result, "SSN", data.getSsnList());
+			Map<String, List<Pii.MatchItem>> result = new LinkedHashMap<>();
+			result.put("SN", data.getSnList());
+			result.put("DN", data.getDnList());
+			result.put("AN", data.getAnList());
+			result.put("PN", data.getPnList());
+			result.put("MN", data.getMnList());
+			result.put("BN", data.getBnList());
+			result.put("EML", data.getEmlList());
+			result.put("IP", data.getIpList());
+			result.put("SSN", data.getSsnList());
 			log.debug("ML_PRIVACY_GRPC_RESPONSE | TEXT.LENGTH:{} | META:ruleset={}, version={}, updatedAt={}", text.length(), res.getMeta().getRulesetName(), res.getMeta().getRulesetVersion(), res.getMeta().getRulesetUpdatedAt());
 			return result;
 		} catch (Exception e) {

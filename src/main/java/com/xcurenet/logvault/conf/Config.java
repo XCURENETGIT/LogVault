@@ -193,6 +193,24 @@ public class Config {
 	@Value("${ml.privacy.grpc.port:50055}") //ML Privacy GRPC PORT
 	private int mlPrivacyGrpcPort;
 
+	@Value("${ml.privacy.grpc.tls.enable:false}") //ML Privacy GRPC TLS ENABLE
+	private boolean mlPrivacyGrpcTlsEnable;
+
+	@Value("${ml.privacy.grpc.deadline.ms:20000}") //ML Privacy GRPC Deadline (ms)
+	private int mlPrivacyGrpcDeadlineMs;
+
+	@Value("${ml.privacy.grpc.retry.max-attempts:3}") //ML Privacy GRPC Retry Count
+	private int mlPrivacyGrpcRetryMaxAttempts;
+
+	@Value("${ml.privacy.grpc.retry.backoff.ms:200}") //ML Privacy GRPC Retry Backoff (ms)
+	private int mlPrivacyGrpcRetryBackoffMs;
+
+	@Value("${ml.privacy.grpc.circuit.failure-threshold:5}") //ML Privacy GRPC Circuit Breaker Failure Threshold
+	private int mlPrivacyGrpcCircuitFailureThreshold;
+
+	@Value("${ml.privacy.grpc.circuit.open.ms:30000}") //ML Privacy GRPC Circuit Breaker Open Duration (ms)
+	private int mlPrivacyGrpcCircuitOpenMs;
+
 	@Value("${guardrail.api.url:http://xgenai-manager:9901/guardrail}") //guardrail Rest API URL
 	private String guardRailApiUrl;
 

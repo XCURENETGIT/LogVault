@@ -233,9 +233,12 @@ public class FileScanner implements Runnable {
 		}
 
 		int lastDot = fileName.lastIndexOf('.');
+		if (lastDot <= 0) {
+			throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_INVALID, Map.of("info", "invalid file name or extension is missing", "file", fileName));
+		}
 		String[] parts = fileName.substring(0, lastDot).split("-", 10);
-		if (parts.length < 7) { // LVT-5002: 구성 요소 개수 불일치
-			throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_PART_COUNT, Map.of("count", parts.length + ", Expected: 8", "file", fileName));
+		if (parts.length < 9) { // LVT-5002: 구성 요소 개수 불일치 (parts[8] 접근 보장)
+			throw ExFactory.ex(ScanException::new, ErrorCode.SCAN_NAME_PART_COUNT, Map.of("count", parts.length + ", Expected: 9", "file", fileName));
 		}
 
 		try {

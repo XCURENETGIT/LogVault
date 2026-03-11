@@ -61,6 +61,7 @@ public class MLTaskProcessor implements TaskProcessor {
 			setSummaryMLResult(doc);
 		} catch (Exception e) {
 			log.warn("{} | {}", ErrorCode.ML_ANALYSIS_ERROR, e.toString());
+			throw e;
 		} finally {
 			if (doc != null) {
 				updateIndex(doc);

@@ -106,6 +106,7 @@ public class OcrTaskProcessor implements TaskProcessor {
 			log.info("OCR__END | Target: {} (Fail: {}/Success: {}) | Total Time: {}", result.targetCount, result.failCount, result.successCount, DateUtils.stop(sw1));
 		} catch (Exception e) {
 			log.error("An error occurred during OCR task processing for message: {}", message.getMsgId(), e);
+			throw e;
 		} finally {
 			if (doc != null) {
 				insertMLTask(doc);

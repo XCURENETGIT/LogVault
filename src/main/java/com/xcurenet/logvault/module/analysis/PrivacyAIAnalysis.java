@@ -13,6 +13,7 @@ import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.StatusRuntimeException;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.TimeUnit;
 
 @Log4j2
@@ -40,6 +42,8 @@ public class PrivacyAIAnalysis {
 	private final Config conf;
 	private PiiDetectorGrpc.PiiDetectorBlockingStub stub;
 	private ManagedChannel channel;
+	private final AtomicInteger grpcConsecutiveFailures = new AtomicInteger(0);
+	private volatile long circuitOpenUntilMs = 0L;
 
 	/**
 	 * ML API가 반환하는 키(탐지 타입)
@@ -49,9 +53,13 @@ public class PrivacyAIAnalysis {
 
 	@PostConstruct
 	public void initGrpcClient() {
-		this.channel = ManagedChannelBuilder.forAddress(conf.getMlPrivacyGrpcHost(), conf.getMlPrivacyGrpcPort()).usePlaintext().build();
+		ManagedChannelBuilder<?> channelBuilder = ManagedChannelBuilder.forAddress(conf.getMlPrivacyGrpcHost(), conf.getMlPrivacyGrpcPort());
+		if (!conf.isMlPrivacyGrpcTlsEnable()) {
+			channelBuilder.usePlaintext();
+		}
+		this.channel = channelBuilder.build();
 		this.stub = PiiDetectorGrpc.newBlockingStub(channel);
-		log.info("PII_INIT | PII gRPC Client Initialized | {}:{}", conf.getMlPrivacyGrpcHost(), conf.getMlPrivacyGrpcPort());
+		log.info("PII_INIT | PII gRPC Client Initialized | {}:{} | TLS:{} | DEADLINE:{}ms | RETRY:{}", conf.getMlPrivacyGrpcHost(), conf.getMlPrivacyGrpcPort(), conf.isMlPrivacyGrpcTlsEnable(), conf.getMlPrivacyGrpcDeadlineMs(), conf.getMlPrivacyGrpcRetryMaxAttempts());
 	}
 
 	@PreDestroy
@@ -209,30 +217,93 @@ public class PrivacyAIAnalysis {
 	}
 
 	private Map<String, List<Pii.MatchItem>> detectPIIMatches(String text, int max) {
-		try {
-			Pii.DetectRequest req = Pii.DetectRequest.newBuilder().setText(text).setMaxResultsPerType(max).setRuleset("strict").build();
-			Pii.DetectResponse res = stub.detect(req);
-			if (!res.getSuccess()) {
-				log.warn("{} | TEXT.LENGTH:{} | STATUS:{} | MESSAGE:{}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), res.getStatus(), res.getMessage());
+		if (isCircuitOpen()) {
+			log.warn("{} | TEXT.LENGTH:{} | CIRCUIT:OPEN(until={})", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), circuitOpenUntilMs);
+			return null;
+		}
+
+		int maxAttempts = Math.max(1, conf.getMlPrivacyGrpcRetryMaxAttempts());
+		int deadlineMs = Math.max(500, conf.getMlPrivacyGrpcDeadlineMs());
+		int backoffMs = Math.max(0, conf.getMlPrivacyGrpcRetryBackoffMs());
+		Pii.DetectRequest req = Pii.DetectRequest.newBuilder().setText(text).setMaxResultsPerType(max).setRuleset("strict").build();
+
+		for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+			try {
+				Pii.DetectResponse res = stub.withDeadlineAfter(deadlineMs, TimeUnit.MILLISECONDS).detect(req);
+				if (!res.getSuccess()) {
+					log.warn("{} | TEXT.LENGTH:{} | ATTEMPT:{}/{} | STATUS:{} | MESSAGE:{}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), attempt, maxAttempts, res.getStatus(), res.getMessage());
+					if (attempt < maxAttempts) {
+						sleepRetry(backoffMs, attempt);
+						continue;
+					}
+					markGrpcFailure();
+					return null;
+				}
+
+				markGrpcSuccess();
+				Pii.PiiData data = res.getData();
+				Map<String, List<Pii.MatchItem>> result = new LinkedHashMap<>();
+				result.put("SN", data.getSnList());
+				result.put("DN", data.getDnList());
+				result.put("AN", data.getAnList());
+				result.put("PN", data.getPnList());
+				result.put("MN", data.getMnList());
+				result.put("BN", data.getBnList());
+				result.put("EML", data.getEmlList());
+				result.put("IP", data.getIpList());
+				result.put("SSN", data.getSsnList());
+				log.debug("ML_PRIVACY_GRPC_RESPONSE | TEXT.LENGTH:{} | META:ruleset={}, version={}, updatedAt={}", text.length(), res.getMeta().getRulesetName(), res.getMeta().getRulesetVersion(), res.getMeta().getRulesetUpdatedAt());
+				return result;
+			} catch (StatusRuntimeException e) {
+				log.warn("{} | TEXT.LENGTH:{} | ATTEMPT:{}/{} | STATUS:{}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), attempt, maxAttempts, e.getStatus(), e);
+				if (attempt < maxAttempts) {
+					sleepRetry(backoffMs, attempt);
+					continue;
+				}
+				markGrpcFailure();
+				log.error("{} | TEXT.LENGTH:{}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), e);
+				return null;
+			} catch (Exception e) {
+				log.warn("{} | TEXT.LENGTH:{} | ATTEMPT:{}/{} | {}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), attempt, maxAttempts, e.getMessage(), e);
+				if (attempt < maxAttempts) {
+					sleepRetry(backoffMs, attempt);
+					continue;
+				}
+				markGrpcFailure();
+				log.error("{} | TEXT.LENGTH:{}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), e);
 				return null;
 			}
+		}
+		return null;
+	}
 
-			Pii.PiiData data = res.getData();
-			Map<String, List<Pii.MatchItem>> result = new LinkedHashMap<>();
-			result.put("SN", data.getSnList());
-			result.put("DN", data.getDnList());
-			result.put("AN", data.getAnList());
-			result.put("PN", data.getPnList());
-			result.put("MN", data.getMnList());
-			result.put("BN", data.getBnList());
-			result.put("EML", data.getEmlList());
-			result.put("IP", data.getIpList());
-			result.put("SSN", data.getSsnList());
-			log.debug("ML_PRIVACY_GRPC_RESPONSE | TEXT.LENGTH:{} | META:ruleset={}, version={}, updatedAt={}", text.length(), res.getMeta().getRulesetName(), res.getMeta().getRulesetVersion(), res.getMeta().getRulesetUpdatedAt());
-			return result;
-		} catch (Exception e) {
-			log.error("{} | TEXT.LENGTH:{}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), e);
-			return null;
+	private boolean isCircuitOpen() {
+		return System.currentTimeMillis() < circuitOpenUntilMs;
+	}
+
+	private void markGrpcSuccess() {
+		grpcConsecutiveFailures.set(0);
+		circuitOpenUntilMs = 0L;
+	}
+
+	private void markGrpcFailure() {
+		int failures = grpcConsecutiveFailures.incrementAndGet();
+		int threshold = Math.max(1, conf.getMlPrivacyGrpcCircuitFailureThreshold());
+		if (failures >= threshold) {
+			circuitOpenUntilMs = System.currentTimeMillis() + Math.max(1000, conf.getMlPrivacyGrpcCircuitOpenMs());
+			grpcConsecutiveFailures.set(0);
+			log.warn("{} | CIRCUIT:OPEN | THRESHOLD_REACHED:{} | OPEN_MS:{}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), threshold, conf.getMlPrivacyGrpcCircuitOpenMs());
+		}
+	}
+
+	private void sleepRetry(int backoffMs, int attempt) {
+		if (backoffMs <= 0) {
+			return;
+		}
+		try {
+			Thread.sleep((long) backoffMs * attempt);
+		} catch (InterruptedException ie) {
+			Thread.currentThread().interrupt();
 		}
 	}
 

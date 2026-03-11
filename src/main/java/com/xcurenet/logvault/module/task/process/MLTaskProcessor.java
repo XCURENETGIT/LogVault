@@ -1,5 +1,6 @@
 package com.xcurenet.logvault.module.task.process;
 
+import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xcurenet.common.error.ErrorCode;
@@ -21,7 +22,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 /**
  * ML_ANALYSIS 처리를 담당하는 Processor
@@ -92,15 +97,74 @@ public class MLTaskProcessor implements TaskProcessor {
 	private void setAttachMLResult(EmassDoc doc) {
 		if (doc.getAttach() == null) return;
 		for (EmassDoc.Attach attach : doc.getAttach()) {
-			try {
-				if (attach.getText() != null) {
-					EmassDoc.MLResult mlResult = analysisML(Common.limitLength(attach.getText(), conf.getMlApiTextLimit()));
-					log.info("ML__TASK | ATTACH: {}", mlResult);
-					if (mlResult != null) attach.setMlResult(mlResult);
-				}
-			} catch (Exception e) {
-				log.warn("{} | {} | {} | {}", ErrorCode.ML_ANALYSIS_ATTACH_ERROR, attach.getSize(), conf.getDestPathSmall(attach.getPath()), e.toString());
+			if (attach.getText() == null) {
+				continue;
 			}
+			String limitedText = Common.limitLength(attach.getText(), conf.getMlApiTextLimit());
+			applyAttachMlResult(attach, limitedText, "ML__TASK", this::analysisML);
+			applyAttachMlResult(attach, limitedText, "SIMILARITY", this::similarityML);
+		}
+	}
+
+	private void applyAttachMlResult(EmassDoc.Attach attach, String text, String logPrefix, Function<String, EmassDoc.MLResult> analyzer) {
+		try {
+			EmassDoc.MLResult mlResult = analyzer.apply(text);
+			log.info("{} | ATTACH: {}", logPrefix, mlResult);
+			mergeOrReplaceAttachMlResult(attach, mlResult);
+		} catch (Exception e) {
+			log.warn("{} | {} | {} | {}", ErrorCode.ML_ANALYSIS_ATTACH_ERROR, attach.getSize(), conf.getDestPathSmall(attach.getPath()), e.toString());
+		}
+	}
+
+	private void mergeOrReplaceAttachMlResult(EmassDoc.Attach attach, EmassDoc.MLResult incoming) {
+		if (incoming == null) {
+			return;
+		}
+
+		EmassDoc.MLResult current = attach.getMlResult();
+		if (current == null || isFailed(current)) {
+			attach.setMlResult(incoming);
+			return;
+		}
+
+		mergeMlResult(current, incoming);
+		attach.setMlResult(current);
+	}
+
+	private boolean isFailed(EmassDoc.MLResult result) {
+		return result != null && result.getResult() > 200;
+	}
+
+	private void mergeMlResult(EmassDoc.MLResult target, EmassDoc.MLResult source) {
+		target.setCodeExist(target.isCodeExist() || source.isCodeExist());
+		target.setCategory(Math.max(target.getCategory(), source.getCategory()));
+		target.setProbs(Math.max(target.getProbs(), source.getProbs()));
+
+		if (source.getKeywords() != null && !source.getKeywords().isEmpty()) {
+			if (target.getKeywords() == null) {
+				target.setKeywords(new ArrayList<>());
+			}
+			target.getKeywords().addAll(source.getKeywords());
+		}
+
+		if (source.isSimilarityExist()) {
+			target.setSimilarityExist(true);
+		}
+		if (source.getSimilarityId() != null) {
+			target.setSimilarityId(source.getSimilarityId());
+		}
+		if (source.getSimilarityName() != null) {
+			target.setSimilarityName(source.getSimilarityName());
+		}
+		if (source.getSimilarityScore() > 0f) {
+			target.setSimilarityScore(Math.max(target.getSimilarityScore(), source.getSimilarityScore()));
+		}
+
+		if (source.getResult() > 0 && (target.getResult() <= 0 || source.getResult() > target.getResult())) {
+			target.setResult(source.getResult());
+		}
+		if (source.getMessage() != null && !source.getMessage().isBlank()) {
+			target.setMessage(source.getMessage());
 		}
 	}
 
@@ -195,6 +259,44 @@ public class MLTaskProcessor implements TaskProcessor {
 			mlResult.setResult(body.getInteger("result"));
 			mlResult.setMessage(body.getString("message"));
 			return mlResult;
+		}
+		return null;
+	}
+
+	/**
+	 * ML API 호출
+	 */
+	private EmassDoc.MLResult similarityML(final String text) {
+		JSONObject data = new JSONObject();
+		data.put("query", text);
+		data.put("top_k", 1);
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+		headers.add("x-api-key", conf.getSimilarityKey());
+
+		log.debug("SIMILARITY_CALL | {}", data.toJSONString());
+		HttpEntity<String> entity = new HttpEntity<>(data.toJSONString(), headers);
+		ResponseEntity<String> resp = restTemplate.postForEntity(conf.getSimilarityUrl(), entity, String.class);
+		if (!resp.getStatusCode().is2xxSuccessful()) {
+			log.warn("SIMILARITY_ERROR | {} | {}", resp.getStatusCode(), resp.getBody());
+			return null;
+		}
+
+		log.debug("SIMILARITY_RES | {}", resp.getBody());
+		JSONObject body = JSONObject.parseObject(resp.getBody());
+		if (body != null) {
+			JSONArray result = body.getJSONArray("result");
+			if (!result.isEmpty()) {
+				JSONObject obj = result.getJSONObject(0);
+				EmassDoc.MLResult mlResult = new EmassDoc.MLResult();
+				mlResult.setSimilarityExist(true);
+				mlResult.setSimilarityId(obj.getString("doc_id"));
+				mlResult.setSimilarityScore(obj.getFloatValue("score"));
+				mlResult.setSimilarityName(obj.getJSONObject("metadata").getString("file_name"));
+				return mlResult;
+			}
 		}
 		return null;
 	}

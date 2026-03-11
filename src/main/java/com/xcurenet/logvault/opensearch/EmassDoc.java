@@ -123,6 +123,16 @@ public class EmassDoc {
 		private float probs;
 		@Field("keywords")
 		private List<String> keywords;
+
+		@Field("similarity_exist")
+		private boolean similarityExist;
+		@Field("similarity_id")
+		private String similarityId;
+		@Field("similarity_name")
+		private String similarityName;
+		@Field("similarity_score")
+		private float similarityScore;
+
 		@Field("result")
 		private int result;
 		@Field("message")
@@ -135,8 +145,16 @@ public class EmassDoc {
 			this.codeExist |= other.isCodeExist();
 			this.category = Math.max(this.category, other.getCategory());
 			this.probs = Math.max(this.probs, other.getProbs());
-			if (this.keywords == null) this.keywords = new ArrayList<>();
-			this.keywords.addAll(other.getKeywords());
+			if (other.getKeywords() != null && !other.getKeywords().isEmpty()) {
+				if (this.keywords == null) this.keywords = new ArrayList<>();
+				this.keywords.addAll(other.getKeywords());
+			}
+			this.similarityExist |= other.isSimilarityExist();
+			if (other.getSimilarityId() != null) this.similarityId = other.getSimilarityId();
+			if (other.getSimilarityName() != null) this.similarityName = other.getSimilarityName();
+			this.similarityScore = Math.max(this.similarityScore, other.getSimilarityScore());
+			if (other.getResult() > 0 && (this.result <= 0 || other.getResult() > this.result)) this.result = other.getResult();
+			if (other.getMessage() != null && !other.getMessage().isBlank()) this.message = other.getMessage();
 		}
 	}
 

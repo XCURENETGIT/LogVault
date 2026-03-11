@@ -226,6 +226,12 @@ public class Config {
 	@Value("${ml.api.url:http://xgenai-manager:15000/api/data-analyze}") //ML Rest API URL
 	private String mlApiUrl;
 
+	@Value("${ml.similarity.url:http://10.100.40.52:8000/api/search}") //SIMILARITY API URL
+	private String similarityUrl;
+
+	@Value("${ml.similarity.key:xcn-rag}") //SIMILARITY KEY
+	private String similarityKey;
+
 	@Value("${ml.api.timeout:600}") //ML Rest API TimeOut
 	private int mlTimeoutSec;
 

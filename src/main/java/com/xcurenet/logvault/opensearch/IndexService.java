@@ -92,6 +92,11 @@ public class IndexService {
 		return template.count(query, index);
 	}
 
+	public long countIndex(final String index) {
+		Query query = new NativeSearchQueryBuilder().withQuery(QueryBuilders.queryStringQuery("*:*")).build();
+		return template.count(query, IndexCoordinates.of(index));
+	}
+
 	public SearchHits<Document> search(final String queryString, int size) throws IndexerException {
 		try {
 			NativeSearchQuery query = new NativeSearchQueryBuilder()

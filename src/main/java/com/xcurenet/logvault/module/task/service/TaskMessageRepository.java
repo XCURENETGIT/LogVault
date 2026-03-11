@@ -1,5 +1,6 @@
 package com.xcurenet.logvault.module.task.service;
 
+import com.xcurenet.logvault.job.delete.DeleteMessage;
 import com.xcurenet.logvault.module.alert.AlertMessage;
 import org.apache.ibatis.annotations.*;
 
@@ -81,4 +82,10 @@ public interface TaskMessageRepository {
 			VALUES (#{msgId}, #{data}, CURRENT_TIMESTAMP())
 			""")
 	void insertAlertRule(AlertMessage message);
+
+	@Insert("""
+			INSERT IGNORE INTO UI_DELETE_HISTORY (DELETE_DATE, DELETE_TYPE, DELETE_COUNT, DELETE_TIME)
+			VALUES (#{deleteDate}, #{deleteType}, #{deleteCount}, CURRENT_TIMESTAMP())
+			""")
+	void insertDeleteHistory(DeleteMessage message);
 }

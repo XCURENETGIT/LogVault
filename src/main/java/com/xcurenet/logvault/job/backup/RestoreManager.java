@@ -37,6 +37,8 @@ public class RestoreManager {
 		Path filePath = checkPath(date);
 		if (filePath == null) return false;
 
+		log.info("RESTORE_IDX | START | {}", date);
+
 		StopWatch sw = DateUtils.start();
 		AtomicLong total = new AtomicLong(0L);
 		final IndexCoordinates ic = IndexCoordinates.of(conf.getIndexName() + date);
@@ -54,7 +56,7 @@ public class RestoreManager {
 				}
 				total.getAndIncrement();
 				if (total.get() % (BATCH_SIZE * 5L) == 0) {
-					log.info("RESTORE_IDX | INDEXED {} docs...", total);
+					log.info("RESTORE_IDX | INDEXED {} | {}", total, date);
 				}
 			});
 			if (!batch.isEmpty()) {
@@ -96,7 +98,7 @@ public class RestoreManager {
 						Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
 						count.getAndIncrement();
 						if (count.get() % (BATCH_SIZE * 5L) == 0) {
-							log.info("RESTORE_ATT | COPY FILES {}", count);
+							log.info("RESTORE_ATT | COPY FILES {} | {} > {}", count, source, target);
 						}
 					}
 				} catch (IOException e) {

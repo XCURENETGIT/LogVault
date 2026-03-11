@@ -31,7 +31,7 @@ public class DeletePolicyManager {
 		log.info("RM_EXPIRE | {} | {}", conf.getDataStoreTerm(), conf.getAttachRoot());
 		if (isInvalidPath(conf.getAttachRoot())) return;
 
-		cleanupService.runCleanup(conf.getDataStoreTerm());
+		cleanupService.runCleanupRetention(conf.getDataStoreTerm());
 	}
 
 	@Scheduled(cron = "0 0 * * * *")
@@ -53,7 +53,7 @@ public class DeletePolicyManager {
 		currentDiskLog(path, usageThreshold, "START");
 
 		if (usageRatio >= usageThreshold) {
-			cleanupService.runCleanup(path, usageThreshold);
+			cleanupService.runCleanupCapacity(path, usageThreshold);
 			currentDiskLog(path, usageThreshold, "END");
 			deleteDirectory(path);
 		}

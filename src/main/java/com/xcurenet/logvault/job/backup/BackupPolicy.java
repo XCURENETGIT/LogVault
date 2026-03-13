@@ -117,7 +117,6 @@ public class BackupPolicy {
 		if (item == null) return null;
 
 		item.putIfAbsent("path", backupDir.getAbsolutePath());
-		item.putIfAbsent("date", backupDir.getName());
 		return item;
 	}
 
@@ -142,7 +141,6 @@ public class BackupPolicy {
 		long attachSize = getDirectorySize(attachDir);
 
 		JSONObject item = new JSONObject();
-		item.put("date", date);
 		item.put("path", backupDir == null ? null : backupDir.getAbsolutePath());
 		item.put("count", count);
 		item.put("indexSize", indexSize);

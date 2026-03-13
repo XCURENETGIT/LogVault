@@ -181,9 +181,6 @@ public class Config {
 	@Value("${ocr.limit.size:20485760}") //OCR 파일 사이즈 LIMIT (default 20MB)
 	private int ocrLimitSize;
 
-	@Value("${ml.privacy.api.enable:false}") //ML Privacy Rest API ENABLE
-	private boolean mlPrivacyApiEnable;
-
 	@Value("${ml.privacy.api.url:http://xgenai-manager:8005/pii/detect}") //ML Privacy Rest API URL
 	private String mlPrivacyApiUrl;
 
@@ -220,7 +217,7 @@ public class Config {
 	@Value("${guardrail.limit.length:20}") //guardrail limit length
 	private int guardRailLimitLength;
 
-	@Value("${ml.api.enable:false}") //ML Rest API ENABLE
+	@Value("${ml.api.enable:true}") //ML Rest API ENABLE
 	private boolean mlApiEnable;
 
 	@Value("${ml.api.url:http://xgenai-manager:15000/api/data-analyze}") //ML Rest API URL

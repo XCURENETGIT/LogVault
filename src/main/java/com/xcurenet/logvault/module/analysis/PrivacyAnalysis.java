@@ -1,12 +1,9 @@
 package com.xcurenet.logvault.module.analysis;
 
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
 import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.regex.MatchResult;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
-import com.xcurenet.crypto.Crypto;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.loader.PatternLoader;
 import com.xcurenet.logvault.module.ScanData;
@@ -14,14 +11,12 @@ import com.xcurenet.logvault.opensearch.EmassDoc;
 import com.xcurenet.logvault.privacy.PrivacyPattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
 import org.springframework.web.client.RestClient;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -95,7 +90,7 @@ public class PrivacyAnalysis {
 			return 0;
 		}
 
-		if (!api.isEmpty() && verify(text)) {
+		if (!api.isEmpty()) {
 			for (String key : api.keySet()) {
 				List<MatchResult> arr = api.get(key);
 				if (arr == null || arr.isEmpty()) continue;
@@ -161,49 +156,4 @@ public class PrivacyAnalysis {
 		return doc.getPrivacyInfo();
 	}
 
-	/* =========================
-	 * ML Verify
-	 * ========================= */
-	private boolean verify(final String text) {
-		if (!conf.isMlPrivacyApiEnable()) return true;
-
-		JSONArray candidates = new JSONArray();
-		JSONObject obj = new JSONObject();
-		obj.put("category", "string");
-		obj.put("matched_text", "string");
-		obj.put("start_pos", 0);
-		obj.put("end_pos", 0);
-		candidates.add(obj);
-
-		JSONObject body = new JSONObject();
-		body.put("text", text);
-		body.put("candidates", candidates);
-		body.put("context_window", 100);
-
-		int maxRetries = 3;
-		int attempt = 0;
-
-		while (attempt < maxRetries) {
-			StopWatch sw = DateUtils.start();
-			try {
-				attempt++;
-				JSONObject rs = restClient.post().uri(conf.getMlPrivacyApiUrl()).contentType(MediaType.APPLICATION_JSON).body(body).retrieve().body(JSONObject.class);
-				if (rs == null || rs.getJSONArray("results") == null) {
-					log.warn("{} | TEXT.LENGTH:{}", ErrorCode.PRIVACY_ML_RESPONSE_INVALID.toString(), text.length());
-					return false;
-				}
-
-				JSONObject object = rs.getJSONArray("results").getJSONObject(0);
-				log.info("ML_PII | TEXT.LENGTH:{} | {} | {}", text.length(), object.getBoolean("is_pii"), DateUtils.stop(sw));
-				return object.getBoolean("is_pii");
-			} catch (Exception e) {
-				log.warn("{} | ({}/{}) | TEXT.LENGTH:{} | {}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), attempt, maxRetries, text.length(), e.getMessage());
-				if (attempt < maxRetries) {
-					Common.sleep(1000);
-				}
-			}
-		}
-		log.warn("{} | TEXT.LENGTH:{}", ErrorCode.PRIVACY_ML_VERIFY_FAIL.toString(), text.length());
-		return false;
-	}
 }

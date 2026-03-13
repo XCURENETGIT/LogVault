@@ -2,6 +2,7 @@ package com.xcurenet.logvault.job.backup;
 
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.JSONWriter;
 import com.github.luben.zstd.ZstdInputStream;
 import com.github.luben.zstd.ZstdOutputStream;
 import com.xcurenet.common.utils.Common;
@@ -77,9 +78,10 @@ public class BackupPolicy {
 		log.info("BACKUP_INFO | isBackupEnable:{} | path:{}", conf.isBackupEnable(), conf.getBackupPath());
 		FileUtils.forceMkdir(new File(conf.getBackupPath()));
 
-		boolean result = indexBackup(date);
-		if (result) { //인덱스 스냅샷이 정상 처리 되면 첨부, 본문도 백업
+		long backupCount = indexBackup(date);
+		if (backupCount >= 0) { //인덱스 스냅샷이 정상 처리 되면 첨부, 본문도 백업
 			attachBackup(date);
+			writeBackupInfo(date, backupCount);
 			return true;
 		}
 		return false;
@@ -88,8 +90,7 @@ public class BackupPolicy {
 	public JSONArray getBackupList() throws IOException {
 		JSONArray result = new JSONArray();
 		String indexPath = Common.makeFilepath(conf.getBackupPath(), "index");
-		String attachPath = Common.makeFilepath(conf.getBackupPath(), "attach");
-		if (indexPath == null || attachPath == null) return result;
+		if (indexPath == null) return result;
 
 		File dir = new File(indexPath);
 		File[] backupDirs = dir.listFiles();
@@ -99,23 +100,55 @@ public class BackupPolicy {
 		for (File backupDir : backupDirs) {
 			if (!backupDir.isDirectory()) continue;
 			log.info("BACKUP_INFO | path:{}", backupDir.getAbsolutePath());
-			JSONObject item = new JSONObject();
-			item.put("path", backupDir.getAbsolutePath());
-
-			File[] file = backupDir.listFiles();
-			if (file == null || file.length == 0) continue;
-
-			String date = backupDir.getName();
-			long indexSize = file[0].length();
-			long attachSize = getDirectorySize(new File(attachPath, date));
-
-			item.put("count", getCount(file[0]));
-			item.put("indexSize", indexSize);
-			item.put("attachSize", attachSize);
-			item.put("size", indexSize + attachSize);
-			result.add(item);
+			JSONObject item = readBackupInfo(backupDir);
+			if (item != null) result.add(item);
 		}
 		return result;
+	}
+
+	private JSONObject readBackupInfo(final File backupDir) throws IOException {
+		File infoFile = new File(backupDir, "info.json");
+		if (!infoFile.exists() || !infoFile.isFile()) return null;
+
+		String json = Files.readString(infoFile.toPath(), StandardCharsets.UTF_8);
+		if (!org.springframework.util.StringUtils.hasText(json)) return null;
+
+		JSONObject item = JSONObject.parseObject(json);
+		if (item == null) return null;
+
+		item.putIfAbsent("path", backupDir.getAbsolutePath());
+		item.putIfAbsent("date", backupDir.getName());
+		return item;
+	}
+
+	private void writeBackupInfo(final String date, final long count) throws IOException {
+		JSONObject info = buildBackupInfo(date, count);
+		String infoPath = Common.makeFilepath(conf.getBackupPath(), "index", date, "info.json");
+		if (infoPath == null) return;
+
+		Files.writeString(Path.of(infoPath), info.toString(JSONWriter.Feature.PrettyFormat), StandardCharsets.UTF_8);
+	}
+
+	private JSONObject buildBackupInfo(final String date, final long count) {
+		String indexFilePath = Common.makeFilepath(conf.getBackupPath(), "index", date, date + ".gz");
+		String backupDirPath = Common.makeFilepath(conf.getBackupPath(), "index", date);
+		String attachDirPath = Common.makeFilepath(conf.getBackupPath(), "attach", date);
+
+		File indexFile = indexFilePath == null ? null : new File(indexFilePath);
+		File backupDir = backupDirPath == null ? null : new File(backupDirPath);
+		File attachDir = attachDirPath == null ? null : new File(attachDirPath);
+
+		long indexSize = indexFile != null && indexFile.exists() ? indexFile.length() : 0L;
+		long attachSize = getDirectorySize(attachDir);
+
+		JSONObject item = new JSONObject();
+		item.put("date", date);
+		item.put("path", backupDir == null ? null : backupDir.getAbsolutePath());
+		item.put("count", count);
+		item.put("indexSize", indexSize);
+		item.put("attachSize", attachSize);
+		item.put("size", indexSize + attachSize);
+		return item;
 	}
 
 	private long getDirectorySize(final File dir) {
@@ -125,18 +158,6 @@ public class BackupPolicy {
 		} catch (IllegalArgumentException e) {
 			return 0L;
 		}
-	}
-
-	private long getCount(File file) throws IOException {
-		if (!file.exists() || file.length() == 0) return 0;
-
-		long lines = 0;
-		try (InputStream fis = Common.zipOpen(file.toPath()); BufferedReader reader = new BufferedReader(new InputStreamReader(fis, StandardCharsets.UTF_8))) {
-			while (reader.readLine() != null) {
-				lines++;
-			}
-		}
-		return lines;
 	}
 
 	private void attachBackup(final String yesterday) throws IOException {
@@ -153,8 +174,8 @@ public class BackupPolicy {
 	/**
 	 * 개별 DOC 문서를 zst 압축파일에 json object로 라인별 저장
 	 */
-	private boolean indexBackup(final String yesterday) throws IOException {
-		if (!isExistIndices(yesterday)) return false;
+	private long indexBackup(final String yesterday) throws IOException {
+		if (!isExistIndices(yesterday)) return -1L;
 
 		StopWatch sw = DateUtils.start();
 		long total = 0;
@@ -162,7 +183,7 @@ public class BackupPolicy {
 		long scrollTtlMs = 600000L;
 
 		String path = Common.makeFilepath(conf.getBackupPath(), "index", yesterday);
-		if (path == null) return false;
+		if (path == null) return -1L;
 		FileUtils.forceMkdir(new File(path));
 
 		String indexName = conf.getIndexName() + yesterday;
@@ -194,7 +215,7 @@ public class BackupPolicy {
 				}
 			} catch (Exception e) {
 				log.error("BACKUP_IDX | {}", e.getMessage(), e);
-				return false;
+				return -1L;
 			} finally {
 				if (scrollId != null) {
 					try {
@@ -204,10 +225,10 @@ public class BackupPolicy {
 				}
 			}
 			log.info("BACKUP_IDX | DONE | {} docs | {}", total, DateUtils.stop(sw));
-			return true;
+			return total;
 		} catch (Exception e) {
 			log.error("BACKUP_IDX | {}", e.getMessage(), e);
-			return false;
+			return -1L;
 		}
 	}
 

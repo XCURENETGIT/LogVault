@@ -152,7 +152,7 @@ public class Config {
 	@Value("${ocr.api.host:xgenai-manager}") //OCR Rest API Host
 	private String ocrApiHost;
 
-	@Value("${ocr.api.port:8000}") //OCR Rest API PORT
+	@Value("${ocr.api.port:8001}") //OCR Rest API PORT
 	private String ocrApiPort;
 
 	@Value("${ocr.api.local.gpu.model:/models/allenai/olmOCR-2-7B-1025-FP8}") //OCR LOCAL Model
@@ -223,7 +223,7 @@ public class Config {
 	@Value("${ml.api.url:http://xgenai-manager:15000/api/data-analyze}") //ML Rest API URL
 	private String mlApiUrl;
 
-	@Value("${ml.similarity.url:http://10.100.40.52:8000/api/search}") //SIMILARITY API URL
+	@Value("${ml.similarity.url:http://xgenai-manager:18000/api/search}") //SIMILARITY API URL
 	private String similarityUrl;
 
 	@Value("${ml.similarity.key:xcn-rag}") //SIMILARITY KEY
@@ -241,7 +241,7 @@ public class Config {
 	@Value("${ml.api.detect.model.dir:251114_epochs1_ebed512-ch31}") //ML Rest API TimeOut
 	private String mlDetectModelDir;
 
-	@Value("${ml.api.text.limit:200000}") //ML TEXT LIMIT
+	@Value("${ml.api.text.limit:1000000}") //ML TEXT LIMIT
 	private int mlApiTextLimit;
 
 	@Value("${spring.minio.url:http://xgenai-manager:9000}")

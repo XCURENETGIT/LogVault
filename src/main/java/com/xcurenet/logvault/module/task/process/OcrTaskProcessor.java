@@ -9,6 +9,7 @@ import com.xcurenet.common.utils.FileUtil;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.fs.FileProcessor;
 import com.xcurenet.logvault.module.alert.AlertService;
+import com.xcurenet.logvault.module.analysis.GuardRailAnalysis;
 import com.xcurenet.logvault.module.analysis.KeywordAnalysis;
 import com.xcurenet.logvault.module.analysis.PrivacyAIAnalysis;
 import com.xcurenet.logvault.module.task.service.TaskDispatcherService;
@@ -57,6 +58,7 @@ public class OcrTaskProcessor implements TaskProcessor {
 	protected final IndexService indexService;
 	private final KeywordAnalysis keywordAnalysis;
 	private final PrivacyAIAnalysis privacyAnalysis;
+	private final GuardRailAnalysis guardRailAnalysis;
 	private final TaskMessageRepository repository;
 	private final RestTemplate restTemplate;
 	private final AlertService alertService;
@@ -64,13 +66,14 @@ public class OcrTaskProcessor implements TaskProcessor {
 	private static final String OCR_STATUS_SUCCESS = "S";
 	private static final String OCR_STATUS_ERROR = "E";
 
-	public OcrTaskProcessor(Config conf, ObjectMapper mapper, FileProcessor fileProcessor, IndexService indexService, KeywordAnalysis keywordAnalysis, PrivacyAIAnalysis privacyAnalysis, TaskMessageRepository repository, @Qualifier("ocrRestTemplate") RestTemplate restTemplate, AlertService alertService) {
+	public OcrTaskProcessor(Config conf, ObjectMapper mapper, FileProcessor fileProcessor, IndexService indexService, KeywordAnalysis keywordAnalysis, GuardRailAnalysis guardRailAnalysis, PrivacyAIAnalysis privacyAnalysis, TaskMessageRepository repository, @Qualifier("ocrRestTemplate") RestTemplate restTemplate, AlertService alertService) {
 		this.conf = conf;
 		this.mapper = mapper;
 		this.fileProcessor = fileProcessor;
 		this.indexService = indexService;
 		this.keywordAnalysis = keywordAnalysis;
 		this.privacyAnalysis = privacyAnalysis;
+		this.guardRailAnalysis = guardRailAnalysis;
 		this.repository = repository;
 		this.restTemplate = restTemplate;
 		this.alertService = alertService;
@@ -239,6 +242,10 @@ public class OcrTaskProcessor implements TaskProcessor {
 		StopWatch swPrivacy = DateUtils.start();
 		privacyAnalysis.detect(doc);                // 개인정보 탐지
 		log.info("PII__END | Time: {}", DateUtils.stop(swPrivacy));
+
+		StopWatch swGuard = DateUtils.start();
+		guardRailAnalysis.detect(doc);
+		log.info("MG_GUARD | END Time: {}", DateUtils.stop(swGuard));
 	}
 
 	/**

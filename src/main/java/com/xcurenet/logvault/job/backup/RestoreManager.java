@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSONObject;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
+import com.xcurenet.logvault.opensearch.IndexService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.Nullable;
@@ -30,6 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class RestoreManager {
 	final int BATCH_SIZE = 100;
 	private final Config conf;
+	protected final IndexService indexService;
 	protected final OpenSearchRestTemplate template;
 
 	public boolean restore(final DateTime dateTime) throws IOException {
@@ -43,6 +45,13 @@ public class RestoreManager {
 		AtomicLong total = new AtomicLong(0L);
 		final IndexCoordinates ic = IndexCoordinates.of(conf.getIndexName() + date);
 		final List<IndexQuery> batch = new ArrayList<>(BATCH_SIZE);
+
+		boolean isReadOnly = indexService.isReadOnly(ic.getIndexName());
+		if (isReadOnly) {
+			indexService.setReadOnlyStrict(ic.getIndexName(), false);
+			log.info("RESTORE_IDX | setReadOnlyStrict false | {}", ic.getIndexName());
+			Common.sleep(2000);
+		}
 
 		IndexOperations ops = template.indexOps(ic);
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(Common.zipOpen(filePath), StandardCharsets.UTF_8))) {
@@ -70,6 +79,12 @@ public class RestoreManager {
 		} catch (IOException e) {
 			log.error("RESTORE_IDX | {}", e.getMessage(), e);
 			return false;
+		} finally {
+			if (isReadOnly) {
+				indexService.setReadOnlyStrict(ic.getIndexName(), true);
+				log.info("RESTORE_IDX | setReadOnlyStrict true | {}", ic.getIndexName());
+				Common.sleep(2000);
+			}
 		}
 		return true;
 	}

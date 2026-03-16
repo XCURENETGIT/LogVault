@@ -22,6 +22,7 @@ import org.opensearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.opensearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.opensearch.action.support.master.AcknowledgedResponse;
 import org.opensearch.client.*;
+import org.opensearch.client.indices.GetIndexRequest;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.data.client.orhlc.NativeSearchQuery;
 import org.opensearch.data.client.orhlc.NativeSearchQueryBuilder;
@@ -314,16 +315,21 @@ public class IndexService {
 		});
 	}
 
-
-	private boolean isReadOnly(final String index) {
+	public boolean isReadOnly(final String index) {
 		return template.execute((RestHighLevelClient client) -> {
+			GetIndexRequest existsRequest = new GetIndexRequest(index);
+			boolean exists = client.indices().exists(existsRequest, RequestOptions.DEFAULT);
+			if (!exists) return false;
+
 			GetSettingsRequest getReq = new GetSettingsRequest().indices(index);
 			GetSettingsResponse getResp = client.indices().getSettings(getReq, RequestOptions.DEFAULT);
-			return "true".equalsIgnoreCase(getResp.getIndexToSettings().get(index).get("index.blocks.read_only"));
+			Settings settings = getResp.getIndexToSettings().get(index);
+			if (settings == null) return false;
+			return "true".equalsIgnoreCase(settings.get("index.blocks.read_only"));
 		});
 	}
 
-	private void setReadOnlyStrict(final String index, final boolean readOnly) {
+	public void setReadOnlyStrict(final String index, final boolean readOnly) {
 		template.execute(client -> {
 			UpdateSettingsRequest req = new UpdateSettingsRequest(index);
 			req.settings(Settings.builder().put("index.blocks.read_only", readOnly).build());

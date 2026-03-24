@@ -226,7 +226,8 @@ public class IndexService {
 			log.warn("{} | INDEX:{} ID:{} USER:{}", ErrorCode.INDEX_UPSERT_FAIL.toString(), index, id, user);
 			return false;
 		}
-		String json = JSON.toJSONString(Map.of("user", user), JSONWriter.Feature.WriteMapNullValue);
+		String json = JSONObject.toJSONString(Map.of("user", user), JSONWriter.Feature.FieldBased);
+		log.debug("idx:{}, json:{}", index, json);
 		UpdateQuery query = UpdateQuery.builder(id).withDocument(Document.parse(json)).build();
 		template.update(query, IndexCoordinates.of(index));
 		return true;

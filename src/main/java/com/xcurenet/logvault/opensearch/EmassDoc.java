@@ -1,6 +1,8 @@
 package com.xcurenet.logvault.opensearch;
 
+import com.alibaba.fastjson2.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.xcurenet.logvault.module.util.ActionType;
 import lombok.Builder;
 import lombok.Data;
@@ -153,7 +155,8 @@ public class EmassDoc {
 			if (other.getSimilarityId() != null) this.similarityId = other.getSimilarityId();
 			if (other.getSimilarityName() != null) this.similarityName = other.getSimilarityName();
 			this.similarityScore = Math.max(this.similarityScore, other.getSimilarityScore());
-			if (other.getResult() > 0 && (this.result <= 0 || other.getResult() > this.result)) this.result = other.getResult();
+			if (other.getResult() > 0 && (this.result <= 0 || other.getResult() > this.result))
+				this.result = other.getResult();
 			if (other.getMessage() != null && !other.getMessage().isBlank()) this.message = other.getMessage();
 		}
 	}
@@ -212,18 +215,23 @@ public class EmassDoc {
 		private String name;
 
 		@Field("is_ceo")
+		@JSONField(name = "is_ceo")
 		private boolean ceo;
 
 		@Field("dept_code")
+		@JSONField(name = "dept_code")
 		private String deptCode;
 
 		@Field("dept_name")
+		@JSONField(name = "dept_name")
 		private String deptName;
 
 		@Field("jikgub_code")
+		@JSONField(name = "jikgub_code")
 		private String jikgubCode;
 
 		@Field("jikgub_name")
+		@JSONField(name = "jikgub_name")
 		private String jikgubName;
 	}
 

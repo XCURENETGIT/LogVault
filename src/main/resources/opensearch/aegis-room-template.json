@@ -152,6 +152,60 @@
 							"type": "integer"
 						}
 					}
+				},
+				"keyword_total": {
+					"type": "integer"
+				},
+				"keyword_info": {
+					"properties": {
+						"exist": {
+							"type": "boolean"
+						},
+						"keywords": {
+							"type": "nested",
+							"properties": {
+								"name": {
+									"type": "keyword"
+								},
+								"count": {
+									"type": "integer"
+								}
+							}
+						},
+						"attach": {
+							"type": "nested",
+							"properties": {
+								"name": {
+									"type": "keyword"
+								},
+								"count": {
+									"type": "integer"
+								}
+							}
+						},
+						"attach_name": {
+							"type": "nested",
+							"properties": {
+								"name": {
+									"type": "keyword"
+								},
+								"count": {
+									"type": "integer"
+								}
+							}
+						},
+						"body": {
+							"type": "nested",
+							"properties": {
+								"name": {
+									"type": "keyword"
+								},
+								"count": {
+									"type": "integer"
+								}
+							}
+						}
+					}
 				}
 			}
 		},

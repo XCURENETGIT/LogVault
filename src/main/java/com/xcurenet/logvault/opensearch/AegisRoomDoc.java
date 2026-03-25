@@ -49,4 +49,10 @@ public class AegisRoomDoc {
 
 	@Field("privacy_info")
 	private List<EmassDoc.PrivacyInfo> privacyInfo;
+
+	@Field("keyword_total") //탐지 키워드 총 건수
+	private int keywordTotal;
+
+	@Field("keyword_info")
+	private EmassDoc.KeywordInfo keywordInfo;
 }

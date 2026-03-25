@@ -162,6 +162,8 @@ public class IndexService {
 			room.setRecentMessage(message);
 			room.setPrivacyTotal(newDoc.getPrivacyTotal());
 			room.setPrivacyInfo(newDoc.getPrivacyInfo());
+			room.setKeywordTotal(newDoc.getKeywordTotal());
+			room.setKeywordInfo(newDoc.getKeywordInfo());
 		} else if (roomDoc != null) {  // 기존 데이터가 더 최근이라면 기존 값으로 (OCR, ML 처리 결과에 따라 분석 내용이 달라짐.)
 			room.setUser(roomDoc.getUser());
 			room.setAction(roomDoc.getAction());
@@ -173,6 +175,8 @@ public class IndexService {
 			room.setRecentMessage(roomDoc.getRecentMessage());
 			room.setPrivacyTotal(roomDoc.getPrivacyTotal());
 			room.setPrivacyInfo(roomDoc.getPrivacyInfo());
+			room.setKeywordTotal(roomDoc.getKeywordTotal());
+			room.setKeywordInfo(roomDoc.getKeywordInfo());
 		}
 		indexData(room, conf.getIndexRoomName());
 	}

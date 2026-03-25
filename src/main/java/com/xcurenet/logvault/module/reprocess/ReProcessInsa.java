@@ -66,7 +66,7 @@ public class ReProcessInsa {
 		NativeSearchQuery searchQuery = new NativeSearchQueryBuilder() //query builder
 				.withQuery(QueryBuilders.matchAllQuery()) //query
 				.withPageable(PageRequest.of(0, batchSize)) //page
-				.withSourceFilter(new FetchSourceFilter(new String[]{"network.src_ip"}, null)).build();
+				.withSourceFilter(new FetchSourceFilter(new String[]{"room_id", "network.src_ip"}, null)).build();
 		SearchScrollHits<Document> scrollHits = template.searchScrollStart(scrollTtlMs, searchQuery, Document.class, indexCoordinates);
 		String scrollId = scrollHits.getScrollId();
 		try {
@@ -76,7 +76,6 @@ public class ReProcessInsa {
 					String json = hit.getContent().toJson();
 					String docId = hit.getId();
 					IP srcip = getSourceIp(hit.getContent());
-					log.info("REPROCESS | DATE:{} | MSGID:{} | SRCIP:{}", date, docId, srcip);
 					if (srcip == null) {
 						result.fail++;
 						log.warn("{} | DOC:{}", ErrorCode.INSA_SIP_NULL.toString(), json);
@@ -96,9 +95,18 @@ public class ReProcessInsa {
 							user.setJikgubCode(info.getJikgubCd());
 							user.setJikgubName(info.getJikgubNm());
 						}
+						log.info("REPROCESS | DATE:{} | MSGID:{} | SRCIP:{} | USERID:{} | USERNM:{}", date, docId, srcip, user.getId(), user.getName());
 
-						if (indexService.updateUser(indexName, docId, user)) result.success++;
-						else result.fail++;
+						if (indexService.updateUser(indexName, docId, user)) {
+							result.success++;
+
+							String roomId = getRoomId(hit.getContent());
+							if (roomId != null) {
+								indexService.updateUser(conf.getIndexRoomName(), roomId, user);
+							}
+						} else {
+							result.fail++;
+						}
 					} catch (Exception e) {
 						result.fail++;
 						log.warn("{} | SRCIP={} err={}", ErrorCode.INSA_MAPPING_FAIL.toString(), srcip, e.toString(), e);
@@ -128,6 +136,15 @@ public class ReProcessInsa {
 			return new IP((String) network.get("src_ip"));
 		} catch (Exception e) {
 			log.warn("{}", ErrorCode.INSA_SIP_NULL.toString(), e);
+		}
+		return null;
+	}
+
+	private String getRoomId(final Map<String, Object> map) {
+		try {
+			return (String) map.get("room_id");
+		} catch (Exception e) {
+			log.warn("{}", ErrorCode.INSA_MAPPING_FAIL.toString(), e);
 		}
 		return null;
 	}

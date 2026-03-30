@@ -122,6 +122,7 @@ public class IndexService {
 	 */
 	public void index(final EmassDoc doc) throws IndexerException {
 		String index = conf.getIndexName() + doc.getCtime().substring(0, 8);
+		log.debug("{}", doc);
 		indexData(doc, index);
 		if (Common.isEquals(doc.getService().getSvc1(), "I")) { //생성형 AI 서비스만.
 			indexRoom(doc);

@@ -58,7 +58,9 @@ public class MLTaskProcessor implements TaskProcessor {
 		MDC.put("worker", Thread.currentThread().getName());
 		EmassDoc doc = null;
 		try {
+			log.debug(message.getData());
 			doc = mapper.readValue(message.getData(), EmassDoc.class);
+			log.debug(doc);
 			MDC.put("msgId", doc.getMsgid());
 
 			setBodyMLResult(doc);

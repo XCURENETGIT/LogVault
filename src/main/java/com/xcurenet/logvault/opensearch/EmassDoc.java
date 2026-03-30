@@ -216,22 +216,27 @@ public class EmassDoc {
 
 		@Field("is_ceo")
 		@JSONField(name = "is_ceo")
+		@JsonProperty("is_ceo")
 		private boolean ceo;
 
 		@Field("dept_code")
 		@JSONField(name = "dept_code")
+		@JsonProperty("dept_code")
 		private String deptCode;
 
 		@Field("dept_name")
 		@JSONField(name = "dept_name")
+		@JsonProperty("dept_name")
 		private String deptName;
 
 		@Field("jikgub_code")
 		@JSONField(name = "jikgub_code")
+		@JsonProperty("jikgub_code")
 		private String jikgubCode;
 
 		@Field("jikgub_name")
-		@JSONField(name = "jikgub_name")
+		@JSONField(name = "jikgub_name") //직렬화 용도
+		@JsonProperty("jikgub_name") //역직렬화 용도
 		private String jikgubName;
 	}
 

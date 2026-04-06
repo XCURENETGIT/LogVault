@@ -174,7 +174,7 @@ public class Config {
 	 */
 	public Set<String> getOcrTargetExt() {
 		if (Common.isEquals(ocrApiType, "LC"))
-			return new HashSet<>(Arrays.asList("jpg", "jpeg", "png", "bmp", "tiff", "webp", "git", "pdf"));
+			return new HashSet<>(Arrays.asList("jpg", "jpeg", "png", "bmp", "tiff", "webp", "gif", "pdf"));
 		return ocrTargetExt;
 	}
 

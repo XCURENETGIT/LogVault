@@ -23,7 +23,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
@@ -130,19 +129,24 @@ public class FileScanner implements Runnable {
 	}
 
 	/**
-	 * Validates whether a given file meets certain criteria for processing.
+	 * MSG 파일 내부의 참조 파일(HDRFILE, MSGFILE, APPFILE)이 모두 존재하는지 검증한다.
+	 * <p>
+	 * 최적화: TARGET_KEYS(3개)를 모두 확인하면 나머지 파일 내용을 읽지 않고 즉시 종료한다.
+	 * 한 라인에 키가 매칭되면 해당 라인에서 다른 키 검사를 건너뛴다.
 	 *
-	 * @param path         the path of the file to validate
-	 * @param lastModified the last modified time of the file, in milliseconds
-	 * @return true if the file is valid; false otherwise
+	 * @param path         MSG 파일 경로
+	 * @param lastModified MSG 파일의 마지막 수정 시각 (밀리초)
+	 * @return true: 참조 파일이 모두 존재하거나 대기 시간 초과, false: 참조 파일 미도착 (대기 필요)
 	 */
 	private boolean isFileValid(final Path path, final long lastModified) {
 		CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE);
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(Files.newInputStream(path), decoder))) {
+			int foundCount = 0;
 			String line;
 			while ((line = br.readLine()) != null) {
 				for (String key : TARGET_KEYS) {
 					if (line.contains(key)) {
+						foundCount++;
 						String val = getFieldValue(line);
 						if (Common.isNotEmpty(val)) {
 							Path ref = Paths.get(getPath(val));
@@ -154,8 +158,11 @@ public class FileScanner implements Runnable {
 								}
 							}
 						}
+						break; // 한 라인에 키는 하나만 존재하므로 나머지 키 검사 생략
 					}
 				}
+				// 모든 TARGET_KEYS를 찾았으면 나머지 파일을 읽지 않고 즉시 종료
+				if (foundCount >= TARGET_KEYS.size()) break;
 			}
 			return true;
 		} catch (Exception e) {
@@ -176,17 +183,27 @@ public class FileScanner implements Runnable {
 		return null;
 	}
 
+	/**
+	 * 큐에 ScanData를 적재한다.
+	 * <p>
+	 * PriorityBlockingQueue는 unbounded이므로 offer()가 항상 성공한다.
+	 * 따라서 명시적으로 큐 사이즈를 확인하여 QUEUE_CAPACITY를 초과하지 않도록 backpressure를 적용한다.
+	 * Worker가 큐를 소비하여 여유가 생길 때까지 대기한 뒤 적재한다.
+	 */
 	private void addQueue(final ScanData data) {
 		if (!isRunning()) return;
 
-		while (isRunning()) {
-			if (queue.offer(data, QUEUE_OFFER_WAIT_MS, TimeUnit.MILLISECONDS)) {
-				data.incrementCount();
-				log.debug("ENQ | {}", data.getFilePath());
-				return;
-			}
-			log.warn("ENQ-TIMEOUT | Retrying... file={}", data.getFilePath());
+		// backpressure: 큐가 CAPACITY에 도달하면 Worker가 소비할 때까지 대기
+		while (isRunning() && queue.size() >= LogVaultApplication.QUEUE_CAPACITY) {
+			log.debug("ENQ-WAIT | queue full (size={}), waiting {}ms...", queue.size(), QUEUE_OFFER_WAIT_MS);
+			Common.sleep(QUEUE_OFFER_WAIT_MS);
 		}
+
+		if (!isRunning()) return;
+
+		queue.offer(data);
+		data.incrementCount();
+		log.debug("ENQ | {}", data.getFilePath());
 	}
 
 	/**

@@ -138,9 +138,9 @@ mvn -U -T 1C clean package
 
 ### 실행 (로컬)
 ```bash
-java -jar target/logvault-0.0.1.war
+java -jar target/logvault-1.0.0.war
 # 또는 프로파일/외부설정
-java -Dspring.profiles.active=prod -Dserver.port=14541 -jar target/logvault-0.0.1.war
+java -Dspring.profiles.active=prod -Dserver.port=14541 -jar target/logvault-1.0.0.war
 ```
 
 ### 시스템 서비스(예시)
@@ -152,7 +152,7 @@ After=network.target
 
 [Service]
 User=svc-logvault
-ExecStart=/usr/bin/java -Xms512m -Xmx2048m -jar /opt/logvault/logvault-0.0.1.war
+ExecStart=/usr/bin/java -Xms512m -Xmx2048m -jar /opt/logvault/logvault-1.0.0.war
 Restart=always
 Environment=SPRING_PROFILES_ACTIVE=prod
 
@@ -229,5 +229,5 @@ WantedBy=multi-user.target
 ## 📎 부록
 
 - Spring Boot 메인 클래스: `com.xcurenet.logvault.LogVaultApplication`
-- Maven Artifact: `com.xcurenet:LogValut:0.0.1` _(오타 주의: artifactId가 **LogValut**)_
+- Maven Artifact: `com.xcurenet:LogVault:1.0.0`
 - 서버 배너: `src/main/resources/banner.txt`

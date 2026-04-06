@@ -56,6 +56,7 @@ public class LogVaultApplication implements CommandLineRunner {
 
 	public static final int QUEUE_CAPACITY = 1000;
 	private final AtomicBoolean run = new AtomicBoolean(true);
+	private final List<ExecutorService> executors = new ArrayList<>();
 	private final PriorityBlockingQueue<ScanData> wmailQueue = new PriorityBlockingQueue<>(QUEUE_CAPACITY, new FileTimeComparator());
 	private final PriorityBlockingQueue<ScanData> wmailBlockQueue = new PriorityBlockingQueue<>(QUEUE_CAPACITY, new FileTimeComparator());
 
@@ -84,6 +85,7 @@ public class LogVaultApplication implements CommandLineRunner {
 			while (!isCompleteWorkers(workers)) {
 				Common.sleep(1000);
 			}
+			shutdownExecutors();
 			shutdownLatch.countDown();
 		}
 	}
@@ -117,6 +119,7 @@ public class LogVaultApplication implements CommandLineRunner {
 		ExecutorService executor = Executors.newFixedThreadPool(2, new NamedThreadFactory(new File(dir).getName()));
 		executor.execute(new FileScanner(dir, queue, run, waitingSec, dataPath, split, fileWaitTime, conf.getNokRoot()));
 		executor.shutdown();
+		executors.add(executor);
 
 //		WatchServiceScanner scanner = WatchServiceScanner.ofDefault(dir, queue, run, scannerCount, false);
 //		ExecutorService es = Executors.newSingleThreadExecutor();
@@ -125,20 +128,50 @@ public class LogVaultApplication implements CommandLineRunner {
 		log.info("START_SCAN | {}", dir);
 	}
 
-	private void startWorker(final List<AbstractWorker> workers) throws Exception {
-		if (conf.isEnableWmailBlock()) startWorker(workers, wmailBlockQueue, conf.getWorkerSizeWmailBlock(), MSGWorker.class, "BLOCK");
-		if (conf.isEnableWmail()) startWorker(workers, wmailQueue, conf.getWorkerSizeWmail(), MSGWorker.class, "WMAIL");
+	/**
+	 * Worker 생성을 위한 팩토리 인터페이스.
+	 * Reflection 대신 생성자 참조(MSGWorker::new)를 사용하여 컴파일 시점 타입 안전성을 보장한다.
+	 */
+	@FunctionalInterface
+	interface WorkerFactory {
+		AbstractWorker create(ApplicationContext context, PriorityBlockingQueue<ScanData> queue, AtomicBoolean run);
+	}
+
+	private void startWorker(final List<AbstractWorker> workers) {
+		if (conf.isEnableWmailBlock()) startWorker(workers, wmailBlockQueue, conf.getWorkerSizeWmailBlock(), MSGWorker::new, "BLOCK");
+		if (conf.isEnableWmail()) startWorker(workers, wmailQueue, conf.getWorkerSizeWmail(), MSGWorker::new, "WMAIL");
 		log.info("START_WORKER | LOAD END\n");
 	}
 
-	private void startWorker(final List<AbstractWorker> workers, final PriorityBlockingQueue<ScanData> queue, int workerSize, Class<? extends AbstractWorker> workerClass, final String name) throws Exception {
+	private void startWorker(final List<AbstractWorker> workers, final PriorityBlockingQueue<ScanData> queue, int workerSize, WorkerFactory factory, final String name) {
 		ExecutorService executor = Executors.newFixedThreadPool(workerSize, new NamedThreadFactory(name));
 		for (int i = 0; i < workerSize; i++) {
-			AbstractWorker worker = workerClass.getDeclaredConstructor(ApplicationContext.class, PriorityBlockingQueue.class, AtomicBoolean.class).newInstance(context, queue, run);
+			AbstractWorker worker = factory.create(context, queue, run);
 			workers.add(worker);
 			executor.execute(worker);
 		}
-		log.info("START_WORKER | {}", workerClass.getName());
+		log.info("START_WORKER | {}", name);
 		executor.shutdown();
+		executors.add(executor);
+	}
+
+	/**
+	 * 모든 ExecutorService에 대해 awaitTermination을 호출하여 스레드 정리를 보장한다.
+	 * run.set(false) 이후 Worker/Scanner가 루프를 탈출하면 ExecutorService도 종료된다.
+	 */
+	private void shutdownExecutors() {
+		for (ExecutorService executor : executors) {
+			try {
+				if (!executor.awaitTermination(60, java.util.concurrent.TimeUnit.SECONDS)) {
+					log.warn("SHUTDOWN | ExecutorService did not terminate within 60s, forcing shutdownNow");
+					executor.shutdownNow();
+				}
+			} catch (InterruptedException e) {
+				log.warn("SHUTDOWN | awaitTermination interrupted, forcing shutdownNow");
+				executor.shutdownNow();
+				Thread.currentThread().interrupt();
+			}
+		}
+		log.info("SHUTDOWN | All executors terminated");
 	}
 }

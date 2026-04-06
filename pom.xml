@@ -24,7 +24,7 @@
 		<encoding>UTF-8</encoding>
 		<main.class>com.xcurenet.logvault.LogVaultApplication</main.class>
 
-		<release.version>15</release.version>
+		<release.version>16</release.version>
 		<build.version>${project.version}-${release.version}</build.version>
 		<arch>x86_64</arch>
 
@@ -364,6 +364,18 @@
 			<groupId>javax.annotation</groupId>
 			<artifactId>javax.annotation-api</artifactId>
 			<version>1.3.2</version>
+		</dependency>
+
+		<!-- Test Dependencies -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	<build>

@@ -119,7 +119,11 @@ public abstract class AbstractWorker implements Runnable {
 							Common.sleep(2000);
 						}
 					}
-					if (!success) return; // 실패 시 종료 (로직의 실패로 간주 하고 재 처리)
+					if (!success) {
+						log.error("{} | FILEPATH:{} | 3회 재시도 실패로 NOK 이동", ErrorCode.UNKNOWN_ERROR.toString(), data.getFilePath());
+						Common.moveNok(data.getFilePath(), conf.getNokRoot(), conf.getDataPath(), conf.getDecoderSplitDir());
+						continue; // NOK로 이동 후 다음 작업 계속 처리
+					}
 
 					while (retryCnt <= 3) {
 						try {
@@ -243,7 +247,7 @@ public abstract class AbstractWorker implements Runnable {
 			try {
 				if (fileSystem.exists(destStr)) {
 					log.info("EMB_SKIP | {} already exists. Skipping copy.", conf.getDestPathSmall(destStr));
-					return;
+					continue;
 				}
 
 				StopWatch sw = DateUtils.start();

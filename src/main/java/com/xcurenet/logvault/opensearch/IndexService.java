@@ -64,7 +64,6 @@ public class IndexService {
 
 	protected final OpenSearchRestTemplate template;
 	private final Config conf;
-	private final ObjectMapper mapper = new ObjectMapper();
 
 	public <T> T get(final String msgId, final Class<T> clazz, final String indexName) {
 		return template.get(msgId, clazz, IndexCoordinates.of(indexName));
@@ -196,7 +195,7 @@ public class IndexService {
 		StopWatch sw = DateUtils.start();
 		try {
 			if (indexName == null) {
-				throw ExFactory.ex(IndexerException::new, ErrorCode.INDEX_NAME_NULL, Map.of("index", "null", "size", getDataByteSize(data)));
+				throw ExFactory.ex(IndexerException::new, ErrorCode.INDEX_NAME_NULL, Map.of("index", "null"));
 			}
 			if (data == null) {
 				throw ExFactory.ex(IndexerException::new, ErrorCode.INDEX_DATA_NULL, Map.of("index", indexName, "data", "null"));
@@ -209,18 +208,10 @@ public class IndexService {
 			if (refused) {
 				throw ExFactory.ex(IndexerException::new, ErrorCode.INDEX_CONNECT_FAIL, Map.of("host", conf.getOpensearchRestUris()));
 			} else {
-				throw ExFactory.ex(IndexerException::new, ErrorCode.INDEX_SAVE_FAIL, Map.of("index", Optional.ofNullable(indexName), "size", getDataByteSize(data)), e);
+				throw ExFactory.ex(IndexerException::new, ErrorCode.INDEX_SAVE_FAIL, Map.of("index", Optional.ofNullable(indexName)), e);
 			}
 		}
-		log.info("MG_INDEX | {} | SIZE:{} | {}", indexName, Common.convertFileSize(getDataByteSize(data)), DateUtils.stop(sw));
-	}
-
-	private int getDataByteSize(Object data) {
-		try {
-			return mapper.writeValueAsBytes(data).length;
-		} catch (Exception e) {
-			return -1;
-		}
+		log.info("MG_INDEX | {} | {}", indexName, DateUtils.stop(sw));
 	}
 
 	/**

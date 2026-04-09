@@ -19,10 +19,29 @@ import java.util.List;
 public class ReasonAnalysis {
 	private final Config conf;
 
+	/**
+	 * 샘플 메시지
+	 * [WMAIL]
+	 * CTIME : 2026/03/13 19:31:34
+	 * SOURCEIP : 1.225.49.111
+	 * DESTINATIONIP : 172.64.155.209
+	 * SOURCEPORT : 65379
+	 * DESTINATIONPORT : 443
+	 * HOST : chatgpt.com
+	 * URL : /backend-api/f/conversation
+	 * PROTOCOL : https
+	 * METHOD : POST
+	 * STYPE : IGP
+	 * ACTION : BLOCK
+	 * REASON :  보안 정책 안내\n\n⚠️ 내부 보안 정책에 의해 제한된 내용이 포함되어 답변이 중단되었습니다.\n 해당 내용을 제외한 후 다시 질문해 주세요.
+	 * DETECTIONS : 3;3;MDEqKioqKioqNjc=
+	 */
 	/* =========================
 	 * 차단인 경우 사유가 들어온다.
+	 * id : 1~8 개인정보, 9~ 이상은 키워드
+	 * 개인정보 id 는 getId 메소드 참고
 	 * 1;2;abced==,3;2;abced==,5;2;abced==,5;2;abced==,5;2;abced==,5;2;abced==,5;2;abced==,2;2;abced==,8;3;abced==,6;2;abced==,9;3;abced==
-	 * id, confidence, detectStr(base54)
+	 * id, confidence, detectStr(base64)
 	 * ========================= */
 	public void setReason(final ScanData data) {
 		MSGData msg = data.getMsgData();

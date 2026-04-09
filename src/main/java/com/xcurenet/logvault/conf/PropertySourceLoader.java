@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class PropertySourceLoader implements EnvironmentPostProcessor, Ordered {
 	private final Log log;
-	private static final String QUERY = "SELECT CONF_ID, NVL(VAL, DEFAULT_VAL) AS VAL FROM UI_CONF WHERE APP_CD = ? AND USE_YN =?";
+	private static final String QUERY = "SELECT CONF_ID, NVL(VAL, DEFAULT_VAL) AS VAL FROM UI_CONF WHERE APP_CD = ? AND USE_YN =? UNION ALL SELECT CONF_ID, NVL(VAL, DEFAULT_VAL) AS VAL FROM UI_CONF WHERE APP_CD = 'UI' AND USE_YN ='Y' AND CONF_ID = 'user.identification.mode'";
 
 	public PropertySourceLoader(DeferredLogFactory logFactory) {
 		this.log = logFactory.getLog(PropertySourceLoader.class);

@@ -34,8 +34,8 @@ public class TaskExecutorsConfig {
 			return t;
 		};
 		ex.setThreadFactory(threadFactory);
-		ex.setCorePoolSize(conf.getTaskQueueWorkersThreads());
-		ex.setMaxPoolSize(conf.getTaskQueueWorkersThreads());
+		ex.setCorePoolSize(conf.getTaskQueueOcrThreads());
+		ex.setMaxPoolSize(conf.getTaskQueueOcrThreads());
 		ex.setQueueCapacity(50);
 		ex.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
 		ex.initialize();
@@ -52,8 +52,8 @@ public class TaskExecutorsConfig {
 			return t;
 		};
 		ex.setThreadFactory(threadFactory);
-		ex.setCorePoolSize(conf.getTaskQueueWorkersThreads());
-		ex.setMaxPoolSize(conf.getTaskQueueWorkersThreads());
+		ex.setCorePoolSize(conf.getTaskQueueMlThreads());
+		ex.setMaxPoolSize(conf.getTaskQueueMlThreads());
 		ex.setQueueCapacity(50);
 		ex.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
 		ex.initialize();

@@ -3,6 +3,7 @@ package com.xcurenet.logvault.conf;
 import com.xcurenet.common.Constants;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.crypto.Crypto;
+import com.xcurenet.logvault.module.util.IdentificationMode;
 import lombok.Data;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Value;
@@ -65,6 +66,10 @@ public class Config {
 
 	@Value("${spring.opensearch.rest.uris}")
 	private String opensearchRestUris;
+
+
+	@Value("${user.identification.mode:IP}") //인사정보 탐지 기준 (IP, PORT)
+	private IdentificationMode userIdentificationMode;
 
 	@Value("${file.system.type:local}") //파일 시스템 유형 - 운영중 설정 변경 불가 (재시작필요)
 	private String fileSystemType;
@@ -308,8 +313,11 @@ public class Config {
 	@Value("${task.queue.workers.capacity:50}") //후 처리 큐 capacity
 	private int taskQueueWorkersCapacity;
 
-	@Value("${task.queue.workers.threads:10}") //후 처리 쓰레드 수
-	private int taskQueueWorkersThreads;
+	@Value("${task.queue.ocr.threads:4}") //OCR 후 처리 동시 실행 수
+	private int taskQueueOcrThreads;
+
+	@Value("${task.queue.ml.threads:8}") //ML 후 처리 동시 실행 수
+	private int taskQueueMlThreads;
 
 	@Value("${task.queue.scheduler.fetch-size:50}") //후 처리 시 한번에 MariaDB에서 불러올 건수
 	private int taskQueueSchedulerFetchSize;

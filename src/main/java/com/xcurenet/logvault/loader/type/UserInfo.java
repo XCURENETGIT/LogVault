@@ -36,11 +36,15 @@ public class UserInfo implements Serializable {
 
 	private String ip;
 
+	private String port;
+
 	private String email;
 
 	private final List<String> emails = new ArrayList<>();
 
 	private final List<IP> ips = new ArrayList<>();
+
+	private final List<Integer> ports = new ArrayList<>();
 
 	public void addEmail(final String email) {
 		final String trimEmail = StringUtils.trimToNull(email);
@@ -54,4 +58,10 @@ public class UserInfo implements Serializable {
 	public void addIp(final IP ip) {
 		ips.add(ip);
 	}
+
+	public void addPort(final int port) {
+		ports.add(port);
+	}
+
+
 }

@@ -208,6 +208,9 @@ public class EmassDoc {
 		@Field("ip")
 		private String ip;
 
+		@Field("proxy_port")
+		private int proxyPort;
+
 		@Field("id")
 		private String id;
 

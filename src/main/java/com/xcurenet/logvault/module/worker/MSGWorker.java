@@ -16,6 +16,7 @@ import com.xcurenet.logvault.exception.ParsingException;
 import com.xcurenet.logvault.loader.type.UserInfo;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.module.util.ActionType;
+import com.xcurenet.logvault.module.util.IdentificationMode;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FilenameUtils;
@@ -99,6 +100,10 @@ public class MSGWorker extends AbstractWorker {
 		EmassDoc.User user = new EmassDoc.User();
 		user.setIp(data.getMsgData().getSourceIp().toCanonicalAddr());
 		try {
+			if (conf.getUserIdentificationMode() == IdentificationMode.PORT && Common.isNumeric(data.getFileNameInfo().getDeviceName())) {
+				user.setProxyPort(Common.nvz(data.getFileNameInfo().getDeviceName()));
+			}
+
 			UserInfo info = insaManager.getUser(data);
 			if (info != null) {
 				user.setId(info.getUserId());

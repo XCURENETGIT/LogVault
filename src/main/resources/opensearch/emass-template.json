@@ -260,6 +260,9 @@
 						},
 						"jikgub_name": {
 							"type": "keyword"
+						},
+						"proxy_port": {
+							"type": "integer"
 						}
 					}
 				},

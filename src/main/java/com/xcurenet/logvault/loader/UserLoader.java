@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 @Log4j2
 @Service
@@ -35,43 +36,54 @@ public class UserLoader {
 
 		Map<String, UserInfo> newMapID = new HashMap<>();
 		Map<String, UserInfo> newMapIP = new HashMap<>();
+		Map<Integer, UserInfo> newMapPort = new HashMap<>();
 		for (UserInfo user : users) {
 			log.debug("INFO_LOAD | User Info: {}", user);
 			if (user.getUserId() != null) {
 				newMapID.put(user.getUserId().toLowerCase(), user);
 			}
 
-			/*
-			 * IP 처리
-			 */
-			String[] ips = Common.toArray(user.getIp(), ",");
-			for (String ipStr : ips) {
-				if (ipStr == null || Common.isEmpty(ipStr)) {
-					continue;
-				}
-
-				try {
-					IP ip = new IP(ipStr.trim());
-					user.addIp(ip);
-					newMapIP.put(ip.toHexString(), user);
-					log.debug("INFO_LOAD | IP: {}", ip);
-				} catch (IOException e) {
-					log.warn("INFO_LOAD | ip error: user:{}, input:{} message:{}", user.getName(), ipStr, e.getMessage());
-				}
-			}
-
-			/*
-			 * EMAIL 처리
-			 */
-			String[] emails = Common.toArray(user.getEmail(), ",");
-			for (String emailStr : emails) {
-				if (emailStr == null || Common.isEmpty(emailStr)) {
-					continue;
-				}
-				user.addEmail(emailStr);
-			}
+			loadIps(user, newMapIP);
+			loadPorts(user, newMapPort);
+			loadEmails(user);
 		}
-		data.replaceAll(newMapID, newMapIP);
-		log.info("INFO_LOAD COMPLETE | idSize={} ipSize={}", newMapID.size(), newMapIP.size());
+		data.replaceAll(newMapID, newMapIP, newMapPort);
+		log.info("INFO_LOAD COMPLETE | idSize={} ipSize={} portSize={}", newMapID.size(), newMapIP.size(), newMapPort.size());
+	}
+
+	private void loadIps(final UserInfo user, final Map<String, UserInfo> newMapIP) {
+		forEachToken(user.getIp(), ipStr -> {
+			try {
+				IP ip = new IP(ipStr);
+				user.addIp(ip);
+				newMapIP.put(ip.toHexString(), user);
+				log.debug("INFO_LOAD | IP: {}", ip);
+			} catch (IOException e) {
+				log.warn("INFO_LOAD | ip error: user:{}, input:{} message:{}", user.getName(), ipStr, e.getMessage());
+			}
+		});
+	}
+
+	private void loadPorts(final UserInfo user, final Map<Integer, UserInfo> newMapPort) {
+		forEachToken(user.getPort(), portStr -> {
+			int port = Common.nvz(portStr);
+			user.addPort(port);
+			newMapPort.put(port, user);
+			log.debug("INFO_LOAD | PORT: {}", port);
+		});
+	}
+
+	private void loadEmails(final UserInfo user) {
+		forEachToken(user.getEmail(), user::addEmail);
+	}
+
+	private void forEachToken(final String value, final Consumer<String> action) {
+		String[] tokens = Common.toArray(value, ",");
+		for (String token : tokens) {
+			if (token == null || Common.isEmpty(token)) {
+				continue;
+			}
+			action.accept(token.trim());
+		}
 	}
 }

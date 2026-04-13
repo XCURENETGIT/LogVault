@@ -20,6 +20,7 @@ public class AnalysisService {
 	private final CheckWorkingDay checkWorkingDay;
 	private final ReasonAnalysis reasonAnalysis;
 	private final GuardRailAnalysis guardRailAnalysis;
+	private final AnomalyScoreCalculator anomalyScoreCalculator;
 
 	/**
 	 * 분석 파이프라인을 실행한다.
@@ -95,6 +96,13 @@ public class AnalysisService {
 			userAgentAnalysis.detect(data);
 		} catch (Exception e) {
 			log.warn("ANALYSE_USERAGENT | {}", e.getMessage(), e);
+		}
+
+		// 이상행위 점수 계산 (모든 분석 완료 후 최종 단계에서 실행)
+		try {
+			anomalyScoreCalculator.calculate(data);
+		} catch (Exception e) {
+			log.warn("ANALYSE_ANOMALY_SCORE | {}", e.getMessage(), e);
 		}
 	}
 }

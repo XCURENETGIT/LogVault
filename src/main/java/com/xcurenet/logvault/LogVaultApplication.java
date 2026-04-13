@@ -12,6 +12,7 @@ import jakarta.annotation.PreDestroy;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.ibatis.annotations.Mapper;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -40,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RequiredArgsConstructor
 @EnableTransactionManagement
 @ComponentScan(basePackages = "com.xcurenet")
-@MapperScan("com.xcurenet")
+@MapperScan(basePackages = "com.xcurenet", annotationClass = Mapper.class)
 public class LogVaultApplication implements CommandLineRunner {
 
 	private final ApplicationContext context;

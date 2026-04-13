@@ -30,4 +30,8 @@ public class KeywordVO {
 	@JsonProperty("useYn")
 	private String useYn;
 
+	@Field("keywordCategorySeq")
+	@JsonProperty("keywordCategorySeq")
+	private String keywordCategorySeq;
+
 }

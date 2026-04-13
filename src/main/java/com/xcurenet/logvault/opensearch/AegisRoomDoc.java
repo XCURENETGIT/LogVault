@@ -55,4 +55,7 @@ public class AegisRoomDoc {
 
 	@Field("keyword_info")
 	private EmassDoc.KeywordInfo keywordInfo;
+
+	@Field("anomaly_score")
+	private EmassDoc.AnomalyScore anomalyScore;
 }

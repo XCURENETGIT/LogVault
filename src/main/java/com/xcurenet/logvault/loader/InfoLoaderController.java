@@ -55,4 +55,11 @@ public class InfoLoaderController {
 		infoLoader.workDayLoad();
 		return ResponseEntity.ok().build();
 	}
+
+	@ResponseBody
+	@GetMapping(value = "/insa/anomaly-score/reload")
+	public ResponseEntity<Object> anomalyScoreReload() {
+		infoLoader.anomalyScoreLoad();
+		return ResponseEntity.ok().build();
+	}
 }

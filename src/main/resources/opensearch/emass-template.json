@@ -472,6 +472,46 @@
 				"keyword_total": {
 					"type": "integer"
 				},
+				"anomaly_score": {
+					"properties": {
+						"guardrail": {
+							"properties": {
+								"score": { "type": "integer" },
+								"count": { "type": "integer" }
+							}
+						},
+						"keyword": {
+							"properties": {
+								"score": { "type": "integer" },
+								"count": { "type": "integer" }
+							}
+						},
+						"pattern": {
+							"properties": {
+								"score": { "type": "integer" },
+								"count": { "type": "integer" }
+							}
+						},
+						"code_exist": {
+							"properties": {
+								"score": { "type": "integer" },
+								"count": { "type": "integer" }
+							}
+						},
+						"similarity": {
+							"properties": {
+								"score": { "type": "integer" },
+								"count": { "type": "integer" }
+							}
+						},
+						"total": {
+							"properties": {
+								"score": { "type": "integer" },
+								"count": { "type": "integer" }
+							}
+						}
+					}
+				},
 				"keyword_info": {
 					"properties": {
 						"exist": {

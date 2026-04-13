@@ -244,14 +244,13 @@ public class PrivacyAIAnalysis {
 				Pii.PiiData data = res.getData();
 				Map<String, List<Pii.MatchItem>> result = new LinkedHashMap<>();
 				result.put("SN", data.getSnList());
+				result.put("SSN", data.getSsnList());
 				result.put("DN", data.getDnList());
-				result.put("AN", data.getAnList());
 				result.put("PN", data.getPnList());
 				result.put("MN", data.getMnList());
 				result.put("BN", data.getBnList());
 				result.put("EML", data.getEmlList());
-				result.put("IP", data.getIpList());
-				result.put("SSN", data.getSsnList());
+				result.put("CN", data.getCnList());
 				log.debug("ML_PRIVACY_GRPC_RESPONSE | TEXT.LENGTH:{} | META:ruleset={}, version={}, updatedAt={}", text.length(), res.getMeta().getRulesetName(), res.getMeta().getRulesetVersion(), res.getMeta().getRulesetUpdatedAt());
 				return result;
 			} catch (StatusRuntimeException e) {

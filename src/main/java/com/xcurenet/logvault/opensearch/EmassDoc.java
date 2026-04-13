@@ -2,6 +2,7 @@ package com.xcurenet.logvault.opensearch;
 
 import com.alibaba.fastjson2.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.xcurenet.logvault.module.util.ActionType;
 import lombok.Builder;
@@ -96,6 +97,9 @@ public class EmassDoc {
 
 	@Field("keyword_info")
 	private KeywordInfo keywordInfo;
+
+	@Field("anomaly_score")
+	private AnomalyScore anomalyScore;
 
 	@Data
 	@Builder
@@ -412,5 +416,54 @@ public class EmassDoc {
 		private int sheetHiddenTotal;
 		@Field("hidden_sheet_names")
 		private List<String> hiddenSheetNames;
+	}
+
+	@Data
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	public static class AnomalyScore {
+		@Field("guardrail")
+		private ScoreEntry guardrail = new ScoreEntry();
+		@Field("keyword")
+		private ScoreEntry keyword = new ScoreEntry();
+		@Field("pattern")
+		private ScoreEntry pattern = new ScoreEntry();
+		@Field("code_exist")
+		private ScoreEntry codeExist = new ScoreEntry();
+		@Field("similarity")
+		private ScoreEntry similarity = new ScoreEntry();
+		@Field("total")
+		private ScoreEntry total = new ScoreEntry();
+
+		public void calculateTotal() {
+			this.total.setScore(guardrail.getScore() + keyword.getScore() + pattern.getScore()
+					+ codeExist.getScore() + similarity.getScore());
+			this.total.setCount(guardrail.getCount() + keyword.getCount() + pattern.getCount()
+					+ codeExist.getCount() + similarity.getCount());
+			// score/count 가 모두 0인 항목은 null 처리하여 인덱싱에서 제외
+			guardrail = nullIfEmpty(guardrail);
+			keyword = nullIfEmpty(keyword);
+			pattern = nullIfEmpty(pattern);
+			codeExist = nullIfEmpty(codeExist);
+			similarity = nullIfEmpty(similarity);
+		}
+
+		private static ScoreEntry nullIfEmpty(ScoreEntry entry) {
+			return (entry == null || (entry.getScore() == 0 && entry.getCount() == 0)) ? null : entry;
+		}
+
+		@Data
+		public static class ScoreEntry {
+			@Field("score")
+			private int score;
+			@Field("count")
+			private int count;
+
+			public void add(int scoreValue) {
+				if (scoreValue > 0) {
+					this.score += scoreValue;
+					this.count++;
+				}
+			}
+		}
 	}
 }

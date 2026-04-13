@@ -19,7 +19,7 @@ import com.xcurenet.logvault.module.log.LogService;
 import com.xcurenet.logvault.module.scanner.FileScanner;
 import com.xcurenet.logvault.module.statics.StatService;
 import com.xcurenet.logvault.module.statics.ThroughputMetrics;
-import com.xcurenet.logvault.module.task.service.TaskService;
+import com.xcurenet.logvault.module.task.pipeline.PipelineManager;
 import com.xcurenet.logvault.module.util.InsaManager;
 import com.xcurenet.logvault.opensearch.IndexService;
 import lombok.Data;
@@ -53,7 +53,7 @@ public abstract class AbstractWorker implements Runnable {
 	protected final IndexService indexService;
 	protected final FilterService filterService;
 	protected final AlertService alertService;
-	protected final TaskService taskService;
+	protected final PipelineManager pipelineManager;
 	protected final ThroughputMetrics metrics;
 	protected final StatService statService;
 
@@ -69,7 +69,7 @@ public abstract class AbstractWorker implements Runnable {
 		this.metrics = context.getBean(ThroughputMetrics.class);
 		this.filterService = context.getBean(FilterService.class);
 		this.alertService = context.getBean(AlertService.class);
-		this.taskService = context.getBean(TaskService.class);
+		this.pipelineManager = context.getBean(PipelineManager.class);
 		this.indexService = context.getBean(IndexService.class);
 		this.statService = context.getBean(StatService.class);
 	}

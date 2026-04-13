@@ -145,7 +145,7 @@ public class MSGWorker extends AbstractWorker {
 
 	@Override
 	protected boolean task(ScanData data) {
-		return taskService.send(data);
+		return pipelineManager.send(data);
 	}
 
 	private void setService(MSGData msg, EmassDoc doc) {

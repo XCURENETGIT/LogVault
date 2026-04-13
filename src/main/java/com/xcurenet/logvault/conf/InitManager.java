@@ -2,7 +2,7 @@ package com.xcurenet.logvault.conf;
 
 import com.xcurenet.logvault.fs.FileProcessor;
 import com.xcurenet.logvault.loader.InfoLoader;
-import com.xcurenet.logvault.module.task.service.TaskDispatcherService;
+import com.xcurenet.logvault.module.task.pipeline.PipelineManager;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -17,7 +17,7 @@ public class InitManager {
 	private final OpenSearchInitializer openSearchInitializer;
 	private final FileProcessor fileProcessor;
 	private final InfoLoader infoLoader;
-	private final TaskDispatcherService taskDispatcherService;
+	private final PipelineManager pipelineManager;
 
 	@PostConstruct
 	private void init() throws Exception {
@@ -29,7 +29,7 @@ public class InitManager {
 		} catch (Exception e) {
 			log.error("Failed to initialize info loader", e);
 		}
-		taskDispatcherService.init();
+		pipelineManager.start();
 	}
 
 }

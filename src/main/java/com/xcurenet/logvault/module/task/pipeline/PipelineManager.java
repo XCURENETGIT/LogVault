@@ -198,7 +198,7 @@ public class PipelineManager {
 					break;
 				} catch (Exception e) {
 					if (m != null) {
-						log.error("TASK_FAIL | {} | {} | {}", m.getMsgId(), taskType, e.getMessage(), e);
+						log.error("TSK_FAIL | {} | {} | {}", m.getMsgId(), taskType, e.getMessage(), e);
 						repository.updateStatusFailed(m.getMsgId(), taskType, e.getMessage());
 					}
 				} finally {
@@ -212,11 +212,11 @@ public class PipelineManager {
 			EmassDoc doc = mapper.readValue(m.getData(), EmassDoc.class);
 
 			if (worker.isEnabled() && worker.isTarget(doc)) {
-				log.info("TASK_EXEC | {} | {}", m.getMsgId(), taskType);
+				log.info("TSK_EXEC | {} | {}", m.getMsgId(), taskType);
 				doc = worker.process(doc);
-				log.info("TASK_DONE | {} | {} | {}ms", m.getMsgId(), taskType, System.currentTimeMillis() - t0);
+				log.info("TSK_DONE | {} | {} | {}ms", m.getMsgId(), taskType, System.currentTimeMillis() - t0);
 			} else {
-				log.info("TASK_PASS | {} | {}", m.getMsgId(), taskType);
+				log.info("TSK_PASS | {} | {}", m.getMsgId(), taskType);
 			}
 
 			// 다음 Step
@@ -227,7 +227,7 @@ public class PipelineManager {
 				next.setTaskType(nextType);
 				next.setData(JSON.toJSONString(doc));
 				repository.insertMessage(next);
-				log.info("TASK_NEXT | {} | {} → {}", m.getMsgId(), taskType, nextType);
+				log.info("TSK_NEXT | {} | {} → {}", m.getMsgId(), taskType, nextType);
 			}
 
 			repository.deleteById(m.getMsgId(), taskType);

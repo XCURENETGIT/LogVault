@@ -162,13 +162,13 @@ public class OcrWorker implements PipelineWorker {
 	}
 
 	private String callOcr(InputStream in, String name) throws Exception {
-		if (Common.isEquals(conf.getOcrApiType(), "LC")) return ocrCPU(in, name);
-		if (Common.isEquals(conf.getOcrApiType(), "LG")) return ocrGPU(IOUtils.toByteArray(in));
-		if (Common.isEquals(conf.getOcrApiType(), "SY")) return ocrSynap(in, name);
+		if (Common.isOrEquals(conf.getOcrApiType(), "LC", "LG")) return xcn_ocr_version(in, name);
+		if (Common.isEquals(conf.getOcrApiType(), "LGX")) return tmp_gpu_ocr_version(IOUtils.toByteArray(in));
+		if (Common.isEquals(conf.getOcrApiType(), "SY")) return synap_ocr_version(in, name);
 		return null;
 	}
 
-	private String ocrCPU(InputStream in, String name) throws IOException {
+	private String xcn_ocr_version(InputStream in, String name) throws IOException {
 		ByteArrayResource res = new ByteArrayResource(in.readAllBytes()) {
 			@Override
 			public String getFilename() {
@@ -186,7 +186,7 @@ public class OcrWorker implements PipelineWorker {
 		return j != null ? j.getString("text") : null;
 	}
 
-	private String ocrGPU(byte[] bytes) throws IOException {
+	private String tmp_gpu_ocr_version(byte[] bytes) throws IOException {
 		String b64 = Base64.getEncoder().encodeToString(bytes);
 		Map<String, Object> p = new HashMap<>();
 		p.put("model", conf.getOcrApiLocalGpuModel());
@@ -198,10 +198,10 @@ public class OcrWorker implements PipelineWorker {
 		ResponseEntity<String> r = restTemplate.postForEntity(String.format(URL_FMT, conf.getOcrApiHost(), conf.getOcrApiPort()) + "/v1/chat/completions", new HttpEntity<>(JSON.toJSONString(p), h), String.class);
 		if (!r.getStatusCode().is2xxSuccessful()) throw new IOException("HTTP " + r.getStatusCode());
 		JSONObject j = JSONObject.parseObject(r.getBody());
-		return j.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
+		return j != null ? j.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content") : null;
 	}
 
-	private String ocrSynap(InputStream in, String name) throws IOException {
+	private String synap_ocr_version(InputStream in, String name) throws IOException {
 		String url = String.format(URL_FMT, conf.getOcrApiHost(), conf.getOcrApiPort()) + "/sdk/ocr";
 		Connection.Response r = Jsoup.connect(url).timeout(conf.getOcrTimeoutSec() * 1000).method(Connection.Method.POST).ignoreContentType(true).data("api_key", conf.getOcrApiKey()).data("type", "upload").data("textout", "true").data("boxes_type", "line").data("image", name, in).execute();
 		return JSONObject.parseObject(r.body()).getJSONObject("result").getString("full_text");

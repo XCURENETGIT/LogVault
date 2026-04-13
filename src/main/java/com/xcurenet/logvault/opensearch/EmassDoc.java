@@ -97,6 +97,9 @@ public class EmassDoc {
 	@Field("keyword_info")
 	private KeywordInfo keywordInfo;
 
+	@Field("anomaly_score")
+	private AnomalyScore anomalyScore;
+
 	@Data
 	@Builder
 	public static class Day {
@@ -412,5 +415,41 @@ public class EmassDoc {
 		private int sheetHiddenTotal;
 		@Field("hidden_sheet_names")
 		private List<String> hiddenSheetNames;
+	}
+
+	@Data
+	public static class AnomalyScore {
+		@Field("guardrail")
+		private ScoreEntry guardrail = new ScoreEntry();
+		@Field("keyword")
+		private ScoreEntry keyword = new ScoreEntry();
+		@Field("pattern")
+		private ScoreEntry pattern = new ScoreEntry();
+		@Field("code_exist")
+		private ScoreEntry codeExist = new ScoreEntry();
+		@Field("similarity")
+		private ScoreEntry similarity = new ScoreEntry();
+		@Field("total")
+		private int total;
+
+		public void calculateTotal() {
+			this.total = guardrail.getScore() + keyword.getScore() + pattern.getScore()
+					+ codeExist.getScore() + similarity.getScore();
+		}
+
+		@Data
+		public static class ScoreEntry {
+			@Field("score")
+			private int score;
+			@Field("count")
+			private int count;
+
+			public void add(int scoreValue) {
+				if (scoreValue > 0) {
+					this.score += scoreValue;
+					this.count++;
+				}
+			}
+		}
 	}
 }

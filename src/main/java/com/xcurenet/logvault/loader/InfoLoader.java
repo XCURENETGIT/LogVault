@@ -17,6 +17,7 @@ public class InfoLoader {
 	private final PatternLoader patternLoader;
 	private final ServiceLoader serviceLoader;
 	private final WorkDayLoader workDayLoader;
+	private final AnomalyScoreLoader anomalyScoreLoader;
 
 	public void init() {
 		StopWatch sw = DateUtils.start();
@@ -27,6 +28,7 @@ public class InfoLoader {
 		patternLoad();
 		serviceLoad();
 		workDayLoad();
+		anomalyScoreLoad();
 
 		log.info("INFO_LOAD | END | {}\n", DateUtils.stop(sw));
 	}
@@ -63,6 +65,13 @@ public class InfoLoader {
 		log.debug("INFO_LOAD | WORKDAY START");
 		synchronized (this) {
 			workDayLoader.load();
+		}
+	}
+
+	public void anomalyScoreLoad() {
+		log.debug("INFO_LOAD | AnomalyScore START");
+		synchronized (this) {
+			anomalyScoreLoader.load();
 		}
 	}
 }

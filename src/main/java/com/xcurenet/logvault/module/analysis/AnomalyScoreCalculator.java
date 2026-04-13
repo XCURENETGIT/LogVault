@@ -45,17 +45,21 @@ public class AnomalyScoreCalculator {
         calcGuardrail(doc, score.getGuardrail());
         calcKeyword(doc, score.getKeyword());
         calcPattern(doc, score.getPattern(), score.getCodeExist(), score.getSimilarity());
-        score.calculateTotal();
 
-        doc.setAnomalyScore(score);
-        log.debug("ANOMALY_SCORE | msgid={} | guardrail={}({}) keyword={}({}) pattern={}({}) code_exist={}({}) similarity={}({}) total={}",
+        log.debug("ANOMALY_SCORE | msgid={} | guardrail={}({}) keyword={}({}) pattern={}({}) code_exist={}({}) similarity={}({})",
                 doc.getMsgid(),
                 score.getGuardrail().getScore(), score.getGuardrail().getCount(),
                 score.getKeyword().getScore(), score.getKeyword().getCount(),
                 score.getPattern().getScore(), score.getPattern().getCount(),
                 score.getCodeExist().getScore(), score.getCodeExist().getCount(),
-                score.getSimilarity().getScore(), score.getSimilarity().getCount(),
-                score.getTotal());
+                score.getSimilarity().getScore(), score.getSimilarity().getCount());
+
+        score.calculateTotal();
+
+        log.debug("ANOMALY_SCORE | msgid={} | total={}({})",
+                doc.getMsgid(), score.getTotal().getScore(), score.getTotal().getCount());
+
+        doc.setAnomalyScore(score);
     }
 
 

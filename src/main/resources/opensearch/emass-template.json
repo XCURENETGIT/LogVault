@@ -505,7 +505,10 @@
 							}
 						},
 						"total": {
-							"type": "integer"
+							"properties": {
+								"score": { "type": "integer" },
+								"count": { "type": "integer" }
+							}
 						}
 					}
 				},

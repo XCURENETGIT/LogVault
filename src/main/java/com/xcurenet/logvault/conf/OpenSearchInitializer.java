@@ -31,6 +31,9 @@ public class OpenSearchInitializer {
 	private static final String ROOM_TEMPLATE_NAME = "aegis-room-template";
 	private static final String ROOM_TEMPLATE_PATH = "opensearch/aegis-room-template.json";
 
+	private static final String RAG_DOCS_TEMPLATE_NAME = "rag-docs-template";
+	private static final String RAG_DOCS_TEMPLATE_PATH = "opensearch/rag-docs-template.json";
+
 	/**
 	 * OpenSearch 초기화 진입점
 	 */
@@ -49,6 +52,9 @@ public class OpenSearchInitializer {
 			Common.sleep(2000);
 
 			applyTemplate(loadJson(TEMPLATE_PATH), TEMPLATE_NAME);
+			Common.sleep(2000);
+
+			applyTemplate(loadJson(RAG_DOCS_TEMPLATE_PATH), RAG_DOCS_TEMPLATE_NAME);
 			Common.sleep(2000);
 
 			log.info("INIT_OPENSEARCH | END | {}", DateUtils.stop(sw));

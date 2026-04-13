@@ -1,0 +1,41 @@
+{
+  "index_patterns": ["rag-docs"],
+  "template": {
+    "settings": {
+      "index.knn": true,
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "refresh_interval": "10s",
+      "max_result_window": 5000,
+      "index.codec": "best_compression"
+    },
+    "mappings": {
+      "properties": {
+        "doc_id": { "type": "keyword" },
+        "doc_title": {
+          "type": "text",
+          "fields": {
+            "raw": { "type": "keyword" }
+          }
+        },
+        "doc_filename": { "type": "keyword" },
+        "chunk_id": { "type": "keyword" },
+        "chunk_text": { "type": "text" },
+        "created_at": { "type": "date" },
+        "embedding": {
+          "type": "knn_vector",
+          "dimension": 1024,
+          "method": {
+            "name": "hnsw",
+            "engine": "faiss",
+            "space_type": "cosinesimil",
+            "parameters": {
+              "ef_construction": 128,
+              "m": 16
+            }
+          }
+        }
+      }
+    }
+  }
+}

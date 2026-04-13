@@ -128,7 +128,7 @@ public abstract class AbstractWorker implements Runnable {
 					while (retryCnt <= 3) {
 						try {
 							boolean postProcessingTarget = task(data); //OCR 및 분석 관련 TASK
-							if (!postProcessingTarget) { // 후 처리 대상이 아닌 경우만 즉각 알림 전송
+							if (!postProcessingTarget) { // 후 처리 대상이 아닌 경우만 즉각 알림 전송(수신메시지, 차단메시지)
 								alert(data);
 							}
 							break;

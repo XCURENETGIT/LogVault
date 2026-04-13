@@ -197,8 +197,9 @@ public class PipelineManager {
 					Thread.currentThread().interrupt();
 					break;
 				} catch (Exception e) {
+					// DATA 파싱 자체가 실패한 경우 (복구 불가)
 					if (m != null) {
-						log.error("TSK_FAIL | {} | {} | {}", m.getMsgId(), taskType, e.getMessage(), e);
+						log.error("TSK_FATAL | {} | {} | {}", m.getMsgId(), taskType, e.getMessage(), e);
 						repository.updateStatusFailed(m.getMsgId(), taskType, e.getMessage());
 					}
 				} finally {
@@ -211,26 +212,59 @@ public class PipelineManager {
 			long t0 = System.currentTimeMillis();
 			EmassDoc doc = mapper.readValue(m.getData(), EmassDoc.class);
 
+			// ① Worker 처리 — 실패해도 다음 Step으로 반드시 이동
 			if (worker.isEnabled() && worker.isTarget(doc)) {
-				log.info("TSK_EXEC | {} | {}", m.getMsgId(), taskType);
-				doc = worker.process(doc);
-				log.info("TSK_DONE | {} | {} | {}ms", m.getMsgId(), taskType, System.currentTimeMillis() - t0);
+				try {
+					log.info("TSK_EXEC | {} | {}", m.getMsgId(), taskType);
+					doc = worker.process(doc);
+					log.info("TSK_DONE | {} | {} | {}ms", m.getMsgId(), taskType, System.currentTimeMillis() - t0);
+				} catch (Exception e) {
+					log.error("TSK_FAIL | {} | {} | {}ms | {}", m.getMsgId(), taskType, System.currentTimeMillis() - t0, e.getMessage(), e);
+					// 실패해도 원본 doc으로 다음 Step 진행
+				}
 			} else {
 				log.info("TSK_PASS | {} | {}", m.getMsgId(), taskType);
 			}
 
-			// 다음 Step
+			// ② 다음 큐 등록 — 재시도 포함 (실패 시 메시지 유실 방지)
 			String nextType = next(taskType);
 			if (nextType != null) {
-				TaskMessage next = new TaskMessage();
-				next.setMsgId(m.getMsgId());
-				next.setTaskType(nextType);
-				next.setData(JSON.toJSONString(doc));
-				repository.insertMessage(next);
-				log.info("TSK_NEXT | {} | {} → {}", m.getMsgId(), taskType, nextType);
+				enqueueNext(m.getMsgId(), nextType, doc);
 			}
 
-			repository.deleteById(m.getMsgId(), taskType);
+			// ③ 현재 레코드 삭제 (실패해도 재시작 시 updateStatusPending으로 복구됨)
+			try {
+				repository.deleteById(m.getMsgId(), taskType);
+			} catch (Exception e) {
+				log.warn("TSK_DEL_FAIL | {} | {} | {}", m.getMsgId(), taskType, e.getMessage());
+			}
+		}
+
+		/**
+		 * 다음 큐에 등록. 3회 재시도.
+		 * <p>실패 시 메시지가 유실되므로 반드시 성공시켜야 한다.</p>
+		 */
+		private void enqueueNext(String msgId, String nextType, EmassDoc doc) {
+			TaskMessage next = new TaskMessage();
+			next.setMsgId(msgId);
+			next.setTaskType(nextType);
+			next.setData(JSON.toJSONString(doc));
+
+			for (int attempt = 1; attempt <= 3; attempt++) {
+				try {
+					repository.insertMessage(next);
+					log.info("TSK_NEXT | {} | {} → {}", msgId, taskType, nextType);
+					return;
+				} catch (Exception e) {
+					log.error("TSK_NEXT_FAIL | {} | {} → {} | attempt={} | {}", msgId, taskType, nextType, attempt, e.getMessage());
+					if (attempt < 3) {
+						try { Thread.sleep(1000L * attempt); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); break; }
+					}
+				}
+			}
+			// 3회 실패 시 현재 레코드를 FAILED로 마킹 (수동 조치 필요)
+			log.error("TSK_NEXT_GIVEUP | {} | {} → {} | 3회 재시도 실패, 수동 조치 필요", msgId, taskType, nextType);
+			repository.updateStatusFailed(msgId, taskType, "Failed to enqueue next: " + nextType);
 		}
 	}
 }

@@ -319,8 +319,14 @@ public class Config {
 	@Value("${task.queue.ml.threads:8}") //ML 후 처리 동시 실행 수
 	private int taskQueueMlThreads;
 
+	@Value("${task.queue.alert.threads:2}") //Alert 후 처리 동시 실행 수
+	private int taskQueueAlertThreads;
+
 	@Value("${task.queue.scheduler.fetch-size:50}") //후 처리 시 한번에 MariaDB에서 불러올 건수
 	private int taskQueueSchedulerFetchSize;
+
+	@Value("${task.queue.scheduler.interval-ms:2000}") //후 처리 큐 스캔 주기 (ms)
+	private long taskQueueSchedulerIntervalMs;
 
 	@Value("${thumbnail.retention.days:90}") //썸네일 이미지 보관 (MariaDB)
 	private int thumbnailRetentionDays;

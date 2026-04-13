@@ -1,5 +1,7 @@
 {
-  "index_patterns": ["rag-docs"],
+  "index_patterns": [
+    "rag_chunks_v1"
+  ],
   "template": {
     "settings": {
       "index.knn": true,
@@ -11,18 +13,78 @@
     },
     "mappings": {
       "properties": {
-        "doc_id": { "type": "keyword" },
-        "doc_title": {
-          "type": "text",
-          "fields": {
-            "raw": { "type": "keyword" }
+        "chunk_id": {
+          "type": "keyword"
+        },
+        "doc_id": {
+          "type": "keyword"
+        },
+        "created_at": {
+          "type": "date",
+          "format": "epoch_millis"
+        },
+        "metadata": {
+          "properties": {
+            "ext": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "file_name": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "filename": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "saved_name": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "source": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "tag": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            }
           }
         },
-        "doc_filename": { "type": "keyword" },
-        "chunk_id": { "type": "keyword" },
-        "chunk_text": { "type": "text" },
-        "created_at": { "type": "date" },
-        "embedding": {
+        "text": {
+          "type": "text"
+        },
+        "vector": {
           "type": "knn_vector",
           "dimension": 1024,
           "method": {

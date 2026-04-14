@@ -10,7 +10,6 @@ import com.xcurenet.logvault.module.task.service.TaskMessage;
 import com.xcurenet.logvault.module.task.service.TaskMessageRepository;
 import com.xcurenet.logvault.module.util.ActionType;
 import com.xcurenet.logvault.opensearch.EmassDoc;
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.log4j.Log4j2;
 import org.slf4j.MDC;
@@ -20,7 +19,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -199,7 +201,7 @@ public class PipelineManager {
 				} catch (Exception e) {
 					// DATA 파싱 자체가 실패한 경우 (복구 불가)
 					if (m != null) {
-						log.error("TSK_FATAL | {} | {} | {}", m.getMsgId(), taskType, e.getMessage(), e);
+						log.error("TSK_FATAL | {} | {}", taskType, e.getMessage(), e);
 						repository.updateStatusFailed(m.getMsgId(), taskType, e.getMessage());
 					}
 				} finally {
@@ -209,22 +211,19 @@ public class PipelineManager {
 		}
 
 		private void process(TaskMessage m) throws Exception {
-			long t0 = System.currentTimeMillis();
+			StopWatch sw = DateUtils.start();
 			EmassDoc doc = mapper.readValue(m.getData(), EmassDoc.class);
 
 			// ① Worker 처리 — 실패해도 다음 Step으로 반드시 이동
 			if (worker.isEnabled() && worker.isTarget(doc)) {
 				try {
-					log.info("TSK_EXEC | {} | {}", m.getMsgId(), taskType);
+					log.debug("TSK_EXEC | {}", taskType);
 					doc = worker.process(doc);
-					log.info("TSK_DONE | {} | {} | {}ms", m.getMsgId(), taskType, System.currentTimeMillis() - t0);
+					log.debug("TSK_DONE | {} | {}", taskType, DateUtils.stop(sw));
 				} catch (Exception e) {
-					log.error("TSK_FAIL | {} | {} | {}ms | {}", m.getMsgId(), taskType, System.currentTimeMillis() - t0, e.getMessage(), e);
-					// 실패해도 원본 doc으로 다음 Step 진행
+					log.error("TSK_FAIL | {} | {} | {}", taskType, DateUtils.stop(sw), e.getMessage(), e);
 				}
-			} else {
-				log.info("TSK_PASS | {} | {}", m.getMsgId(), taskType);
-			}
+			} else log.debug("TSK_PASS | {}", taskType);
 
 			// ② 다음 큐 등록 — 재시도 포함 (실패 시 메시지 유실 방지)
 			String nextType = next(taskType);
@@ -236,7 +235,7 @@ public class PipelineManager {
 			try {
 				repository.deleteById(m.getMsgId(), taskType);
 			} catch (Exception e) {
-				log.warn("TSK_DEL_FAIL | {} | {} | {}", m.getMsgId(), taskType, e.getMessage());
+				log.warn("TSK_DEL_FAIL | {} | {}", taskType, e.getMessage());
 			}
 		}
 
@@ -253,17 +252,22 @@ public class PipelineManager {
 			for (int attempt = 1; attempt <= 3; attempt++) {
 				try {
 					repository.insertMessage(next);
-					log.info("TSK_NEXT | {} | {} → {}", msgId, taskType, nextType);
+					log.debug("TSK_NEXT | {} → {}", taskType, nextType);
 					return;
 				} catch (Exception e) {
-					log.error("TSK_NEXT_FAIL | {} | {} → {} | attempt={} | {}", msgId, taskType, nextType, attempt, e.getMessage());
+					log.error("TSK_NEXT_FAIL | {} → {} | attempt={} | {}", taskType, nextType, attempt, e.getMessage());
 					if (attempt < 3) {
-						try { Thread.sleep(1000L * attempt); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); break; }
+						try {
+							Thread.sleep(1000L * attempt);
+						} catch (InterruptedException ie) {
+							Thread.currentThread().interrupt();
+							break;
+						}
 					}
 				}
 			}
 			// 3회 실패 시 현재 레코드를 FAILED로 마킹 (수동 조치 필요)
-			log.error("TSK_NEXT_GIVEUP | {} | {} → {} | 3회 재시도 실패, 수동 조치 필요", msgId, taskType, nextType);
+			log.error("TSK_NEXT_GIVEUP | {} → {} | 3회 재시도 실패, 수동 조치 필요", taskType, nextType);
 			repository.updateStatusFailed(msgId, taskType, "Failed to enqueue next: " + nextType);
 		}
 	}

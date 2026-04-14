@@ -78,7 +78,9 @@ public class OcrWorker implements PipelineWorker {
 	@Override
 	public boolean isTarget(EmassDoc doc) {
 		List<EmassDoc.Attach> att = doc.getAttach();
-		return att != null && att.stream().anyMatch(EmassDoc.Attach::isOcrTarget);
+		boolean flag = att != null && att.stream().anyMatch(EmassDoc.Attach::isOcrTarget);
+		log.info("OCR__NOT | ATTACH_COUNT:{} | TARGET_COUNT:{}", (att == null ? 0 : att.size()), flag ? att.stream().filter(EmassDoc.Attach::isOcrTarget).count() : 0);
+		return flag;
 	}
 
 	@Override

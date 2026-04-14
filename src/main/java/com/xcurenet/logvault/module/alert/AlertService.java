@@ -51,7 +51,10 @@ public class AlertService {
 
 			AlertInfo alertInfo = findAlertInfo(doc);
 			int total = alertInfo.getKeywordAlarmTotal() + alertInfo.getKeywordSyslogTotal() + alertInfo.getPrivacyAlarmTotal() + alertInfo.getPrivacySyslogTotal();
-			if (total <= 0) return;
+			if (total <= 0) {
+				log.info("ALT__NOT | KEYWORD_ALARM:{} | KEYWORD_SYSLOG:{} | PII_ALARM:{} | PII_SYSLOG:{}", alertInfo.getKeywordAlarmTotal(), alertInfo.getKeywordSyslogTotal(), alertInfo.getPrivacyAlarmTotal(), alertInfo.getPrivacySyslogTotal());
+				return;
+			}
 
 			AlertMessage message = new AlertMessage();
 			message.setMsgId(doc.getMsgid());

@@ -38,6 +38,9 @@ public class AegisRoomDoc {
 	@Field("svc")
 	private String svc;
 
+	@Field("svc3")
+	private String svc3;
+
 	@Field("recent_message")
 	private String recentMessage;
 

@@ -95,6 +95,9 @@
 				"svc": {
 					"type": "keyword"
 				},
+				"svc3": {
+				  "type": "keyword"
+				},
 				"recent_message" : {
 					"type": "text",
 					"analyzer": "index_analyzer",

@@ -104,7 +104,10 @@ public class AnomalyScoreCalculator {
         for (EmassDoc.KeywordInfo.Keyword kw : keywords) {
             String categorySeq = keywordLoader.getCategorySeq(kw.getName());
             if (categorySeq == null) continue;
-            entry.add(anomalyScoreLoader.getScore(AnomalyScoreLoader.TABLE_KEYWORD_CATEGORY, categorySeq));
+
+            for(int i = 0; i < kw.getCount(); i++){
+                entry.add(anomalyScoreLoader.getScore(AnomalyScoreLoader.TABLE_KEYWORD_CATEGORY, categorySeq));
+            }
         }
     }
 
@@ -141,7 +144,9 @@ public class AnomalyScoreCalculator {
         if (privacyInfos == null || privacyInfos.isEmpty()) return;
 
         for (EmassDoc.PrivacyInfo info : privacyInfos) {
-            entry.add(anomalyScoreLoader.getScore(AnomalyScoreLoader.TABLE_PATTERN, info.getId()));
+            for(int i = 0; i < info.getCount(); i++){
+                entry.add(anomalyScoreLoader.getScore(AnomalyScoreLoader.TABLE_PATTERN, info.getId()));
+            }
         }
     }
 

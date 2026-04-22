@@ -1,6 +1,6 @@
 package com.xcurenet.logvault.loader;
 
-import com.xcurenet.logvault.loader.mapper.AnomalyScoreMapper;
+import com.xcurenet.logvault.loader.mapper.InfoLoaderMapper;
 import com.xcurenet.logvault.loader.type.AnomalyScoreVO;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,7 +26,7 @@ public class AnomalyScoreLoader {
     public static final String TABLE_KEYWORD_CATEGORY = "UI_KEYWORD_CATEGORY";
     public static final String TABLE_PATTERN = "UI_PATTERN";
 
-    private final AnomalyScoreMapper mapper;
+    private final InfoLoaderMapper mapper;
 
     private final AtomicReference<Map<String, String>> SCORE_LEVEL_REF = new AtomicReference<>(Collections.emptyMap());
 
@@ -35,7 +35,7 @@ public class AnomalyScoreLoader {
      */
     private final Map<String, Integer> levelScoreMap;
 
-    public AnomalyScoreLoader(AnomalyScoreMapper mapper,
+    public AnomalyScoreLoader(InfoLoaderMapper mapper,
                               @Value("${anomaly.high.score:0}") int highScore,
                               @Value("${anomaly.mid.score:0}") int midScore,
                               @Value("${anomaly.low.score:0}") int lowScore) {

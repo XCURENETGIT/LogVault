@@ -177,12 +177,6 @@ public class PrivacyAIAnalysis {
 		}
 		if (items.isEmpty()) return null;
 
-		int threshold = PatternLoader.getCodeValueOrDefault(key, 1);
-		if (items.size() < threshold) {
-			log.debug("REG_INFO | {} | KEY:{} COUNT:{} THRESHOLD:{}", ErrorCode.PRIVACY_THRESHOLD_NOT_MET.toString(), key, items.size(), threshold);
-			return null;
-		}
-
 		EmassDoc.PrivacyInfo info = new EmassDoc.PrivacyInfo();
 		info.setId(key);
 		info.setType(type);

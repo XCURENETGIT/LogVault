@@ -3,10 +3,7 @@ package com.xcurenet.logvault.loader.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.xcurenet.common.mybatis.JsonTypeContext;
 import com.xcurenet.logvault.loader.mapper.InfoLoaderMapper;
-import com.xcurenet.logvault.loader.type.KeywordVO;
-import com.xcurenet.logvault.loader.type.PatternInfo;
-import com.xcurenet.logvault.loader.type.RuleContentWrapper;
-import com.xcurenet.logvault.loader.type.ServiceVO;
+import com.xcurenet.logvault.loader.type.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -67,4 +64,9 @@ public class InfoLoaderService {
 		List<ServiceVO> result = (List<ServiceVO>) wrapper.getRuleContent();
 		return result;
 	}
+
+    public List<GuardRailVO> getGuardRail() {
+        return mapper.getGuardRailList();
+    }
+
 }

@@ -48,10 +48,9 @@ public class KeywordMatcher implements Serializable {
 	 * 키워드 등록
 	 *
 	 * @param keyword  키워드
-	 * @param minCount 탐지 최소 건수
 	 */
-	public void addKeyword(String keyword, int minCount) {
-		addKeyword(keyword, MatchType.EXACT, minCount);
+	public void addKeyword(String keyword) {
+		addKeyword(keyword, MatchType.EXACT);
 	}
 
 	/**
@@ -59,13 +58,12 @@ public class KeywordMatcher implements Serializable {
 	 *
 	 * @param keyword  키워드
 	 * @param type     탐지 방식 (EXACT:완전 일치, AND 텍스트 내 구성 토큰 모두 존재)
-	 * @param minCount 탐지 최소 건수
 	 */
-	public void addKeyword(String keyword, MatchType type, int minCount) {
+	public void addKeyword(String keyword, MatchType type) {
 		String trimmed = safeTrim(keyword);
 		if (trimmed.isEmpty()) return;
 
-		Keyword k = new Keyword(trimmed, type, minCount);
+		Keyword k = new Keyword(trimmed, type);
 		keywords.add(k);
 		if (type == MatchType.AND) {
 			for (String part : trimmed.split("\\s+")) {
@@ -114,10 +112,7 @@ public class KeywordMatcher implements Serializable {
 
 				case EXACT -> {
 					String target = normalize(k.keyword);
-					int count = countExact(normalizedText, target);
-					if (count >= k.minCount) {
-						result.put(k.keyword, count);
-					}
+                    result.put(k.keyword, countExact(normalizedText, target));
 				}
 
 				case AND -> {
@@ -134,7 +129,7 @@ public class KeywordMatcher implements Serializable {
 						minAcross = (minAcross == null) ? c : Math.min(minAcross, c);
 					}
 
-					if (allHit && minAcross != null && minAcross >= k.minCount) {
+					if (allHit && minAcross != null) {
 						result.put(k.keyword, minAcross);
 					}
 				}
@@ -184,7 +179,6 @@ public class KeywordMatcher implements Serializable {
 	public static class Keyword {
 		private String keyword;
 		private MatchType matchType;
-		private int minCount;
 	}
 
 	public static void main(String[] args) {
@@ -193,14 +187,14 @@ public class KeywordMatcher implements Serializable {
 		km.setIgnoreCase(true);
 
 		// EXACT
-		km.addKeyword("버그", MatchType.EXACT, 19);
+		km.addKeyword("버그", MatchType.EXACT);
 		// AND
-		km.addKeyword("장애 버그", MatchType.AND, 1);
+		km.addKeyword("장애 버그", MatchType.AND);
 
-		km.addKeyword("요청건 예정", MatchType.AND, 1);
+		km.addKeyword("요청건 예정", MatchType.AND);
 
-		km.addKeyword("개발 요청서", MatchType.EXACT, 1);
-		km.addKeyword("개발요청서", MatchType.EXACT, 1);
+		km.addKeyword("개발 요청서", MatchType.EXACT);
+		km.addKeyword("개발요청서", MatchType.EXACT);
 
 		km.prepare();
 

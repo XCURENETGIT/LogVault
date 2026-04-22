@@ -12,6 +12,7 @@ import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.common.utils.ExFactory;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.exception.IndexerException;
+import com.xcurenet.logvault.loader.GuardRailLoader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.http.util.EntityUtils;
@@ -183,13 +184,25 @@ public class IndexService {
         room.setDay(newDoc.getDay());
         room.setMlResult(newDoc.getMlResult());
 
+        String guardRailCategory = null;
+        if (newDoc.getBody() != null)
+            guardRailCategory = Common.nvl(newDoc.getBody().getGuardrailCategory());
+
         String message = newDoc.getBody() == null ? null : newDoc.getBody().getText();
         if (Common.isEmpty(message) && newDoc.getAttachCount() > 0) {
             message = "";
             for (EmassDoc.Attach attach : newDoc.getAttach()) {
                 message = message.concat(attach.getName()).concat(" ");
+                String newGuardRailCategory = Common.nvl(attach.getGuardrailCategory());
+                if (!Common.isEmpty(newGuardRailCategory) && !Common.isEmpty(guardRailCategory)) {
+                    if (GuardRailLoader.getGuardRailOrder(newGuardRailCategory) > GuardRailLoader.getGuardRailOrder(guardRailCategory)) {
+                        guardRailCategory = newGuardRailCategory;
+                    }
+                }
             }
         }
+
+        room.setGuardrailCategory(Common.isEmpty(guardRailCategory) ? null : guardRailCategory);
         room.setRecentMessage(message);
         room.setPrivacyTotal(newDoc.getPrivacyTotal());
         room.setPrivacyInfo(newDoc.getPrivacyInfo());
@@ -207,6 +220,7 @@ public class IndexService {
         room.setRecentMsgId(roomDoc.getRecentMsgId());
         room.setDay(roomDoc.getDay());
         room.setMlResult(roomDoc.getMlResult());
+        room.setGuardrailCategory(roomDoc.getGuardrailCategory());
         room.setRecentMessage(roomDoc.getRecentMessage());
         room.setPrivacyTotal(roomDoc.getPrivacyTotal());
         room.setPrivacyInfo(roomDoc.getPrivacyInfo());

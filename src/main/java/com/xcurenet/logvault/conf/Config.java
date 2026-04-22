@@ -331,6 +331,12 @@ public class Config {
 	@Value("${thumbnail.retention.days:90}") //썸네일 이미지 보관 (MariaDB)
 	private int thumbnailRetentionDays;
 
+	@Value("${decrypt.file.path:/users/aegis_ai/rule/}") // 차단/허용 정책 파일 경로
+	private String decryptFilePath;
+
+	@Value("${decrypt.file.rule.json:rules.json}") // 차단/허용 정책 파일명
+	private String decryptFileRuleJson;
+
 	public int getInterval() {
 		return fileWaitTime * 1000;
 	}

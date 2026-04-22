@@ -18,6 +18,8 @@ public class InfoLoader {
 	private final ServiceLoader serviceLoader;
 	private final WorkDayLoader workDayLoader;
 	private final AnomalyScoreLoader anomalyScoreLoader;
+	private final RuleLoader ruleLoader;
+    private final GuardRailLoader guardRailLoader;
 
 	public void init() {
 		StopWatch sw = DateUtils.start();
@@ -29,6 +31,8 @@ public class InfoLoader {
 		serviceLoad();
 		workDayLoad();
 		anomalyScoreLoad();
+		ruleLoad();
+        guardRailLoad();
 
 		log.info("INFO_LOAD | END | {}\n", DateUtils.stop(sw));
 	}
@@ -72,6 +76,20 @@ public class InfoLoader {
 		log.debug("INFO_LOAD | AnomalyScore START");
 		synchronized (this) {
 			anomalyScoreLoader.load();
+		}
+	}
+
+	public void ruleLoad() {
+		log.debug("INFO_LOAD | Rule START");
+		synchronized (this) {
+			ruleLoader.load();
+		}
+	}
+
+	public void guardRailLoad() {
+		log.debug("INFO_LOAD | GuardRail START");
+		synchronized (this) {
+            guardRailLoader.load();
 		}
 	}
 }

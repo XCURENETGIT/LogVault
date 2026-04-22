@@ -62,4 +62,11 @@ public class InfoLoaderController {
 		infoLoader.anomalyScoreLoad();
 		return ResponseEntity.ok().build();
 	}
+
+	@ResponseBody
+	@GetMapping(value = "/insa/rule/reload")
+	public ResponseEntity<Object> ruleReload() {
+		infoLoader.ruleLoad();
+		return ResponseEntity.ok().build();
+	}
 }

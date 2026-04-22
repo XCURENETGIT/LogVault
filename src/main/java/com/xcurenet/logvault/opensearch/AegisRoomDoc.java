@@ -35,6 +35,9 @@ public class AegisRoomDoc {
 	@Field("ml_result")
 	private EmassDoc.MLResult mlResult;
 
+    @Field("guardrail_category")
+    private String guardrailCategory;
+
 	@Field("svc")
 	private String svc;
 

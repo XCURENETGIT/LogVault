@@ -28,18 +28,6 @@ public class PatternInfo {
 	@JsonProperty("regex")
 	private String regex;
 
-	@Field("minCount")
-	@JsonProperty("minCnt")
-	private int minCount;
-
-	@Field("alarmYn")
-	@JsonProperty("alarmYn")
-	private String alarmYn;
-
-	@Field("syslogYn")
-	@JsonProperty("syslogYn")
-	private String syslogYn;
-
 	@Field("useYn")
 	@JsonProperty("useYn")
 	private String useYn;

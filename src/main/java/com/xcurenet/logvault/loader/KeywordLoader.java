@@ -1,17 +1,16 @@
 package com.xcurenet.logvault.loader;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.xcurenet.common.ahocorasick.KeywordMatcher;
 import com.xcurenet.common.utils.Common;
-import com.xcurenet.logvault.loader.mapper.InfoLoaderMapper;
 import com.xcurenet.logvault.loader.service.InfoLoaderService;
 import com.xcurenet.logvault.loader.type.KeywordVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.poi.ss.formula.functions.T;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -19,60 +18,42 @@ import java.util.concurrent.atomic.AtomicReference;
 @Service
 @RequiredArgsConstructor
 public class KeywordLoader {
-	private final InfoLoaderService infoLoaderService;
-	public final AtomicReference<KeywordMatcher> KEYWORD_MATCHER_REF = new AtomicReference<>();
-	public final AtomicReference<Set<String>> KEYWORD_ALARM_REF = new AtomicReference<>();
-	public final AtomicReference<Set<String>> KEYWORD_SYSLOG_REF = new AtomicReference<>();
+    private final InfoLoaderService infoLoaderService;
+    public final AtomicReference<KeywordMatcher> KEYWORD_MATCHER_REF = new AtomicReference<>();
 
-	/** keyword name → UI_KEYWORD_CATEGORY SEQ */
-	private final AtomicReference<Map<String, String>> KEYWORD_CATEGORY_SEQ_REF = new AtomicReference<>(Collections.emptyMap());
+    /**
+     * keyword name → UI_KEYWORD_CATEGORY SEQ
+     */
+    private final AtomicReference<Map<String, String>> KEYWORD_CATEGORY_SEQ_REF = new AtomicReference<>(Collections.emptyMap());
 
-	public void load() {
-		long version = infoLoaderService.getKeywordVersion();
-		List<KeywordVO> keywords = infoLoaderService.getKeyword(version);
-		KeywordMatcher keywordMatcher = new KeywordMatcher();
-		Set<String> alarmSet = new HashSet<>();
-		Set<String> syslogSet = new HashSet<>();
-		Map<String, String> categorySeqMap = new ConcurrentHashMap<>();
-		for (KeywordVO item : keywords) {
-			log.debug("INFO_LOAD | Keyword: {}", item);
-			if (Common.isEmpty(item.getKeywordNm()) || Common.isEquals(item.getUseYn(), "N")) continue;
+    public void load() {
+        long version = infoLoaderService.getKeywordVersion();
+        List<KeywordVO> keywords = infoLoaderService.getKeyword(version);
+        KeywordMatcher keywordMatcher = new KeywordMatcher();
+        Map<String, String> categorySeqMap = new ConcurrentHashMap<>();
+        for (KeywordVO item : keywords) {
+            log.debug("INFO_LOAD | Keyword: {}", item);
+            if (Common.isEmpty(item.getKeywordNm()) || Common.isEquals(item.getUseYn(), "N")) continue;
 
-			keywordMatcher.addKeyword(item.getKeywordNm(), item.getMinCnt());
-			if (Common.isEquals(item.getAlarmYn(), "Y")) {
-				alarmSet.add(item.getKeywordNm());
-			}
-			if (Common.isEquals(item.getSyslogYn(), "Y")) {
-				syslogSet.add(item.getKeywordNm());
-			}
-			if (Common.isNotEmpty(item.getKeywordCategorySeq())) {
-				categorySeqMap.put(item.getKeywordNm(), item.getKeywordCategorySeq());
-			}
-		}
-		keywordMatcher.prepare();
-		KEYWORD_MATCHER_REF.set(keywordMatcher);
-		KEYWORD_ALARM_REF.set(alarmSet);
-		KEYWORD_SYSLOG_REF.set(syslogSet);
-		KEYWORD_CATEGORY_SEQ_REF.set(categorySeqMap);
+            keywordMatcher.addKeyword(item.getKeywordNm());
+            if (Common.isNotEmpty(item.getKeywordCategorySeq())) {
+                categorySeqMap.put(item.getKeywordNm(), item.getKeywordCategorySeq());
+            }
+        }
+        keywordMatcher.prepare();
+        KEYWORD_MATCHER_REF.set(keywordMatcher);
+        KEYWORD_CATEGORY_SEQ_REF.set(categorySeqMap);
 
-		log.info("INFO_LOAD | Rule Version : {} | Keyword Size: {} | CategorySeqMap: {}", version, keywords.size(), categorySeqMap.size());
-	}
+        log.info("INFO_LOAD | Rule Version : {} | Keyword Size: {} | CategorySeqMap: {}", version, keywords.size(), categorySeqMap.size());
+    }
 
-	public Set<String> getKeywordAlert() {
-		return KEYWORD_ALARM_REF.get();
-	}
-
-	public Set<String> getKeywordSyslog() {
-		return KEYWORD_SYSLOG_REF.get();
-	}
-
-	/**
-	 * keyword name으로 해당 키워드의 categorySeq를 반환한다.
-	 *
-	 * @param keywordName 키워드 이름
-	 * @return categorySeq (없으면 null)
-	 */
-	public String getCategorySeq(String keywordName) {
-		return KEYWORD_CATEGORY_SEQ_REF.get().get(keywordName);
-	}
+    /**
+     * keyword name으로 해당 키워드의 categorySeq를 반환한다.
+     *
+     * @param keywordName 키워드 이름
+     * @return categorySeq (없으면 null)
+     */
+    public String getCategorySeq(String keywordName) {
+        return KEYWORD_CATEGORY_SEQ_REF.get().get(keywordName);
+    }
 }

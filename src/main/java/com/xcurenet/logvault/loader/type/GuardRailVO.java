@@ -7,19 +7,15 @@ import org.apache.ibatis.type.Alias;
 import org.springframework.data.elasticsearch.annotations.Field;
 
 @Data
-@Alias("KeywordVO")
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class KeywordVO {
-	@Field("keywordNm")
-	@JsonProperty("keywordName")
-	private String keywordNm;
+public class GuardRailVO {
+	@Field("guardRailCd")
+	private String guardRailCd;
 
 	@Field("useYn")
-	@JsonProperty("useYn")
 	private String useYn;
 
-	@Field("keywordCategorySeq")
-	@JsonProperty("keywordCategorySeq")
-	private String keywordCategorySeq;
+	@Field("guardRailOrder")
+	private int guardRailOrder;
 
 }

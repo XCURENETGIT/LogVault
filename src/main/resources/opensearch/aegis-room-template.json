@@ -92,6 +92,9 @@
 						}
 					}
 				},
+				"guardrail_category": {
+				  "type": "keyword"
+				},
 				"svc": {
 					"type": "keyword"
 				},

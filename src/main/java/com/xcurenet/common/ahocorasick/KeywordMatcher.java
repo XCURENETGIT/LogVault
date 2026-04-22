@@ -112,7 +112,10 @@ public class KeywordMatcher implements Serializable {
 
 				case EXACT -> {
 					String target = normalize(k.keyword);
-                    result.put(k.keyword, countExact(normalizedText, target));
+                    int count = countExact(normalizedText, target);
+                    if (count > 0) {
+                        result.put(k.keyword, count);
+                    }
 				}
 
 				case AND -> {

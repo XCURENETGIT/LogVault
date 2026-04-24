@@ -141,6 +141,7 @@ public class PrivacyAIAnalysis {
 			if (matches == null || matches.isEmpty()) continue;
 
 			EmassDoc.PrivacyInfo info = toPrivacyInfo(key, type, attachName, matches);
+			log.debug("type:{}, info:{}", type, info);
 			if (info == null) continue;
 
 			bucket.add(info);
@@ -160,7 +161,7 @@ public class PrivacyAIAnalysis {
 
 	private EmassDoc.PrivacyInfo toPrivacyInfo(String key, String type, String attachName, List<Pii.MatchItem> matches) {
 		if (!PatternLoader.isDetectCode(key)) {
-			log.debug("REG_INFO | {} | KEY:{}", ErrorCode.PRIVACY_DETECT_CODE_INVALID.toString(), key);
+			log.info("REG_INFO | {} | KEY:{}", ErrorCode.PRIVACY_DETECT_CODE_INVALID.toString(), key);
 			return null;
 		}
 
@@ -173,6 +174,8 @@ public class PrivacyAIAnalysis {
 			String encrypted = Common.encString(matchString.getBytes(StandardCharsets.UTF_8), conf.getEncryptKey(), conf.getEncyptCipher());
 			if (encrypted != null) {
 				items.add(encrypted);
+			} else {
+				log.warn("[REG_WARN] {} | {} | {}", ErrorCode.PRIVACY_DETECT_CODE_INVALID.toString(), key, matchString);
 			}
 		}
 		if (items.isEmpty()) return null;
@@ -245,6 +248,7 @@ public class PrivacyAIAnalysis {
 				result.put("BN", data.getBnList());
 				result.put("EML", data.getEmlList());
 				result.put("CN", data.getCnList());
+				log.info("{}", result);
 				log.debug("ML_PRIVACY_GRPC_RESPONSE | TEXT.LENGTH:{} | META:ruleset={}, version={}, updatedAt={}", text.length(), res.getMeta().getRulesetName(), res.getMeta().getRulesetVersion(), res.getMeta().getRulesetUpdatedAt());
 				return result;
 			} catch (StatusRuntimeException e) {

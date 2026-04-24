@@ -141,7 +141,7 @@ public class ReasonAnalysis {
 			case 2 -> "CN";
 			case 3 -> "MN";
 			case 4 -> "EML";
-			case 5 -> "BA";
+			case 5 -> "BN";
 			case 6 -> "PN";
 			case 7 -> "DN";
 			case 8 -> "SSN";

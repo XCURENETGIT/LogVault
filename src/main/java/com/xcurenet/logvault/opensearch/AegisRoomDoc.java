@@ -64,4 +64,11 @@ public class AegisRoomDoc {
 
 	@Field("anomaly_score")
 	private EmassDoc.AnomalyScore anomalyScore;
+
+    @Field("rule_seq") // 정책 번호
+    private Integer ruleSeq;
+
+    @Field("rule_name") // 정책 명
+    private String ruleName;
+
 }

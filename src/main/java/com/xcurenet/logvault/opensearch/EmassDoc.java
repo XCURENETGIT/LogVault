@@ -101,6 +101,12 @@ public class EmassDoc {
 	@Field("anomaly_score")
 	private AnomalyScore anomalyScore;
 
+    @Field("rule_seq") // 정책 번호
+    private Integer ruleSeq;
+
+    @Field("rule_name") // 정책 명
+    private String ruleName;
+
 	@Data
 	@Builder
 	public static class Day {

@@ -105,6 +105,9 @@ public class MSGData {
 	@FieldKey("REASON") //정책 차단 사유
 	private String reason;
 
+    @FieldKey("RULE_SEQ") //정책 번호
+    private Integer ruleSeq;
+
 	@FieldKey("DETECTIONS") //정책 차단 상세내용
 	private String detections;
 

@@ -10,6 +10,7 @@ import com.xcurenet.logvault.LogVaultApplication;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.exception.*;
 import com.xcurenet.logvault.fs.FileProcessor;
+import com.xcurenet.logvault.loader.RuleLoader;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.module.alert.AlertService;
 import com.xcurenet.logvault.module.analysis.AnalysisService;
@@ -56,6 +57,7 @@ public abstract class AbstractWorker implements Runnable {
 	protected final PipelineManager pipelineManager;
 	protected final ThroughputMetrics metrics;
 	protected final StatService statService;
+    protected final RuleLoader ruleLoader;
 
 	protected AbstractWorker(final ApplicationContext context, final PriorityBlockingQueue<ScanData> queue, final AtomicBoolean run) {
 		this.queue = queue;
@@ -72,6 +74,7 @@ public abstract class AbstractWorker implements Runnable {
 		this.pipelineManager = context.getBean(PipelineManager.class);
 		this.indexService = context.getBean(IndexService.class);
 		this.statService = context.getBean(StatService.class);
+        this.ruleLoader = context.getBean(RuleLoader.class);
 	}
 
 	@Override

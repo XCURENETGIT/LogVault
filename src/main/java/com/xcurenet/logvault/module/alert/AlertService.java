@@ -52,8 +52,6 @@ public class AlertService {
 
             if (matchedAllowRule == null) return;
 
-            log.info("ALT_RULE | {} | ruleSeq:{} | ruleName:{}", doc.getAction(), matchedAllowRule.getRuleSeq(), matchedAllowRule.getRuleName());
-
             AlertInfo alertInfo = findAlertInfo(doc, matchedAllowRule);
 
             AlertMessage message = new AlertMessage();
@@ -61,7 +59,9 @@ public class AlertService {
             message.setData(JSONObject.toJSONString(alertInfo, JSONWriter.Feature.FieldBased));
             try {
                 repository.insertAlertRule(message);
-                log.info("ALT_SEND | KEYWORD_ALARM:{} | KEYWORD_SYSLOG:{} | PRIVACY_ALARM:{} | PRIVACY_SYSLOG:{} | {}", alertInfo.getKeywordAlarmTotal(), alertInfo.getKeywordSyslogTotal(), alertInfo.getPrivacyAlarmTotal(), alertInfo.getPrivacySyslogTotal(), DateUtils.stop(sw));
+                log.info("ALT_SEND | RULE_SEQ:{} | RULE_NAME:{} | KEYWORD_ALARM:{} | KEYWORD_SYSLOG:{} | PRIVACY_ALARM:{} | PRIVACY_SYSLOG:{} | {}",
+                        matchedAllowRule.getRuleSeq(), matchedAllowRule.getRuleName(), alertInfo.getKeywordAlarmTotal(), alertInfo.getKeywordSyslogTotal(),
+                        alertInfo.getPrivacyAlarmTotal(), alertInfo.getPrivacySyslogTotal(), DateUtils.stop(sw));
             } catch (Exception e) {
                 log.error("{} | {}", ErrorCode.ALERT_REPOSITORY_FAIL.toString(), e.toString(), e);
             }
@@ -114,11 +114,6 @@ public class AlertService {
         }
     }
 
-    private List<EmassDoc.KeywordInfo.Keyword> filter(List<EmassDoc.KeywordInfo.Keyword> list, Set<String> loadKeywords) {
-        if (list == null) return Collections.emptyList();
-        return list.stream().filter(k -> loadKeywords.contains(k.getName())).toList();
-    }
-
     /**
      * 현재 문서가 허용 룰(ruleType=A)에 해당되는지 확인한다.
      * 서비스, 클라이언트 IP/Port, 키워드/패턴 조건이 모두 일치하는 첫 번째 허용 룰을 반환한다.
@@ -130,7 +125,9 @@ public class AlertService {
         if (rules == null || rules.isEmpty()) return null;
 
         for (BlockRuleJsonDto.RuleEntry rule : rules) {
-            if (rule == null) continue;
+            if (doc.getRuleSeq() != null && doc.getRuleSeq().intValue() == rule.getRuleSeq().intValue()) {
+                return rule;
+            }
 //            if (!"A".equalsIgnoreCase(rule.getRuleType())) continue;
             if (!matchService(rule, doc)) continue;
             if (!matchClientIp(rule, doc)) continue;
@@ -145,7 +142,7 @@ public class AlertService {
         List<String> serviceCdList = rule.getServiceCdList();
         if (serviceCdList == null || serviceCdList.isEmpty()) return true;
         if (doc.getService() == null) return false;
-        String svc = doc.getService().getSvc();
+        String svc = doc.getService().getSvc12();
         return svc != null && serviceCdList.contains(svc);
     }
 

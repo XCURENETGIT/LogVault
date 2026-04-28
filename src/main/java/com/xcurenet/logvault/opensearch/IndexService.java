@@ -183,6 +183,8 @@ public class IndexService {
         room.setRecentMsgId(newDoc.getMsgid());
         room.setDay(newDoc.getDay());
         room.setMlResult(newDoc.getMlResult());
+        room.setRuleSeq(newDoc.getRuleSeq());
+        room.setRuleName(newDoc.getRuleName());
 
         String guardRailCategory = null;
         if (newDoc.getBody() != null)
@@ -220,6 +222,8 @@ public class IndexService {
         room.setRecentMsgId(roomDoc.getRecentMsgId());
         room.setDay(roomDoc.getDay());
         room.setMlResult(roomDoc.getMlResult());
+        room.setRuleSeq(roomDoc.getRuleSeq());
+        room.setRuleName(roomDoc.getRuleName());
         room.setGuardrailCategory(roomDoc.getGuardrailCategory());
         room.setRecentMessage(roomDoc.getRecentMessage());
         room.setPrivacyTotal(roomDoc.getPrivacyTotal());

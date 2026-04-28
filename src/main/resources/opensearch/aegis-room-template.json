@@ -49,6 +49,12 @@
 				"reason": {
 					"type": "keyword"
 				},
+				"rule_seq": {
+				  	"type": "integer"
+				},
+				"rule_name": {
+				  	"type": "keyword"
+				},
 				"@timestamp": {
 					"type": "date",
 					"format": "epoch_millis"

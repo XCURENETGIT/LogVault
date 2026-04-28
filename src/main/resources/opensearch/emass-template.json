@@ -57,6 +57,12 @@
 				"reason": {
 					"type": "keyword"
 				},
+				"rule_seq": {
+				  	"type": "integer"
+				},
+				"rule_name": {
+				  	"type": "keyword"
+				},
 				"root_mtr": {
 					"type": "keyword"
 				},

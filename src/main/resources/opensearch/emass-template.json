@@ -510,6 +510,12 @@
 								"count": { "type": "integer" }
 							}
 						},
+						"attach": {
+							"properties": {
+								"score": { "type": "integer" },
+								"count": { "type": "integer" }
+							}
+						},
 						"total": {
 							"properties": {
 								"score": { "type": "integer" },

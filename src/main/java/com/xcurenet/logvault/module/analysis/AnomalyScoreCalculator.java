@@ -21,6 +21,7 @@ import java.util.List;
 public class AnomalyScoreCalculator {
 
     private static final String PATTERN_CODE_EXIST = "SC";       // 소스코드 포함
+    private static final String PATTERN_FILE_UPLOAD = "FU";      // 파일업로드
     private static final String PATTERN_SIMILARITY = "CF";       // 기밀문서(대외비) 유사도
 
     private final AnomalyScoreLoader anomalyScoreLoader;
@@ -44,7 +45,7 @@ public class AnomalyScoreCalculator {
 
         calcGuardrail(doc, score.getGuardrail());
         calcKeyword(doc, score.getKeyword());
-        calcPattern(doc, score.getPattern(), score.getCodeExist(), score.getSimilarity());
+        calcPattern(doc, score.getPattern(), score.getAttach(), score.getCodeExist(), score.getSimilarity());
 
         log.debug("ANOMALY_SCORE | msgid={} | guardrail={}({}) keyword={}({}) pattern={}({}) code_exist={}({}) similarity={}({})",
                 doc.getMsgid(),
@@ -117,10 +118,13 @@ public class AnomalyScoreCalculator {
     // ──────────────────────────────────────────────
 
     private void calcPattern(EmassDoc doc, EmassDoc.AnomalyScore.ScoreEntry patternEntry,
+                             EmassDoc.AnomalyScore.ScoreEntry attachEntry,
                              EmassDoc.AnomalyScore.ScoreEntry codeExistEntry,
                              EmassDoc.AnomalyScore.ScoreEntry similarityEntry) {
         // 1. 개인정보 패턴 (privacy_info): 각 탐지 항목별 점수
         calcPrivacyPattern(doc, patternEntry);
+
+        calcFileUploadPattern(doc, attachEntry);
 
         // 2. ML 패턴: 본문 ml_result
         if (doc.getBody() != null) {
@@ -147,6 +151,15 @@ public class AnomalyScoreCalculator {
             for(int i = 0; i < info.getCount(); i++){
                 entry.add(anomalyScoreLoader.getScore(AnomalyScoreLoader.TABLE_PATTERN, info.getId()));
             }
+        }
+    }
+
+    private void calcFileUploadPattern(EmassDoc doc, EmassDoc.AnomalyScore.ScoreEntry entry) {
+        int attachExistCount = doc.getAttachExistCount();
+        int fileUploadScore = anomalyScoreLoader.getScore(AnomalyScoreLoader.TABLE_PATTERN, PATTERN_FILE_UPLOAD);
+
+        for (int i = 0; i < attachExistCount; i++) {
+            entry.add(fileUploadScore);
         }
     }
 

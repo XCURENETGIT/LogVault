@@ -1,7 +1,9 @@
 package com.xcurenet.logvault.loader;
 
-import com.xcurenet.logvault.loader.mapper.InfoLoaderMapper;
+import com.xcurenet.logvault.loader.service.InfoLoaderService;
 import com.xcurenet.logvault.loader.type.AnomalyScoreVO;
+import com.xcurenet.logvault.loader.type.GuardRailVO;
+import com.xcurenet.logvault.loader.type.PatternInfo;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -9,11 +11,12 @@ import org.springframework.stereotype.Service;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * UI_ANOMALY_SCORE 테이블에서 (MAPR_TABLE, TARGET_ID) → ANOMALY_LEVEL_CD 매핑을 로드하고,
+ * UI_ANOMALY_SCORE 룰 히스토리에서 (MAPR_TABLE, TARGET_ID) → ANOMALY_LEVEL_CD 매핑을 로드하고,
  * 레벨별 점수는 PropertySourceLoader 가 Environment 에 올려둔 값을 사용한다.
  */
 @Log4j2
@@ -26,35 +29,49 @@ public class AnomalyScoreLoader {
     public static final String TABLE_KEYWORD_CATEGORY = "UI_KEYWORD_CATEGORY";
     public static final String TABLE_PATTERN = "UI_PATTERN";
 
-    private final InfoLoaderMapper mapper;
+    private final InfoLoaderService infoLoaderService;
 
     private final AtomicReference<Map<String, String>> SCORE_LEVEL_REF = new AtomicReference<>(Collections.emptyMap());
+    private final AtomicReference<Set<String>> ENABLED_TARGET_REF = new AtomicReference<>(Collections.emptySet());
 
     /**
      * ANOMALY_LEVEL_CD → score (PropertySourceLoader 에서 로드한 값)
      */
     private final Map<String, Integer> levelScoreMap;
 
-    public AnomalyScoreLoader(InfoLoaderMapper mapper,
+    public AnomalyScoreLoader(InfoLoaderService infoLoaderService,
                               @Value("${anomaly.high.score:0}") int highScore,
                               @Value("${anomaly.mid.score:0}") int midScore,
                               @Value("${anomaly.low.score:0}") int lowScore) {
-        this.mapper = mapper;
+        this.infoLoaderService = infoLoaderService;
         this.levelScoreMap = Map.of("HIGH", highScore, "MID", midScore, "LOW", lowScore);
         log.info("INFO_LOAD | AnomalyScore LevelScore (from Environment): {}", levelScoreMap);
     }
 
     public void load() {
-        List<AnomalyScoreVO> scoreList = mapper.getAnomalyScoreList();
+        long anomalyScoreVersion = infoLoaderService.getAnomalyScoreVersion();
+        long patternVersion = infoLoaderService.getPatternVersion();
+        long guardRailVersion = infoLoaderService.getGuardRailVersion();
+
+        List<AnomalyScoreVO> scoreList = infoLoaderService.getAnomalyScore(anomalyScoreVersion);
+        List<PatternInfo> patternList = infoLoaderService.getPatternInfo(patternVersion);
+        List<GuardRailVO> guardRailList = infoLoaderService.getGuardRail(guardRailVersion);
         Map<String, String> levelMap = new ConcurrentHashMap<>();
+        Set<String> enabledTargets = ConcurrentHashMap.newKeySet();
+
+        addEnabledPatternTargets(enabledTargets, patternList);
+        addEnabledGuardRailTargets(enabledTargets, guardRailList);
+
         for (AnomalyScoreVO vo : scoreList) {
             String key = compositeKey(vo.getMapperTable(), vo.getTargetId());
             levelMap.put(key, vo.getAnomalyLevelCd());
             log.info("INFO_LOAD | AnomalyScore: {} → {}", key, vo.getAnomalyLevelCd());
         }
         SCORE_LEVEL_REF.set(levelMap);
+        ENABLED_TARGET_REF.set(enabledTargets);
 
-        log.info("INFO_LOAD | AnomalyScore Entries:{} | LevelScore:{}", levelMap.size(), levelScoreMap);
+        log.info("INFO_LOAD | Rule Version : AnomalyScore:{} Pattern:{} GuardRail:{} | AnomalyScore Entries:{} | EnabledTargets:{} | LevelScore:{}",
+                anomalyScoreVersion, patternVersion, guardRailVersion, levelMap.size(), enabledTargets.size(), levelScoreMap);
     }
 
     /**
@@ -66,9 +83,35 @@ public class AnomalyScoreLoader {
      */
     public int getScore(String mapperTable, String targetId) {
         String key = compositeKey(mapperTable, targetId);
+        if (requiresUseYnCheck(mapperTable) && !ENABLED_TARGET_REF.get().contains(key)) return 0;
+
         String level = SCORE_LEVEL_REF.get().get(key);
         if (level == null) return 0;
         return levelScoreMap.getOrDefault(level, 0);
+    }
+
+    private void addEnabledPatternTargets(Set<String> targetSet, List<PatternInfo> patterns) {
+        if (patterns == null || patterns.isEmpty()) return;
+
+        for (PatternInfo pattern : patterns) {
+            if (pattern != null && pattern.getPatternCd() != null && "Y".equals(pattern.getUseYn())) {
+                targetSet.add(compositeKey(TABLE_PATTERN, pattern.getPatternCd()));
+            }
+        }
+    }
+
+    private void addEnabledGuardRailTargets(Set<String> targetSet, List<GuardRailVO> guardRails) {
+        if (guardRails == null || guardRails.isEmpty()) return;
+
+        for (GuardRailVO guardRail : guardRails) {
+            if (guardRail != null && guardRail.getGuardRailCd() != null && "Y".equals(guardRail.getUseYn())) {
+                targetSet.add(compositeKey(TABLE_GUARD_RAIL, guardRail.getGuardRailCd()));
+            }
+        }
+    }
+
+    private boolean requiresUseYnCheck(String mapperTable) {
+        return TABLE_PATTERN.equals(mapperTable) || TABLE_GUARD_RAIL.equals(mapperTable);
     }
 
     private String compositeKey(String mapperTable, String targetId) {

@@ -437,20 +437,23 @@ public class EmassDoc {
 		private ScoreEntry codeExist = new ScoreEntry();
 		@Field("similarity")
 		private ScoreEntry similarity = new ScoreEntry();
+		@Field("attach")
+		private ScoreEntry attach = new ScoreEntry();
 		@Field("total")
 		private ScoreEntry total = new ScoreEntry();
 
 		public void calculateTotal() {
 			this.total.setScore(guardrail.getScore() + keyword.getScore() + pattern.getScore()
-					+ codeExist.getScore() + similarity.getScore());
+					+ codeExist.getScore() + similarity.getScore() + attach.getScore());
 			this.total.setCount(guardrail.getCount() + keyword.getCount() + pattern.getCount()
-					+ codeExist.getCount() + similarity.getCount());
+					+ codeExist.getCount() + similarity.getCount() + attach.getCount());
 			// score/count 가 모두 0인 항목은 null 처리하여 인덱싱에서 제외
 			guardrail = nullIfEmpty(guardrail);
 			keyword = nullIfEmpty(keyword);
 			pattern = nullIfEmpty(pattern);
 			codeExist = nullIfEmpty(codeExist);
 			similarity = nullIfEmpty(similarity);
+			attach = nullIfEmpty(attach);
 		}
 
 		private static ScoreEntry nullIfEmpty(ScoreEntry entry) {

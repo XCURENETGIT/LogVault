@@ -18,6 +18,8 @@ public class InfoLoaderService {
 	private static final String UI_KEYWORD = "UI_KEYWORD";
 	private static final String UI_PATTERN = "UI_PATTERN";
 	private static final String UI_SERVICE = "UI_SERVICE";
+	private static final String UI_ANOMALY_SCORE = "UI_ANOMALY_SCORE";
+	private static final String UI_GUARD_RAIL = "UI_GUARD_RAIL";
 	private final InfoLoaderMapper mapper;
 
 	public long getKeywordVersion() {
@@ -30,6 +32,14 @@ public class InfoLoaderService {
 
 	public long getServiceVersion() {
 		return mapper.getLastVersion(UI_SERVICE);
+	}
+
+	public long getAnomalyScoreVersion() {
+		return mapper.getLastVersion(UI_ANOMALY_SCORE);
+	}
+
+	public long getGuardRailVersion() {
+		return mapper.getLastVersion(UI_GUARD_RAIL);
 	}
 
 	public List<KeywordVO> getKeyword(long version) {
@@ -65,8 +75,26 @@ public class InfoLoaderService {
 		return result;
 	}
 
-    public List<GuardRailVO> getGuardRail() {
-        return mapper.getGuardRailList();
-    }
+	public List<AnomalyScoreVO> getAnomalyScore(long version) {
+		JsonTypeContext.set(new TypeReference<List<AnomalyScoreVO>>() {});
+
+		RuleContentWrapper wrapper = mapper.getRuleHistory(UI_ANOMALY_SCORE, version);
+		if (wrapper == null) return Collections.emptyList();
+
+		@SuppressWarnings("unchecked")
+		List<AnomalyScoreVO> result = (List<AnomalyScoreVO>) wrapper.getRuleContent();
+		return result;
+	}
+
+	public List<GuardRailVO> getGuardRail(long version) {
+		JsonTypeContext.set(new TypeReference<List<GuardRailVO>>() {});
+
+		RuleContentWrapper wrapper = mapper.getRuleHistory(UI_GUARD_RAIL, version);
+		if (wrapper == null) return Collections.emptyList();
+
+		@SuppressWarnings("unchecked")
+		List<GuardRailVO> result = (List<GuardRailVO>) wrapper.getRuleContent();
+		return result;
+	}
 
 }

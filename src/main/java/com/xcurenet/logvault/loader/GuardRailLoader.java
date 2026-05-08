@@ -25,13 +25,14 @@ public class GuardRailLoader {
     private final InfoLoaderService infoLoaderService;
 
     public void load() {
-        List<GuardRailVO> datas = infoLoaderService.getGuardRail();
-        log.info("INFO_LOAD | GuardRail Size: {}", datas.size());
+        long version = infoLoaderService.getGuardRailVersion();
+        List<GuardRailVO> datas = infoLoaderService.getGuardRail(version);
+        log.info("INFO_LOAD | Rule Version : {} | GuardRail Size: {}", version, datas.size());
 
         Map<String, Integer> guardRails = new LinkedHashMap<>();
         for (GuardRailVO item : datas) {
             log.debug("INFO_LOAD | GuardRail: {}", item);
-            if (item == null || Common.isEquals(item.getUseYn(), "N")) continue;
+            if (item == null || !Common.isEquals(item.getUseYn(), "Y")) continue;
 
             guardRails.put(item.getGuardRailCd(), item.getGuardRailOrder());
         }

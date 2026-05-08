@@ -83,26 +83,4 @@ public interface InfoLoaderMapper {
 	@ResultType(Long.class)
 	long getLastVersion(@Param("ruleTableName") String ruleTableName);
 
-    @Select("""
-			SELECT
-				    MAPR_TABLE AS mapperTable,
-				    TARGET_ID AS targetId,
-					ANOMALY_LEVEL_CD AS anomalyLevelCd
-			FROM	UI_ANOMALY_SCORE
-			""")
-    @ResultType(AnomalyScoreVO.class)
-    List<AnomalyScoreVO> getAnomalyScoreList();
-
-
-    @Select("""
-			SELECT
-				    GUARD_RAIL_CD AS guardRailCd,
-				    USE_YN AS useYn,
-					GUARD_RAIL_ORDER AS guardRailOrder
-			FROM	UI_GUARD_RAIL
-			""")
-    @ResultType(GuardRailVO.class)
-    List<GuardRailVO> getGuardRailList();
-
-
 }

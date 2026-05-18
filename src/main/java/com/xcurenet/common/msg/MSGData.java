@@ -111,6 +111,9 @@ public class MSGData {
 	@FieldKey("DETECTIONS") //정책 차단 상세내용
 	private String detections;
 
+	@FieldKey("IS_ATTACH") //정책 차단 상세내용
+	private String isAttach;
+
 	@FieldKey("RESULT") // EP 전용 (GOOD, BAD) MysingleActor (http_decoder)
 	private String result;
 

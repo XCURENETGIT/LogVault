@@ -54,50 +54,53 @@ public class AnalysisService {
 		//networkGEOLocation.networkGEO(data);       // source ip, dest ip MAXMIND 유틸을 활용하여 국가 탐지 * 현재는 사용하지 않음
 		//bodyLanguage.detect(data);                 // 본문 텍스트의 국가 탐지 (최대 2000자 기준, 나머지는 자르고 탐지) * 현재는 사용하지 않음
 
-		if (!Common.isEquals(data.getMsgData().getAction(), "ALLOW")) return; // ALLOW가 아니면 이하 분석 생략
+		if (Common.isEquals(data.getMsgData().getAction(), "ALLOW")) {
+            // ALLOW 일때는 추가 분석 실행
+    
+            // 첨부 텍스트 추출 (후속 분석에 텍스트를 제공하므로 가장 먼저 실행)
+            try {
+                attachAnalysis.setAttachText(data);
+            } catch (Exception e) {
+                log.warn("ANALYSE_ATTACH_TEXT | {}", e.getMessage(), e);
+            }
+    
+            // 첨부 썸네일 생성
+            try {
+                attachAnalysis.setAttachThumbnail(data);
+            } catch (Exception e) {
+                log.warn("ANALYSE_THUMBNAIL | {}", e.getMessage(), e);
+            }
+    
+            // 키워드 탐지
+            try {
+                keywordAnalysis.detect(data);
+            } catch (Exception e) {
+                log.warn("ANALYSE_KEYWORD | {}", e.getMessage(), e);
+            }
+    
+            // 개인정보 탐지
+            try {
+                privacyAnalysis.detect(data);
+            } catch (Exception e) {
+                log.warn("ANALYSE_PRIVACY | {}", e.getMessage(), e);
+            }
+    
+            // GuardRail 탐지
+            try {
+                guardRailAnalysis.detect(data);
+            } catch (Exception e) {
+                log.warn("ANALYSE_GUARDRAIL | {}", e.getMessage(), e);
+            }
+    
+            // User-Agent 분석 (OS, 브라우저, 디바이스)
+            try {
+                userAgentAnalysis.detect(data);
+            } catch (Exception e) {
+                log.warn("ANALYSE_USERAGENT | {}", e.getMessage(), e);
+            }
+        }
 
-		// 첨부 텍스트 추출 (후속 분석에 텍스트를 제공하므로 가장 먼저 실행)
-		try {
-			attachAnalysis.setAttachText(data);
-		} catch (Exception e) {
-			log.warn("ANALYSE_ATTACH_TEXT | {}", e.getMessage(), e);
-		}
-
-		// 첨부 썸네일 생성
-		try {
-			attachAnalysis.setAttachThumbnail(data);
-		} catch (Exception e) {
-			log.warn("ANALYSE_THUMBNAIL | {}", e.getMessage(), e);
-		}
-
-		// 키워드 탐지
-		try {
-			keywordAnalysis.detect(data);
-		} catch (Exception e) {
-			log.warn("ANALYSE_KEYWORD | {}", e.getMessage(), e);
-		}
-
-		// 개인정보 탐지
-		try {
-			privacyAnalysis.detect(data);
-		} catch (Exception e) {
-			log.warn("ANALYSE_PRIVACY | {}", e.getMessage(), e);
-		}
-
-		// GuardRail 탐지
-		try {
-			guardRailAnalysis.detect(data);
-		} catch (Exception e) {
-			log.warn("ANALYSE_GUARDRAIL | {}", e.getMessage(), e);
-		}
-
-		// User-Agent 분석 (OS, 브라우저, 디바이스)
-		try {
-			userAgentAnalysis.detect(data);
-		} catch (Exception e) {
-			log.warn("ANALYSE_USERAGENT | {}", e.getMessage(), e);
-		}
-
+        // BLOCK 일때도 이상행위 점수 계산
 		// 이상행위 점수 계산 (모든 분석 완료 후 최종 단계에서 실행)
 		try {
 			anomalyScoreCalculator.calculate(data);

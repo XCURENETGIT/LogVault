@@ -12,10 +12,12 @@ import org.springframework.stereotype.Component;
 public class RefreshEventListener implements ApplicationListener<RefreshScopeRefreshedEvent> {
 
 	private final FileProcessor fileProcessor;
+    private final CryptoLoad cryptoLoad;
 
 	@Override
 	public void onApplicationEvent(@NotNull RefreshScopeRefreshedEvent event) {
 		try {
+            cryptoLoad.loadEncryptKey();
 			fileProcessor.init();
 		} catch (Exception e) {
 			throw new RuntimeException(e);

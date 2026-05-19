@@ -7,6 +7,7 @@ import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
+import com.xcurenet.logvault.loader.GuardRailLoader;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
@@ -82,6 +83,10 @@ public class GuardRailAnalysis {
 						if (conf.getGuardRailLimitRate() > val || conf.getGuardRailLimitLength() > text.length()) {
 							log.info("MG_GUARD | {} | {} > {} | {} | {}", type, maxEntry.getKey(), "SAFE", maxEntry.getValue(), DateUtils.stop(sw));
 							return "SAFE";
+						}
+						if (!GuardRailLoader.isDetectCode(maxEntry.getKey())) {
+							log.info("MG_GUARD | {} | DISABLED | {} | {} | {}", type, maxEntry.getKey(), maxEntry.getValue(), DateUtils.stop(sw));
+							return null;
 						}
 						log.info("MG_GUARD | {} | {} | {} | {}", type, maxEntry.getKey(), maxEntry.getValue(), DateUtils.stop(sw));
 						return maxEntry.getKey();

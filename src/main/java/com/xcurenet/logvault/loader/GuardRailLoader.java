@@ -44,4 +44,8 @@ public class GuardRailLoader {
         return GUARD_RAIL_MAP_REF.get().get(code);
     }
 
+    public static boolean isDetectCode(String code) {
+        return GUARD_RAIL_MAP_REF.get().containsKey(code);
+    }
+
 }

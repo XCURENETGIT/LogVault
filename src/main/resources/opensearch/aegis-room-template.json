@@ -55,6 +55,9 @@
 				"rule_name": {
 				  	"type": "keyword"
 				},
+				"block_extension": {
+				  "type": "keyword"
+				},
 				"@timestamp": {
 					"type": "date",
 					"format": "epoch_millis"

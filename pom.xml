@@ -24,7 +24,7 @@
 		<encoding>UTF-8</encoding>
 		<main.class>com.xcurenet.logvault.LogVaultApplication</main.class>
 
-		<release.version>23</release.version>
+		<release.version>24</release.version>
 		<build.version>${project.version}-${release.version}</build.version>
 		<arch>x86_64</arch>
 

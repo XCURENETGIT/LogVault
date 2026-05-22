@@ -107,6 +107,9 @@ public class EmassDoc {
     @Field("rule_name") // 정책 명
     private String ruleName;
 
+    @Field("block_extension") // 차단 파일 확장자
+    private String blockExtension;
+
 	@Data
 	@Builder
 	public static class Day {

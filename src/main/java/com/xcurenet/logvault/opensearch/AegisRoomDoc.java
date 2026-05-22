@@ -1,6 +1,7 @@
 package com.xcurenet.logvault.opensearch;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.xcurenet.logvault.module.util.ActionType;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
@@ -70,5 +71,9 @@ public class AegisRoomDoc {
 
     @Field("rule_name") // 정책 명
     private String ruleName;
+
+    @Field("block_extension") // 차단 파일 확장자
+    private String blockExtension;
+
 
 }

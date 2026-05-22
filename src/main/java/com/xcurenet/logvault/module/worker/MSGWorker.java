@@ -35,6 +35,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Log4j2
 public class MSGWorker extends AbstractWorker {
 
+    private static final String PATTERN_FILE_UPLOAD = "FU";
+
     public MSGWorker(final ApplicationContext context, PriorityBlockingQueue<ScanData> queue, final AtomicBoolean run) {
         super(context, queue, run);
     }
@@ -54,11 +56,12 @@ public class MSGWorker extends AbstractWorker {
             doc.setRuleSeq(msg.getRuleSeq());
 
             if (Common.isNotEmpty(msg.getRuleSeq())) {
-                List<BlockRuleJsonDto.RuleEntry> rules = ruleLoader.getRules();
-                if (rules != null && !rules.isEmpty()) {
-                    rules.stream().filter(r -> r.getRuleSeq().intValue() == msg.getRuleSeq().intValue())
-                            .findFirst().ifPresent(rule -> doc.setRuleName(rule.getRuleName()));
-                }
+                findRule(msg.getRuleSeq()).ifPresent(rule -> {
+                    doc.setRuleName(rule.getRuleName());
+                    if (isFileUploadRule(rule)) {
+                        doc.setBlockExtension(msg.getAttachExt());
+                    }
+                });
             }
 
             if (msg.getCtime() == null)
@@ -93,6 +96,29 @@ public class MSGWorker extends AbstractWorker {
         } catch (Exception e) {
             throw ExFactory.ex(ParsingException::new, ErrorCode.PARSER_MSG_FAIL, Map.of("info", msg.getInfoText()), e);
         }
+    }
+
+    private Optional<BlockRuleJsonDto.RuleEntry> findRule(Integer ruleSeq) {
+        if (ruleSeq == null) return Optional.empty();
+
+        List<BlockRuleJsonDto.RuleEntry> rules = ruleLoader.getRules();
+        if (rules == null || rules.isEmpty()) return Optional.empty();
+
+        return rules.stream()
+                .filter(Objects::nonNull)
+                .filter(r -> r.getRuleSeq() != null && r.getRuleSeq().intValue() == ruleSeq.intValue())
+                .findFirst();
+    }
+
+    private boolean isFileUploadRule(BlockRuleJsonDto.RuleEntry rule) {
+        if (rule == null || rule.getConditions() == null || rule.getConditions().getPatternList() == null) {
+            return false;
+        }
+
+        return rule.getConditions().getPatternList().stream()
+                .filter(Objects::nonNull)
+                .map(BlockRuleJsonDto.PatternEntry::getPattern)
+                .anyMatch(pattern -> PATTERN_FILE_UPLOAD.equalsIgnoreCase(pattern));
     }
 
     @Override

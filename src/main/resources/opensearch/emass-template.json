@@ -63,6 +63,9 @@
 				"rule_name": {
 				  	"type": "keyword"
 				},
+				"block_extension": {
+				  	"type": "keyword"
+				},
 				"root_mtr": {
 					"type": "keyword"
 				},

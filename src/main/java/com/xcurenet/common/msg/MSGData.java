@@ -113,6 +113,9 @@ public class MSGData {
 
 	@FieldKey("IS_ATTACH") //정책 차단 상세내용
 	private String isAttach;
+    
+	@FieldKey("ATTACH_EXT") //정책 차단 파일 확장자
+	private String attachExt;
 
 	@FieldKey("RESULT") // EP 전용 (GOOD, BAD) MysingleActor (http_decoder)
 	private String result;

@@ -222,7 +222,7 @@ public class PrivacyAIAnalysis {
 		int maxAttempts = Math.max(1, conf.getMlPrivacyGrpcRetryMaxAttempts());
 		int deadlineMs = Math.max(500, conf.getMlPrivacyGrpcDeadlineMs());
 		int backoffMs = Math.max(0, conf.getMlPrivacyGrpcRetryBackoffMs());
-		Pii.DetectRequest req = Pii.DetectRequest.newBuilder().setText(text).setMaxResultsPerType(max).setRuleset("strict").build();
+		Pii.DetectRequest req = Pii.DetectRequest.newBuilder().setText(text).setMaxResultsPerType(max).setRuleset("default").build();
 
 		for (int attempt = 1; attempt <= maxAttempts; attempt++) {
 			try {

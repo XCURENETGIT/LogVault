@@ -8,6 +8,7 @@ import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.module.scanner.FileScanner;
 import com.xcurenet.logvault.module.worker.AbstractWorker;
 import com.xcurenet.logvault.module.worker.MSGWorker;
+import com.xcurenet.logvault.module.worker.ShadowAiWorker;
 import jakarta.annotation.PreDestroy;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -74,16 +75,18 @@ public class LogVaultApplication implements CommandLineRunner {
 	public void run(String... args) throws Exception {
 		final CountDownLatch shutdownLatch = new CountDownLatch(1);
 		final List<AbstractWorker> workers = new ArrayList<>();
+		final List<ShadowAiWorker> shadowAiWorkers = new ArrayList<>();
 		try {
 			Runtime.getRuntime().addShutdownHook(new WaitForProperShutdown(shutdownLatch, run));
 			startScanner();
 			startWorker(workers);
+			startShadowAiWorker(shadowAiWorkers);
 
 			while (run.get()) {
 				Common.sleep(1000);
 			}
 		} finally {
-			while (!isCompleteWorkers(workers)) {
+			while (!isCompleteWorkers(workers) || !isCompleteShadowAiWorkers(shadowAiWorkers)) {
 				Common.sleep(1000);
 			}
 			shutdownExecutors();
@@ -93,6 +96,13 @@ public class LogVaultApplication implements CommandLineRunner {
 
 	private boolean isCompleteWorkers(final List<AbstractWorker> workers) {
 		for (final AbstractWorker worker : workers) {
+			if (worker.getProgress()) return false;
+		}
+		return true;
+	}
+
+	private boolean isCompleteShadowAiWorkers(final List<ShadowAiWorker> workers) {
+		for (final ShadowAiWorker worker : workers) {
 			if (worker.getProgress()) return false;
 		}
 		return true;
@@ -152,6 +162,24 @@ public class LogVaultApplication implements CommandLineRunner {
 			executor.execute(worker);
 		}
 		log.info("START_WORKER | {}", name);
+		executor.shutdown();
+		executors.add(executor);
+	}
+
+	private void startShadowAiWorker(final List<ShadowAiWorker> workers) {
+		if (!conf.isEnableShadowAi()) return;
+		if (conf.getWorkerSizeShadowAi() <= 0) {
+			log.warn("START_WORKER | SHADOW_AI skipped. workerSize={}", conf.getWorkerSizeShadowAi());
+			return;
+		}
+
+		ExecutorService executor = Executors.newFixedThreadPool(conf.getWorkerSizeShadowAi(), new NamedThreadFactory("SHADOW_AI"));
+		for (int i = 0; i < conf.getWorkerSizeShadowAi(); i++) {
+			ShadowAiWorker worker = new ShadowAiWorker(context, run);
+			workers.add(worker);
+			executor.execute(worker);
+		}
+		log.info("START_WORKER | SHADOW_AI");
 		executor.shutdown();
 		executors.add(executor);
 	}

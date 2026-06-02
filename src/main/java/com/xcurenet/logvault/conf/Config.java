@@ -120,9 +120,17 @@ public class Config {
 	@Value("${scan.dir.wmail.block:/run/ngpii}") //WMAIL 차단 스캔 경로 - 운영중 설정 변경 불가 (재시작필요)
 	private String dirWmailBlock;
 
-	@Value("${worker.size.wmail.block:1}") //WORKER 차단 동시 처리 수 - 운영중 설정 변경 불가 (재시작필요)
+    @Value("${worker.size.wmail.block:1}") //WORKER 차단 동시 처리 수 - 운영중 설정 변경 불가 (재시작필요)
 	private int workerSizeWmailBlock;
 
+    @Value("${scan.dir.enable.shadow:true}") //SHADOW AI 경로 스캔 여부 - 운영중 설정 변경 불가 (재시작필요)
+    private boolean enableShadowAi;
+
+    @Value("${scan.dir.shadow:/users/xcn-nginx/logs/shadowai}") //SHADOW AI 스캔 경로 - 운영중 설정 변경 불가 (재시작필요)
+    private String dirShadowAi;
+
+    @Value("${worker.size.shadow:1}") //WORKER SHADOW AI 동시 처리 수 - 운영중 설정 변경 불가 (재시작필요)
+    private int workerSizeShadowAi;
 
 	@Value("${decompress.depth:3}") //첨부파일 텍스트 추출 시 압축 파일 탐지 DEPTH
 	private int decompressDepth;
@@ -275,6 +283,9 @@ public class Config {
 
 	@Value("${spring.opensearch.index.room.name:aegis-room}")
 	private String indexRoomName;
+
+	@Value("${spring.opensearch.index.shadow-ai.name:shadow-ai-}")
+	private String indexShadowAiName;
 
 	//	암호화 관련 설정
 	@Value("${encrypt.enable:true}") //본문, 첨부 암호화 저장 여부 - 운영중 설정 변경 불가 (재시작필요)

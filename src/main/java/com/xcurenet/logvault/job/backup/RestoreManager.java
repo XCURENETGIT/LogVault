@@ -36,14 +36,29 @@ public class RestoreManager {
 
 	public boolean restore(final DateTime dateTime) throws IOException {
 		final String date = dateTime.toString(DateUtils.F_YYYYMMDD);
-		Path filePath = checkPath(date);
-		if (filePath == null) return false;
+		Path filePath = checkPath(date, date + ".gz", false);
+		Path shadowFilePath = checkPath(date, date + "_shadow.gz", false);
+		if (filePath == null && shadowFilePath == null) return false;
 
 		log.info("RESTORE_IDX | START | {}", date);
 
+		if (filePath != null && !restoreIndex(date, filePath, conf.getIndexName() + date, "msgid")) {
+			return false;
+		}
+
+		if (shadowFilePath != null && !restoreIndex(date, shadowFilePath, conf.getIndexShadowAiName() + date, "id")) {
+			return false;
+		}
+
+		restoreAttach(date);
+		return true;
+	}
+
+	private boolean restoreIndex(final String date, final Path filePath, final String indexName, final String idField) throws IOException {
 		StopWatch sw = DateUtils.start();
 		AtomicLong total = new AtomicLong(0L);
-		final IndexCoordinates ic = IndexCoordinates.of(conf.getIndexName() + date);
+		AtomicLong skipped = new AtomicLong(0L);
+		final IndexCoordinates ic = IndexCoordinates.of(indexName);
 		final List<IndexQuery> batch = new ArrayList<>(BATCH_SIZE);
 
 		boolean isReadOnly = indexService.isReadOnly(ic.getIndexName());
@@ -57,15 +72,20 @@ public class RestoreManager {
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(Common.zipOpen(filePath), StandardCharsets.UTF_8))) {
 			br.lines().forEach(line -> {
 				JSONObject obj = JSONObject.parseObject(line);
-				final String msgId = obj.getString("msgid");
-				batch.add(new IndexQueryBuilder().withId(msgId).withSource(line).build());
+				final String id = obj.getString(idField);
+				if (Common.isEmpty(id)) {
+					skipped.getAndIncrement();
+					return;
+				}
+
+				batch.add(new IndexQueryBuilder().withId(id).withSource(line).build());
 				if (batch.size() >= BATCH_SIZE) {
 					template.bulkIndex(batch, ic);
 					batch.clear();
 				}
 				total.getAndIncrement();
 				if (total.get() % (BATCH_SIZE * 5L) == 0) {
-					log.info("RESTORE_IDX | INDEXED {} | {}", total, date);
+					log.info("RESTORE_IDX | INDEXED {} | {}", total, ic.getIndexName());
 				}
 			});
 			if (!batch.isEmpty()) {
@@ -73,11 +93,9 @@ public class RestoreManager {
 				batch.clear();
 			}
 			ops.refresh();
-			log.info("RESTORE_IDX | DONE | date:{} | docs:{} | {}", date, total, DateUtils.stop(sw));
-
-			restoreAttach(date);
+			log.info("RESTORE_IDX | DONE | index:{} | date:{} | docs:{} skipped:{} | {}", ic.getIndexName(), date, total, skipped, DateUtils.stop(sw));
 		} catch (IOException e) {
-			log.error("RESTORE_IDX | {}", e.getMessage(), e);
+			log.error("RESTORE_IDX | {} | {}", ic.getIndexName(), e.getMessage(), e);
 			return false;
 		} finally {
 			if (isReadOnly) {
@@ -97,6 +115,10 @@ public class RestoreManager {
 		StopWatch sw = DateUtils.start();
 		Path sourceRoot = Path.of(srcPath);
 		Path targetRoot = Path.of(dstPath);
+		if (!Files.exists(sourceRoot)) {
+			log.info("RESTORE_ATT | SKIP | source not found | {}", sourceRoot);
+			return;
+		}
 		int count = copyDirectoryContents(sourceRoot, targetRoot);
 		log.info("RESTORE_ATT | DONE | date:{} | files:{} | {}", date, count, DateUtils.stop(sw));
 	}
@@ -130,12 +152,12 @@ public class RestoreManager {
 
 
 	@Nullable
-	private Path checkPath(String date) {
+	private Path checkPath(String date, String fileName, boolean required) {
 		if (!DateUtils.validDate(date, DateUtils.YYYYMMDD)) {
 			throw new SecurityException("Invalid date format: " + date);
 		}
 
-		String filePathStr = Common.makeFilepath(conf.getBackupPath(), "index", date, date + ".gz");
+		String filePathStr = Common.makeFilepath(conf.getBackupPath(), "index", date, fileName);
 		if (filePathStr == null) {
 			log.warn("Backup path is null | {}", date);
 			throw new SecurityException("Invalid File Path: " + date);
@@ -145,6 +167,18 @@ public class RestoreManager {
 		try {
 			Path base = Paths.get(conf.getBackupPath()).toAbsolutePath().normalize();
 			Path baseReal = base.toRealPath(LinkOption.NOFOLLOW_LINKS);
+			if (!filePath.startsWith(base)) {
+				throw new SecurityException("Invalid file path (path traversal?)");
+			}
+			if (!Files.exists(filePath)) {
+				if (required) {
+					log.warn("Backup file does not exist | {}", filePath);
+				} else {
+					log.info("Optional backup file does not exist | {}", filePath);
+				}
+				return null;
+			}
+
 			Path fileReal = filePath.toRealPath(LinkOption.NOFOLLOW_LINKS);
 			if (!fileReal.startsWith(baseReal)) {
 				throw new SecurityException("Invalid file path (path traversal?)");
@@ -154,10 +188,6 @@ public class RestoreManager {
 			return null;
 		}
 
-		if (!Files.exists(filePath)) {
-			log.warn("Backup file does not exist | {}", filePath);
-			return null;
-		}
 		return filePath;
 	}
 }

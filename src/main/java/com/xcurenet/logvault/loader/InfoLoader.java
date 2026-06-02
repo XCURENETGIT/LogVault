@@ -20,6 +20,7 @@ public class InfoLoader {
 	private final AnomalyScoreLoader anomalyScoreLoader;
 	private final RuleLoader ruleLoader;
     private final GuardRailLoader guardRailLoader;
+    private final AiServiceLoader aiServiceLoader;
 
 	public void init() {
 		StopWatch sw = DateUtils.start();
@@ -33,6 +34,7 @@ public class InfoLoader {
 		anomalyScoreLoad();
 		ruleLoad();
         guardRailLoad();
+        aiServiceLoad();
 
 		log.info("INFO_LOAD | END | {}\n", DateUtils.stop(sw));
 	}
@@ -92,4 +94,11 @@ public class InfoLoader {
             guardRailLoader.load();
 		}
 	}
+
+    public void aiServiceLoad() {
+        log.debug("INFO_LOAD | AiService START");
+        synchronized (this) {
+            aiServiceLoader.load();
+        }
+    }
 }

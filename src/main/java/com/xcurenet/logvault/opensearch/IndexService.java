@@ -98,6 +98,13 @@ public class IndexService {
         return template.count(query, IndexCoordinates.of(index));
     }
 
+    public boolean existsIndex(final String index) {
+        return template.execute((RestHighLevelClient client) -> {
+            GetIndexRequest existsRequest = new GetIndexRequest(index);
+            return client.indices().exists(existsRequest, RequestOptions.DEFAULT);
+        });
+    }
+
     public SearchHits<Document> search(final String queryString, int size) throws IndexerException {
         try {
             NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(QueryBuilders.queryStringQuery(queryString)).withTrackTotalHits(true).withPageable(PageRequest.of(0, size)).withSort(Sort.by(Sort.Order.desc("@timestamp"))).build();
@@ -123,6 +130,12 @@ public class IndexService {
         if (Common.isEquals(doc.getService().getSvc1(), "I")) { //생성형 AI 서비스만.
             indexRoom(doc);
         }
+    }
+
+    public void index(final ShadowAiDoc doc) throws IndexerException {
+        String index = conf.getIndexShadowAiName() + doc.getCtime().substring(0, 8);
+        log.debug("{}", doc);
+        indexData(doc, index);
     }
 
 

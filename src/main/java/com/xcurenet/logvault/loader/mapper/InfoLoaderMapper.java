@@ -64,6 +64,16 @@ public interface InfoLoaderMapper {
 	List<ServiceVO> getService();
 
 	@Select("""
+			SELECT	HOST AS host,
+					CATEGORY_GROUP_SEQ AS categoryGroupSeq,
+					CATEGORY_CD AS categoryCd
+			FROM	AI_SERVICES
+			ORDER	BY HOST
+			""")
+	@ResultType(AiServiceVO.class)
+	List<AiServiceVO> getAiServices();
+
+	@Select("""
 			SELECT	RULE_CONTENT AS ruleContent
 			FROM	UI_RULE_HISTORY
 			WHERE	RULE_TABLE_NAME = #{ruleTableName}

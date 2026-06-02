@@ -75,6 +75,10 @@ public class InfoLoaderService {
 		return result;
 	}
 
+	public List<AiServiceVO> getAiServices() {
+		return mapper.getAiServices();
+	}
+
 	public List<AnomalyScoreVO> getAnomalyScore(long version) {
 		JsonTypeContext.set(new TypeReference<List<AnomalyScoreVO>>() {});
 

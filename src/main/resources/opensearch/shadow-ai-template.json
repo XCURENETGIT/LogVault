@@ -1,0 +1,81 @@
+{
+	"index_patterns": [
+		"shadow-ai-*"
+	],
+	"priority": 9999999,
+	"template": {
+		"settings": {
+			"max_result_window": 5000,
+			"index.codec": "best_compression",
+			"index": {
+				"number_of_shards": 1,
+				"number_of_replicas": 0,
+				"codec": "best_compression",
+				"highlight": { "max_analyzed_offset": 2000000 },
+				"opendistro.index_state_management.policy_id": "emass_policy"
+			}
+		},
+		"mappings": {
+			"properties": {
+			  "id": {
+				"type": "keyword"
+			  },
+			  "@timestamp": {
+				"type": "date",
+				"format": "epoch_millis"
+			  },
+			  "ctime": {
+				"type": "date",
+				"format": "yyyyMMddHHmmss"
+			  },
+			  "service": {
+				"properties": {
+				  "category_cd": {
+					"type": "keyword"
+				  },
+				  "category_group_seq": {
+					"type": "long"
+				  },
+				  "host": {
+					"type": "keyword"
+				  }
+				}
+			  },
+			  "user": {
+				"properties": {
+				  "ip": {
+					"type": "ip"
+				  },
+				  "id": {
+					"type": "keyword"
+				  },
+				  "name": {
+					"type": "keyword"
+				  },
+				  "is_ceo": {
+					"type": "boolean"
+				  },
+				  "dept_code": {
+					"type": "keyword"
+				  },
+				  "dept_name": {
+					"type": "keyword"
+				  },
+				  "jikgub_code": {
+					"type": "keyword"
+				  },
+				  "jikgub_name": {
+					"type": "keyword"
+				  },
+				  "proxy_port": {
+					"type": "integer"
+				  }
+				}
+			  }
+			}
+		},
+		"aliases": {
+			"shadow-ai": {}
+		}
+	}
+}

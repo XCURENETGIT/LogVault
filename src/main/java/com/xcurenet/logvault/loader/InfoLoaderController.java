@@ -69,4 +69,11 @@ public class InfoLoaderController {
 		infoLoader.ruleLoad();
 		return ResponseEntity.ok().build();
 	}
+
+	@ResponseBody
+	@GetMapping(value = "/insa/ai-services/reload")
+	public ResponseEntity<Object> aiServiceReload() {
+		infoLoader.aiServiceLoad();
+		return ResponseEntity.ok().build();
+	}
 }

@@ -79,11 +79,17 @@ public class BackupPolicy {
 		FileUtils.forceMkdir(new File(conf.getBackupPath()));
 
 		long backupCount = indexBackup(date);
-		if (backupCount >= 0) { //인덱스 스냅샷이 정상 처리 되면 첨부, 본문도 백업
+        long shadowBackupCount = indexShadowAiBackup(date);
+		if (backupCount < 0 || shadowBackupCount < 0) return false;
+
+		if (backupCount > 0) { //인덱스 스냅샷이 정상 처리 되면 첨부, 본문도 백업
 			attachBackup(date);
-			writeBackupInfo(date, backupCount);
-			return true;
 		}
+        if (backupCount > 0 || shadowBackupCount > 0) {
+            writeBackupInfo(date, backupCount, shadowBackupCount);
+			return true;
+        }
+
 		return false;
 	}
 
@@ -120,32 +126,40 @@ public class BackupPolicy {
 		return item;
 	}
 
-	private void writeBackupInfo(final String date, final long count) throws IOException {
-		JSONObject info = buildBackupInfo(date, count);
+	private void writeBackupInfo(final String date, final long count, final long shadowCount) throws IOException {
+		JSONObject info = buildBackupInfo(date, count, shadowCount);
 		String infoPath = Common.makeFilepath(conf.getBackupPath(), "index", date, "info.json");
 		if (infoPath == null) return;
 
-		Files.writeString(Path.of(infoPath), info.toString(JSONWriter.Feature.PrettyFormat), StandardCharsets.UTF_8);
+		Path path = Path.of(infoPath);
+		Files.createDirectories(path.getParent());
+		Files.writeString(path, info.toString(JSONWriter.Feature.PrettyFormat), StandardCharsets.UTF_8);
 	}
 
-	private JSONObject buildBackupInfo(final String date, final long count) {
+	private JSONObject buildBackupInfo(final String date, final long count, final long shadowCount) {
 		String indexFilePath = Common.makeFilepath(conf.getBackupPath(), "index", date, date + ".gz");
+		String shadowIndexFilePath = Common.makeFilepath(conf.getBackupPath(), "index", date, date + "_shadow.gz");
 		String backupDirPath = Common.makeFilepath(conf.getBackupPath(), "index", date);
 		String attachDirPath = Common.makeFilepath(conf.getBackupPath(), "attach", date);
 
 		File indexFile = indexFilePath == null ? null : new File(indexFilePath);
+		File shadowIndexFile = shadowIndexFilePath == null ? null : new File(shadowIndexFilePath);
 		File backupDir = backupDirPath == null ? null : new File(backupDirPath);
 		File attachDir = attachDirPath == null ? null : new File(attachDirPath);
 
 		long indexSize = indexFile != null && indexFile.exists() ? indexFile.length() : 0L;
+		long shadowIndexSize = shadowIndexFile != null && shadowIndexFile.exists() ? shadowIndexFile.length() : 0L;
 		long attachSize = getDirectorySize(attachDir);
 
 		JSONObject item = new JSONObject();
 		item.put("path", backupDir == null ? null : backupDir.getAbsolutePath());
 		item.put("count", count);
+		item.put("shadowCount", shadowCount);
+		item.put("shadowPath", shadowIndexFile != null && shadowIndexFile.exists() ? shadowIndexFile.getAbsolutePath() : null);
 		item.put("indexSize", indexSize);
+		item.put("shadowIndexSize", shadowIndexSize);
 		item.put("attachSize", attachSize);
-		item.put("size", indexSize + attachSize);
+		item.put("size", indexSize + shadowIndexSize + attachSize);
 		return item;
 	}
 
@@ -173,20 +187,60 @@ public class BackupPolicy {
 	 * 개별 DOC 문서를 zst 압축파일에 json object로 라인별 저장
 	 */
 	private long indexBackup(final String yesterday) throws IOException {
-		if (!isExistIndices(yesterday)) return -1L;
+        String indexName = conf.getIndexName() + yesterday;
+        boolean indexExists = indexService.existsIndex(indexName);
+        if (!indexExists) {
+            String path = Common.makeFilepath(conf.getBackupPath(), "index", yesterday);
+            if (path != null) deleteBackupFile(Common.makeFilepath(path, yesterday + ".gz"));
+            log.info("BACKUP_IDX | NOT FOUND | {} | {}", indexName, yesterday);
+            return 0L;
+        }
 
 		StopWatch sw = DateUtils.start();
-		long total = 0;
-		int batchSize = 100;
-		long scrollTtlMs = 600000L;
 
 		String path = Common.makeFilepath(conf.getBackupPath(), "index", yesterday);
 		if (path == null) return -1L;
 		FileUtils.forceMkdir(new File(path));
 
-		String indexName = conf.getIndexName() + yesterday;
+        String outFile = Common.makeFilepath(path, yesterday + ".gz");
+        long total = writeIndexBackup(indexName, outFile);
+        if (total < 0) return -1L;
+
+		log.info("BACKUP_IDX | DONE | {} | {} | {}", conf.getIndexName(), yesterday, DateUtils.stop(sw));
+		return total;
+	}
+
+    private long indexShadowAiBackup(final String yesterday) throws IOException {
+        String shadowIndexName = conf.getIndexShadowAiName() + yesterday;
+        boolean shadowIndexExists = indexService.existsIndex(shadowIndexName);
+        if (!shadowIndexExists) {
+            String path = Common.makeFilepath(conf.getBackupPath(), "index", yesterday);
+            if (path != null) deleteBackupFile(Common.makeFilepath(path, yesterday + "_shadow.gz"));
+            log.info("BACKUP_IDX | NOT FOUND | {} | {}", shadowIndexName, yesterday);
+            return 0L;
+        }
+
+        StopWatch sw = DateUtils.start();
+
+        String path = Common.makeFilepath(conf.getBackupPath(), "index", yesterday);
+        if (path == null) return -1L;
+        FileUtils.forceMkdir(new File(path));
+
+        String shadowOutFile = Common.makeFilepath(path, yesterday + "_shadow.gz");
+        long shadowTotal = writeIndexBackup(shadowIndexName, shadowOutFile);
+        if (shadowTotal < 0) return -1L;
+
+        log.info("BACKUP_IDX | DONE | {} | {} | {}", shadowIndexName, yesterday, DateUtils.stop(sw));
+        return shadowTotal;
+    }
+
+	private long writeIndexBackup(final String indexName, final String outFile) {
+		if (outFile == null) return -1L;
+
+		long total = 0;
+		int batchSize = 100;
+		long scrollTtlMs = 600000L;
 		IndexCoordinates indexCoordinates = IndexCoordinates.of(indexName);
-		String outFile = Common.makeFilepath(path, yesterday + ".gz");
 
 		try (FileOutputStream out = new FileOutputStream(Objects.requireNonNull(outFile));
 		     GZIPOutputStream gzip = new GZIPOutputStream(out, 1 << 20);
@@ -208,12 +262,9 @@ public class BackupPolicy {
 					scrollHits = template.searchScrollContinue(scrollId, scrollTtlMs, Document.class, indexCoordinates);
 					scrollId = scrollHits.getScrollId();
 					if (total % (batchSize * 10L) == 0) {
-						log.info("BACKUP_IDX | {} docs", total);
+						log.info("BACKUP_IDX | {} | {} docs", indexName, total);
 					}
 				}
-			} catch (Exception e) {
-				log.error("BACKUP_IDX | {}", e.getMessage(), e);
-				return -1L;
 			} finally {
 				if (scrollId != null) {
 					try {
@@ -222,11 +273,21 @@ public class BackupPolicy {
 					}
 				}
 			}
-			log.info("BACKUP_IDX | DONE | {} docs | {}", total, DateUtils.stop(sw));
+			log.info("BACKUP_IDX | DONE | {} | {} docs", indexName, total);
 			return total;
 		} catch (Exception e) {
-			log.error("BACKUP_IDX | {}", e.getMessage(), e);
+			log.error("BACKUP_IDX | {} | {}", indexName, e.getMessage(), e);
+			deleteBackupFile(outFile);
 			return -1L;
+		}
+	}
+
+	private void deleteBackupFile(final String path) {
+		if (path == null) return;
+		try {
+			Files.deleteIfExists(Path.of(path));
+		} catch (IOException e) {
+			log.warn("BACKUP_IDX | DELETE_OLD_FAIL | {} | {}", path, e.getMessage(), e);
 		}
 	}
 

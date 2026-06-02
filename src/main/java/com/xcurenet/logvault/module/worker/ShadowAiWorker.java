@@ -74,7 +74,7 @@ public class ShadowAiWorker implements Runnable {
             } catch (Exception e) {
                 log.warn("SHADOW_AI_SCAN_FAIL | {}", e.getMessage(), e);
             } finally {
-                Common.sleep(scanIntervalMs());
+                Common.sleep(60 * 1000);
             }
         }
         MDC.remove("worker");
@@ -348,7 +348,4 @@ public class ShadowAiWorker implements Runnable {
         }
     }
 
-    private long scanIntervalMs() {
-        return Math.max(1000L, 60 * 1000L);
-    }
 }

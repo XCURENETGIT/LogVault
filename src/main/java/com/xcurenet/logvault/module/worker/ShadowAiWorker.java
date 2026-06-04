@@ -308,7 +308,7 @@ public class ShadowAiWorker implements Runnable {
 
         AiServiceVO aiService = aiServiceLoader.get(host);
         if (aiService != null) {
-            service.setCategoryGroupSeq(aiService.getCategoryGroupSeq());
+            service.setCategoryGroupSeq(aiService.getCategoryGroupCd());
             service.setCategoryCd(aiService.getCategoryCd());
         }
         return service;

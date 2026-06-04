@@ -32,8 +32,8 @@ public class ShadowAiDoc {
         @Field("host")
         private String host;
 
-        @Field("category_group_seq")
-        private Long categoryGroupSeq;
+        @Field("category_group_cd")
+        private String categoryGroupSeq;
 
         @Field("category_cd")
         private String categoryCd;

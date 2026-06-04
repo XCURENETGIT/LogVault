@@ -33,8 +33,8 @@
 				  "category_cd": {
 					"type": "keyword"
 				  },
-				  "category_group_seq": {
-					"type": "long"
+				  "category_group_cd": {
+					"type": "keyword"
 				  },
 				  "host": {
 					"type": "keyword"

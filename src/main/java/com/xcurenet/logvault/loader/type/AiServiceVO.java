@@ -7,6 +7,6 @@ import org.apache.ibatis.type.Alias;
 @Alias("AiServiceVO")
 public class AiServiceVO {
     private String host;
-    private Long categoryGroupSeq;
+    private String categoryGroupCd;
     private String categoryCd;
 }

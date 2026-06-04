@@ -64,10 +64,12 @@ public interface InfoLoaderMapper {
 	List<ServiceVO> getService();
 
 	@Select("""
-			SELECT	HOST AS host,
-					CATEGORY_GROUP_SEQ AS categoryGroupSeq,
-					CATEGORY_CD AS categoryCd
-			FROM	AI_SERVICES
+			SELECT	A.HOST AS host,
+					B.CATEGORY_GROUP_CD AS categoryGroupCd,
+					A.CATEGORY_CD AS categoryCd
+			FROM	AI_SERVICES A, AI_CATEGORY B
+			WHERE
+				A.CATEGORY_CD = B.CATEGORY_CD
 			ORDER	BY HOST
 			""")
 	@ResultType(AiServiceVO.class)

@@ -147,6 +147,9 @@ public class MSGData {
 	@FieldKey({"USER", "LOGIN_ID"}) // 디코더에서 사용자를 찾을 수 있도록 남겨주는 IP 값 (bnr.yum@xcurenet.com 혹은 bnr.yum)
 	private String loginId;
 
+	@FieldKey("ACCOUNT")
+	private String account;
+
 	@FieldKey("REPROCESS")
 	private int reProcess = 0;
 

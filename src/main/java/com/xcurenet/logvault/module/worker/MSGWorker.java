@@ -135,6 +135,7 @@ public class MSGWorker extends AbstractWorker {
 
         EmassDoc.User user = new EmassDoc.User();
         user.setIp(data.getMsgData().getSourceIp().toCanonicalAddr());
+        user.setAccount(data.getMsgData().getAccount());
         try {
             if (conf.getUserIdentificationMode() == IdentificationMode.PORT && Common.isNumeric(data.getFileNameInfo().getDeviceName())) {
                 user.setProxyPort(Common.nvz(data.getFileNameInfo().getDeviceName()));

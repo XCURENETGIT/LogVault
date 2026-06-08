@@ -143,6 +143,9 @@
 						},
 						"proxy_port": {
 							"type": "integer"
+						},
+						"account": {
+							"type": "keyword"
 						}
 					}
 				},

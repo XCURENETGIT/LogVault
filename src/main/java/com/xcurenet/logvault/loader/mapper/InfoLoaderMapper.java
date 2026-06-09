@@ -44,10 +44,7 @@ public interface InfoLoaderMapper {
 			SELECT	PATTERN_CD AS patternCd,
 					PATTERN_NM AS patternNm,
 					PATTERN_TYPE AS patternType,
-					REGEX AS regex,
-					MIN_CNT AS minCount,
-					ALARM_YN AS alarmYn,
-					SYSLOG_YN AS syslogYn
+					REGEX AS regex
 			FROM	UI_PATTERN
 			WHERE	USE_YN = 'Y'
 			""")

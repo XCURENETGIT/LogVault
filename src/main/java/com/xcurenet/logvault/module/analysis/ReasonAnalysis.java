@@ -11,7 +11,9 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Log4j2
 @Service
@@ -81,29 +83,49 @@ public class ReasonAnalysis {
         EmassDoc.KeywordInfo keywordInfo = doc.getKeywordInfo();
         if (keywordInfo == null) keywordInfo = new EmassDoc.KeywordInfo();
 
-        List<EmassDoc.KeywordInfo.Keyword> body = keywordInfo.getBody();
-        if (body == null) body = new ArrayList<>();
+        List<EmassDoc.KeywordInfo.Keyword> keywords = isAttach ? keywordInfo.getAttach() : keywordInfo.getBody();
+        if (keywords == null) keywords = new ArrayList<>();
 
         EmassDoc.KeywordInfo.Keyword exist = null;
-        for (EmassDoc.KeywordInfo.Keyword k : body) {
+        for (EmassDoc.KeywordInfo.Keyword k : keywords) {
             if (keyword.equals(k.getName())) {
                 exist = k;
                 break;
             }
         }
 
-        if (exist == null) body.add(EmassDoc.KeywordInfo.Keyword.builder().name(keyword).count(count).build());
+        if (exist == null) keywords.add(EmassDoc.KeywordInfo.Keyword.builder().name(keyword).count(count).build());
         else exist.setCount(exist.getCount() + 1);
 
         keywordInfo.setExist(true);
         if (isAttach) {
-            keywordInfo.setAttach(body);
+            keywordInfo.setAttach(keywords);
         } else {
-            keywordInfo.setBody(body);
+            keywordInfo.setBody(keywords);
         }
-        keywordInfo.setKeywords(body);
+        keywordInfo.setKeywords(mergeKeywords(keywordInfo.getBody(), keywordInfo.getAttachName(), keywordInfo.getAttach()));
 
         doc.setKeywordInfo(keywordInfo);
+    }
+
+    @SafeVarargs
+    private final List<EmassDoc.KeywordInfo.Keyword> mergeKeywords(List<EmassDoc.KeywordInfo.Keyword>... sources) {
+        Map<String, Integer> merged = new LinkedHashMap<>();
+        for (List<EmassDoc.KeywordInfo.Keyword> source : sources) {
+            if (source == null) continue;
+            for (EmassDoc.KeywordInfo.Keyword keyword : source) {
+                if (keyword == null || keyword.getName() == null) continue;
+                merged.merge(keyword.getName(), keyword.getCount(), Integer::sum);
+            }
+        }
+
+        if (merged.isEmpty()) return null;
+
+        List<EmassDoc.KeywordInfo.Keyword> keywords = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : merged.entrySet()) {
+            keywords.add(EmassDoc.KeywordInfo.Keyword.builder().name(entry.getKey()).count(entry.getValue()).build());
+        }
+        return keywords;
     }
 
     private void appendPrivacy(EmassDoc doc, int id, int confidence, String detectStr, boolean isAttach) {

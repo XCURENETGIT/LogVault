@@ -10,6 +10,7 @@ import com.xcurenet.logvault.LogVaultApplication;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.exception.*;
 import com.xcurenet.logvault.fs.FileProcessor;
+import com.xcurenet.logvault.loader.AccountsLoader;
 import com.xcurenet.logvault.loader.RuleLoader;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.module.alert.AlertService;
@@ -101,7 +102,6 @@ public abstract class AbstractWorker implements Runnable {
 				boolean filtered = filterService.filter(data);
 				if (!filtered) {
 					analysisService.analyse(data);
-
 					boolean success = false;
 					int retryCnt = 1;
 					while (retryCnt <= 3) {

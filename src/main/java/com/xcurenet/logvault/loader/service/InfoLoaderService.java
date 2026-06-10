@@ -20,6 +20,8 @@ public class InfoLoaderService {
 	private static final String UI_SERVICE = "UI_SERVICE";
 	private static final String UI_ANOMALY_SCORE = "UI_ANOMALY_SCORE";
 	private static final String UI_GUARD_RAIL = "UI_GUARD_RAIL";
+	private static final String UI_SERVICE_COMPANY_ACCOUNT_MAPR = "UI_SERVICE_COMPANY_ACCOUNT_MAPR";
+
 	private final InfoLoaderMapper mapper;
 
 	public long getKeywordVersion() {
@@ -41,6 +43,11 @@ public class InfoLoaderService {
 	public long getGuardRailVersion() {
 		return mapper.getLastVersion(UI_GUARD_RAIL);
 	}
+
+	public long getAccountVersion() {
+		return mapper.getLastVersion(UI_SERVICE_COMPANY_ACCOUNT_MAPR);
+	}
+
 
 	public List<KeywordVO> getKeyword(long version) {
 		JsonTypeContext.set(new TypeReference<List<KeywordVO>>() {});
@@ -100,5 +107,19 @@ public class InfoLoaderService {
 		List<GuardRailVO> result = (List<GuardRailVO>) wrapper.getRuleContent();
 		return result;
 	}
+
+	public List<AccountVO> getAccounts(long version) {
+		JsonTypeContext.set(new TypeReference<List<AccountVO>>() {});
+
+		RuleContentWrapper wrapper = mapper.getRuleHistory(UI_SERVICE_COMPANY_ACCOUNT_MAPR, version);
+		if (wrapper == null) return Collections.emptyList();
+
+		@SuppressWarnings("unchecked")
+		List<AccountVO> result = (List<AccountVO>) wrapper.getRuleContent();
+		return result;
+	}
+
+
+
 
 }

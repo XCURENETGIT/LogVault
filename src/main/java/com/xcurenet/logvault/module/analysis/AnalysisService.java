@@ -21,6 +21,8 @@ public class AnalysisService {
 	private final ReasonAnalysis reasonAnalysis;
 	private final GuardRailAnalysis guardRailAnalysis;
 	private final AnomalyScoreCalculator anomalyScoreCalculator;
+	private final AccountAnalysis accountAnalysis;
+
 
 	/**
 	 * 분석 파이프라인을 실행한다.
@@ -98,7 +100,20 @@ public class AnalysisService {
             } catch (Exception e) {
                 log.warn("ANALYSE_USERAGENT | {}", e.getMessage(), e);
             }
-        }
+
+						// account (사내 계정 여부 탐지)
+						try {
+							accountAnalysis.detect(data);
+						} catch (Exception e) {
+							log.warn("ANALYSE_ACCOUNT | {}", e.getMessage(), e);
+						}
+
+		}
+
+
+
+
+
 
         // BLOCK 일때도 이상행위 점수 계산
 		// 이상행위 점수 계산 (모든 분석 완료 후 최종 단계에서 실행)

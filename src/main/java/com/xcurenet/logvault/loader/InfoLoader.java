@@ -19,8 +19,9 @@ public class InfoLoader {
 	private final WorkDayLoader workDayLoader;
 	private final AnomalyScoreLoader anomalyScoreLoader;
 	private final RuleLoader ruleLoader;
-    private final GuardRailLoader guardRailLoader;
-    private final AiServiceLoader aiServiceLoader;
+  private final GuardRailLoader guardRailLoader;
+  private final AiServiceLoader aiServiceLoader;
+  private final AccountsLoader accountsLoader;
 
 	public void init() {
 		StopWatch sw = DateUtils.start();
@@ -33,8 +34,9 @@ public class InfoLoader {
 		workDayLoad();
 		anomalyScoreLoad();
 		ruleLoad();
-        guardRailLoad();
-        aiServiceLoad();
+    guardRailLoad();
+    aiServiceLoad();
+		companyAccountLoad();
 
 		log.info("INFO_LOAD | END | {}\n", DateUtils.stop(sw));
 	}
@@ -101,4 +103,12 @@ public class InfoLoader {
             aiServiceLoader.load();
         }
     }
+
+	public void companyAccountLoad() {
+		log.debug("INFO_LOAD | Company Accounts START");
+		synchronized (this) {
+			accountsLoader.load();
+		}
+	}
+
 }

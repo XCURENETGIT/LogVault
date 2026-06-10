@@ -233,6 +233,10 @@ public class EmassDoc {
 		@Field("account")
 		private String account;
 
+		@Field("isCompanyAccount")
+		private boolean isCompanyAccount;
+
+
 		@Field("is_ceo")
 		@JSONField(name = "is_ceo")
 		@JsonProperty("is_ceo")

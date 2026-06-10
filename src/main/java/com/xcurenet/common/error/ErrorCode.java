@@ -199,6 +199,11 @@ public enum ErrorCode {
 	KEYWORD_ATTACH_INVALID("LVT-8204", "Attach name or text is invalid"),
 
 	/* =========================
+	 * Account
+	 * ========================= */
+//	ACCOUNT_MSGDATA_NULL("LVT-7701", "ScanData or EmassDoc is null"),
+
+	/* =========================
 	 * Common
 	 * ========================= */
 	UNKNOWN_ERROR("LVT-9999", "Unknown error"); //분류되지 않은 알 수 없는 오류

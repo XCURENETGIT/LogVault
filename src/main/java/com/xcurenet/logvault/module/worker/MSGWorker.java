@@ -13,6 +13,7 @@ import com.xcurenet.common.utils.FileUtil;
 import com.xcurenet.logvault.exception.IndexerException;
 import com.xcurenet.logvault.exception.InsaMappingException;
 import com.xcurenet.logvault.exception.ParsingException;
+import com.xcurenet.logvault.loader.AccountsLoader;
 import com.xcurenet.logvault.loader.type.BlockRuleJsonDto;
 import com.xcurenet.logvault.loader.type.UserInfo;
 import com.xcurenet.logvault.module.ScanData;
@@ -136,6 +137,7 @@ public class MSGWorker extends AbstractWorker {
         EmassDoc.User user = new EmassDoc.User();
         user.setIp(data.getMsgData().getSourceIp().toCanonicalAddr());
         user.setAccount(data.getMsgData().getAccount());
+
         try {
             if (conf.getUserIdentificationMode() == IdentificationMode.PORT && Common.isNumeric(data.getFileNameInfo().getDeviceName())) {
                 user.setProxyPort(Common.nvz(data.getFileNameInfo().getDeviceName()));

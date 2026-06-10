@@ -38,7 +38,7 @@ public class ReasonAnalysis {
      */
     /* =========================
      * 차단인 경우 사유가 들어온다.
-     * id : 1~8 개인정보, 9~ 이상은 키워드
+     * id : 1~9 개인정보, 20~ 이상은 키워드
      * 개인정보 id 는 getId 메소드 참고
      * 1;2;abced==,3;2;abced==,5;2;abced==,5;2;abced==,5;2;abced==,5;2;abced==,5;2;abced==,2;2;abced==,8;3;abced==,6;2;abced==,9;3;abced==
      * id, confidence, detectStr(base64)
@@ -149,6 +149,7 @@ public class ReasonAnalysis {
             case 6 -> "PN";
             case 7 -> "DN";
             case 8 -> "SSN";
+            case 9 -> "AN";
             default -> "-";
         };
     }

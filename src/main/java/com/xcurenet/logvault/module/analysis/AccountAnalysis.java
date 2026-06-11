@@ -26,8 +26,6 @@ public class AccountAnalysis {
             return;
         }
 
-        if (Common.isNotEquals(doc.getService().getSvc3(), "S")) return; //발신 서비스만
-
         if (msg == null) {
             return;
         }

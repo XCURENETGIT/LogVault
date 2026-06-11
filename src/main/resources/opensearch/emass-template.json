@@ -275,6 +275,9 @@
 						},
 						"account": {
 						  "type": "keyword"
+						},
+						"is_company_account": {
+							"type": "boolean"
 						}
 					}
 				},
@@ -517,6 +520,18 @@
 							}
 						},
 						"attach": {
+							"properties": {
+								"score": { "type": "integer" },
+								"count": { "type": "integer" }
+							}
+						},
+						"account": {
+							"properties": {
+								"score": { "type": "integer" },
+								"count": { "type": "integer" }
+							}
+						},
+						"work": {
 							"properties": {
 								"score": { "type": "integer" },
 								"count": { "type": "integer" }

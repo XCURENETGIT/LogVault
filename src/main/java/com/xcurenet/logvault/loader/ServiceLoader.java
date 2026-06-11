@@ -7,9 +7,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Log4j2
@@ -17,10 +18,10 @@ import java.util.concurrent.atomic.AtomicReference;
 @RequiredArgsConstructor
 public class ServiceLoader {
 	private final InfoLoaderService infoLoaderService;
-	private final AtomicReference<Set<String>> SERVICE_REF = new AtomicReference<>();
+	private final AtomicReference<Map<String, ServiceVO>> SERVICE_REF = new AtomicReference<>(Collections.emptyMap());
 
 	public void load() {
-		Set<String> serviceSet = new HashSet<>();
+		Map<String, ServiceVO> serviceMap = new HashMap<>();
 		long version = infoLoaderService.getServiceVersion();
 		List<ServiceVO> service = infoLoaderService.getService(version);
 		for (ServiceVO item : service) {
@@ -28,13 +29,23 @@ public class ServiceLoader {
 			if (Common.isEmpty(item.getServiceCd()) || Common.isEquals(item.getUseYn(), "N") || Common.isEquals(item.getLoggingYn(), "N"))
 				continue;
 
-			serviceSet.add(item.getServiceCd());
-			log.info("INFO_LOAD | Rule Version : {} | Service | {} | {}", version, item.getServiceCd(), item.getServiceName());
+			serviceMap.put(item.getServiceCd(), item);
+			log.info("INFO_LOAD | Rule Version : {} | Service | {} | {} | {}", version, item.getServiceCd(), item.getServiceName(), item.getCompanyAccountUseYn());
 		}
-		SERVICE_REF.set(serviceSet);
+		SERVICE_REF.set(serviceMap);
 	}
 
 	public boolean contains(final String svc) {
-		return SERVICE_REF.get().contains(svc);
+		return SERVICE_REF.get().containsKey(svc);
+	}
+
+	public ServiceVO get(final String svc) {
+		if (Common.isEmpty(svc)) return null;
+		return SERVICE_REF.get().get(svc);
+	}
+
+	public boolean isCompanyAccountUse(final String svc) {
+		ServiceVO service = get(svc);
+		return service != null && Common.isEquals(service.getCompanyAccountUseYn(), "Y");
 	}
 }

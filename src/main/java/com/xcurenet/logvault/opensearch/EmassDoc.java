@@ -132,6 +132,7 @@ public class EmassDoc {
 	public static class MLResult {
 		@Field("code_exist")
 		private boolean codeExist;
+        // 0: 업무, 1:비업무
 		@Field("category")
 		private int category;
 		@Field("probs")
@@ -233,9 +234,11 @@ public class EmassDoc {
 		@Field("account")
 		private String account;
 
-		@Field("isCompanyAccount")
-		private boolean isCompanyAccount;
-
+		@Field("is_company_account")
+		@JSONField(name = "is_company_account")
+		@JsonProperty("is_company_account")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+		private Boolean companyAccount;
 
 		@Field("is_ceo")
 		@JSONField(name = "is_ceo")
@@ -449,14 +452,20 @@ public class EmassDoc {
 		private ScoreEntry similarity = new ScoreEntry();
 		@Field("attach")
 		private ScoreEntry attach = new ScoreEntry();
+		@Field("account")
+		private ScoreEntry account = new ScoreEntry();
+		@Field("work")
+		private ScoreEntry work = new ScoreEntry();
 		@Field("total")
 		private ScoreEntry total = new ScoreEntry();
 
 		public void calculateTotal() {
 			this.total.setScore(guardrail.getScore() + keyword.getScore() + pattern.getScore()
-					+ codeExist.getScore() + similarity.getScore() + attach.getScore());
+					+ codeExist.getScore() + similarity.getScore() + attach.getScore()
+					+ account.getScore() + work.getScore());
 			this.total.setCount(guardrail.getCount() + keyword.getCount() + pattern.getCount()
-					+ codeExist.getCount() + similarity.getCount() + attach.getCount());
+					+ codeExist.getCount() + similarity.getCount() + attach.getCount()
+					+ account.getCount() + work.getCount());
 			// score/count 가 모두 0인 항목은 null 처리하여 인덱싱에서 제외
 			guardrail = nullIfEmpty(guardrail);
 			keyword = nullIfEmpty(keyword);
@@ -464,6 +473,8 @@ public class EmassDoc {
 			codeExist = nullIfEmpty(codeExist);
 			similarity = nullIfEmpty(similarity);
 			attach = nullIfEmpty(attach);
+			account = nullIfEmpty(account);
+			work = nullIfEmpty(work);
 		}
 
 		private static ScoreEntry nullIfEmpty(ScoreEntry entry) {

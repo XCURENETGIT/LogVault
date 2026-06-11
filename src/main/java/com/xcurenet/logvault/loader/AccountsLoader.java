@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,8 +20,8 @@ import java.util.concurrent.atomic.AtomicReference;
 @RequiredArgsConstructor
 public class AccountsLoader {
 
-	private static final AtomicReference<Map<String, String>> ACCOUNT_MAP_REF = new AtomicReference<>();
-	private static final AtomicReference<Map<String, String>> ACCOUNT_REGEX_MAP_REF = new AtomicReference<>();
+	private static final AtomicReference<Map<String, String>> ACCOUNT_MAP_REF = new AtomicReference<>(Collections.emptyMap());
+	private static final AtomicReference<Map<String, String>> ACCOUNT_REGEX_MAP_REF = new AtomicReference<>(Collections.emptyMap());
 
 	private final InfoLoaderService infoLoaderService;
 
@@ -44,8 +45,8 @@ public class AccountsLoader {
 		ACCOUNT_REGEX_MAP_REF.set(accountRegex);
 	}
 
-	public static boolean isDetectCode(String svcCd, String code) {
-		if (svcCd == null || code == null) {
+	public static boolean isDetectAccount(String svcCd, String account) {
+		if (svcCd == null || account == null) {
 			return false;
 		}
 
@@ -59,7 +60,7 @@ public class AccountsLoader {
 					continue;
 				}
 
-				if (code.endsWith(suffix)) {
+				if (account.endsWith(suffix)) {
 					return true;
 				}
 			}
@@ -71,8 +72,8 @@ public class AccountsLoader {
 			return false;
 		}
 
-		for (String account : companyAccounts.split(",")) {
-			if (code.equals(account.trim())) {
+		for (String str : companyAccounts.split(",")) {
+			if (account.equals(str.trim())) {
 				return true;
 			}
 		}

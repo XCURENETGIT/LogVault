@@ -13,7 +13,6 @@ import com.xcurenet.common.utils.FileUtil;
 import com.xcurenet.logvault.exception.IndexerException;
 import com.xcurenet.logvault.exception.InsaMappingException;
 import com.xcurenet.logvault.exception.ParsingException;
-import com.xcurenet.logvault.loader.AccountsLoader;
 import com.xcurenet.logvault.loader.type.BlockRuleJsonDto;
 import com.xcurenet.logvault.loader.type.UserInfo;
 import com.xcurenet.logvault.module.ScanData;
@@ -130,11 +129,12 @@ public class MSGWorker extends AbstractWorker {
         if (data.getMsgData().getSourceIp() == null) {
             throw ExFactory.ex(InsaMappingException::new, ErrorCode.INSA_SIP_NULL, Map.of("info", data.getMsgData().getInfoText()));
         }
-        if (data.getEmassDoc().getUser() != null) { //이미 처리된 상태라면
-            return;
+
+        EmassDoc.User user = data.getEmassDoc().getUser();
+        if (user == null) {
+            user = new EmassDoc.User();
         }
 
-        EmassDoc.User user = new EmassDoc.User();
         user.setIp(data.getMsgData().getSourceIp().toCanonicalAddr());
         user.setAccount(data.getMsgData().getAccount());
 

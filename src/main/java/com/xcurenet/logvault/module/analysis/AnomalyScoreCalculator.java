@@ -24,6 +24,10 @@ public class AnomalyScoreCalculator {
     private static final String PATTERN_FILE_UPLOAD = "FU";      // 파일업로드
     private static final String PATTERN_SIMILARITY = "CF";       // 기밀문서(대외비) 유사도
 
+    private static final String PATTERN_PERSONAL_ACCOUNT = "PA";
+    private static final String PATTERN_WORK = "WRK";
+    private static final int ML_CATEGORY_NOT_WORK = 0;
+
     private final AnomalyScoreLoader anomalyScoreLoader;
     private final KeywordLoader keywordLoader;
 
@@ -45,15 +49,17 @@ public class AnomalyScoreCalculator {
 
         calcGuardrail(doc, score.getGuardrail());
         calcKeyword(doc, score.getKeyword());
-        calcPattern(doc, score.getPattern(), score.getAttach(), score.getCodeExist(), score.getSimilarity());
+        calcPattern(doc, score.getPattern(), score.getAttach(), score.getCodeExist(), score.getSimilarity(), score.getAccount(), score.getWork());
 
-        log.debug("ANOMALY_SCORE | msgid={} | guardrail={}({}) keyword={}({}) pattern={}({}) code_exist={}({}) similarity={}({})",
+        log.debug("ANOMALY_SCORE | msgid={} | guardrail={}({}) keyword={}({}) pattern={}({}) code_exist={}({}) similarity={}({}) account={}({}) work={}({})",
                 doc.getMsgid(),
                 score.getGuardrail().getScore(), score.getGuardrail().getCount(),
                 score.getKeyword().getScore(), score.getKeyword().getCount(),
                 score.getPattern().getScore(), score.getPattern().getCount(),
                 score.getCodeExist().getScore(), score.getCodeExist().getCount(),
-                score.getSimilarity().getScore(), score.getSimilarity().getCount());
+                score.getSimilarity().getScore(), score.getSimilarity().getCount(),
+                score.getAccount().getScore(), score.getAccount().getCount(),
+                score.getWork().getScore(), score.getWork().getCount());
 
         score.calculateTotal();
 
@@ -106,7 +112,7 @@ public class AnomalyScoreCalculator {
             String categorySeq = keywordLoader.getCategorySeq(kw.getName());
             if (categorySeq == null) continue;
 
-            for(int i = 0; i < kw.getCount(); i++){
+            for (int i = 0; i < kw.getCount(); i++) {
                 entry.add(anomalyScoreLoader.getScore(AnomalyScoreLoader.TABLE_KEYWORD_CATEGORY, categorySeq));
             }
         }
@@ -120,21 +126,25 @@ public class AnomalyScoreCalculator {
     private void calcPattern(EmassDoc doc, EmassDoc.AnomalyScore.ScoreEntry patternEntry,
                              EmassDoc.AnomalyScore.ScoreEntry attachEntry,
                              EmassDoc.AnomalyScore.ScoreEntry codeExistEntry,
-                             EmassDoc.AnomalyScore.ScoreEntry similarityEntry) {
+                             EmassDoc.AnomalyScore.ScoreEntry similarityEntry,
+                             EmassDoc.AnomalyScore.ScoreEntry accountEntry,
+                             EmassDoc.AnomalyScore.ScoreEntry workEntry) {
         // 1. 개인정보 패턴 (privacy_info): 각 탐지 항목별 점수
         calcPrivacyPattern(doc, patternEntry);
 
         calcFileUploadPattern(doc, attachEntry);
 
+        calcAccountPattern(doc, accountEntry);
+
         // 2. ML 패턴: 본문 ml_result
         if (doc.getBody() != null) {
-            calcMlPattern(codeExistEntry, similarityEntry, doc.getBody().getMlResult());
+            calcMlPattern(codeExistEntry, similarityEntry, workEntry, doc.getBody().getMlResult());
         }
 
         // 3. ML 패턴: 각 첨부 ml_result
         if (doc.getAttach() != null) {
             for (EmassDoc.Attach attach : doc.getAttach()) {
-                calcMlPattern(codeExistEntry, similarityEntry, attach.getMlResult());
+                calcMlPattern(codeExistEntry, similarityEntry, workEntry, attach.getMlResult());
             }
         }
     }
@@ -148,7 +158,7 @@ public class AnomalyScoreCalculator {
         if (privacyInfos == null || privacyInfos.isEmpty()) return;
 
         for (EmassDoc.PrivacyInfo info : privacyInfos) {
-            for(int i = 0; i < info.getCount(); i++){
+            for (int i = 0; i < info.getCount(); i++) {
                 entry.add(anomalyScoreLoader.getScore(AnomalyScoreLoader.TABLE_PATTERN, info.getId()));
             }
         }
@@ -163,12 +173,18 @@ public class AnomalyScoreCalculator {
         }
     }
 
+    private void calcAccountPattern(EmassDoc doc, EmassDoc.AnomalyScore.ScoreEntry entry) {
+        if (doc.getUser() == null || doc.getUser().getCompanyAccount() == null || doc.getUser().getCompanyAccount()) return;
+        entry.add(anomalyScoreLoader.getScore(AnomalyScoreLoader.TABLE_PATTERN, PATTERN_PERSONAL_ACCOUNT));
+    }
+
     /**
-     * ML 패턴 점수: ml_result 조건에 따라 PATTERN_CD(SC, CF) 점수 부여.
+     * ML 패턴 점수: ml_result 조건에 따라 PATTERN_CD(SC, CF, WRK) 점수 부여.
      * 각 본문/첨부의 ml_result 별로 독립 계산.
      */
     private void calcMlPattern(EmassDoc.AnomalyScore.ScoreEntry codeExistEntry,
                                EmassDoc.AnomalyScore.ScoreEntry similarityEntry,
+                               EmassDoc.AnomalyScore.ScoreEntry workEntry,
                                EmassDoc.MLResult mlResult) {
         if (mlResult == null) return;
 
@@ -180,6 +196,10 @@ public class AnomalyScoreCalculator {
         // CF: 기밀문서 유사도 탐지
         if (mlResult.isSimilarityExist()) {
             similarityEntry.add(anomalyScoreLoader.getScore(AnomalyScoreLoader.TABLE_PATTERN, PATTERN_SIMILARITY));
+        }
+
+        if (mlResult.getCategory() == ML_CATEGORY_NOT_WORK) {
+            workEntry.add(anomalyScoreLoader.getScore(AnomalyScoreLoader.TABLE_PATTERN, PATTERN_WORK));
         }
 
     }

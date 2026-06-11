@@ -27,4 +27,7 @@ public class ServiceVO {
 	@JsonProperty("loggingYn")
 	private String loggingYn;
 
+	@Field("companyAccountUseYn")
+	@JsonProperty("companyAccountUseYn")
+    private String companyAccountUseYn;
 }

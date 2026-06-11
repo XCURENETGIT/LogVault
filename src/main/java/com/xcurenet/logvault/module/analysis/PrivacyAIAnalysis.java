@@ -49,7 +49,7 @@ public class PrivacyAIAnalysis {
 	 * ML API가 반환하는 키(탐지 타입)
 	 * processText()에서 이 순서대로 JSON 배열을 읽는다.
 	 */
-	private static final String[] PI_TYPE = {"SN", "DN", "AN", "PN", "MN", "BN", "EML", "IP", "SSN"};
+	private static final String[] PI_TYPE = {"SN", "DN", "AN", "PN", "MN", "BN", "EML", "IP", "SSN", "BRN"};
 
 	@PostConstruct
 	public void initGrpcClient() {

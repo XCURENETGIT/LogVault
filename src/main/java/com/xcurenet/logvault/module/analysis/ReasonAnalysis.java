@@ -77,7 +77,7 @@ public class ReasonAnalysis {
     }
 
     private void appendKeyword(EmassDoc doc, int id, int count, String detectStr, boolean isAttach) {
-        if (id < 9) return;
+        if (id < 200000) return;
 
         String keyword = Common.decodeBase64ToString(detectStr);
         EmassDoc.KeywordInfo keywordInfo = doc.getKeywordInfo();
@@ -109,7 +109,7 @@ public class ReasonAnalysis {
     }
 
     @SafeVarargs
-    private final List<EmassDoc.KeywordInfo.Keyword> mergeKeywords(List<EmassDoc.KeywordInfo.Keyword>... sources) {
+    private List<EmassDoc.KeywordInfo.Keyword> mergeKeywords(List<EmassDoc.KeywordInfo.Keyword>... sources) {
         Map<String, Integer> merged = new LinkedHashMap<>();
         for (List<EmassDoc.KeywordInfo.Keyword> source : sources) {
             if (source == null) continue;
@@ -129,7 +129,7 @@ public class ReasonAnalysis {
     }
 
     private void appendPrivacy(EmassDoc doc, int id, int confidence, String detectStr, boolean isAttach) {
-        if (id > 8) return;
+        if (id > 200000) return;
 
         String encrypted = Common.encString(Common.decodeBase64ToString(detectStr).getBytes(StandardCharsets.UTF_8), conf.getEncryptKey(), conf.getEncyptCipher());
         String piId = getId(id);
@@ -172,6 +172,7 @@ public class ReasonAnalysis {
             case 7 -> "DN";
             case 8 -> "SSN";
             case 9 -> "AN";
+            case 10 -> "BRN";
             default -> "-";
         };
     }

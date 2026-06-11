@@ -129,7 +129,7 @@ public class ReasonAnalysis {
     }
 
     private void appendPrivacy(EmassDoc doc, int id, int confidence, String detectStr, boolean isAttach) {
-        if (id > 200000) return;
+        if (id >= 200000) return;
 
         String encrypted = Common.encString(Common.decodeBase64ToString(detectStr).getBytes(StandardCharsets.UTF_8), conf.getEncryptKey(), conf.getEncyptCipher());
         String piId = getId(id);

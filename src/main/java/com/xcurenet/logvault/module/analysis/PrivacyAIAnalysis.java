@@ -249,6 +249,7 @@ public class PrivacyAIAnalysis {
 				result.put("EML", data.getEmlList());
 				result.put("CN", data.getCnList());
 				result.put("AN", data.getAnList());
+				result.put("BRN", data.getBrnList());
 				log.info("{}", result);
 				log.debug("ML_PRIVACY_GRPC_RESPONSE | TEXT.LENGTH:{} | META:ruleset={}, version={}, updatedAt={}", text.length(), res.getMeta().getRulesetName(), res.getMeta().getRulesetVersion(), res.getMeta().getRulesetUpdatedAt());
 				return result;

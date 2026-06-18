@@ -83,6 +83,7 @@ public class AlertService {
             result.setRuleSeq(rule.getRuleSeq());
             result.setRuleType(toRuleType(rule.getRuleType()));
             result.setRuleName(rule.getRuleName());
+            result.setRuleTarget(Common.isEquals(rule.getBlockNonCorpAccountYn(), "Y") ? "ACCOUNT" : "CONTENT");
 
             Set<String> ruleKeywords = ruleKeywordSet(rule);
             Set<String> rulePatterns = rulePatternSet(rule);
@@ -402,6 +403,7 @@ public class AlertService {
         private int ruleSeq;
         private RuleType ruleType;
         private String ruleName;
+        private String ruleTarget;
 
         private int keywordAlarmTotal;
         private int keywordSyslogTotal;

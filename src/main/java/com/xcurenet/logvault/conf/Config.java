@@ -92,6 +92,9 @@ public class Config {
 	@Value("${data.path:/users/las/msg/data}") //디코더 데이터 경로 - 운영중 설정 변경 불가 (재시작필요)
 	private String dataPath;
 
+	@Value("${data.path:/run/ngpii}") //디코더 데이터 경로 - 운영중 설정 변경 불가 (재시작필요)
+	private String blockDataPath;
+
 	@Value("${data.backup.enable:false}") //데이터 백업 (첨부, 본문, OpenSearch Index)
 	private boolean backupEnable;
 

@@ -114,16 +114,15 @@ public class LogVaultApplication implements CommandLineRunner {
 	}
 
 	private void startScanner() {
-		if (conf.isEnableWmailBlock()) startScanner(conf.getDirWmailBlock(), wmailBlockQueue);
-		if (conf.isEnableWmail()) startScanner(conf.getDirWmail(), wmailQueue);
+		if (conf.isEnableWmailBlock()) startScanner(conf.getDirWmailBlock(), conf.getBlockDataPath(), wmailBlockQueue);
+		if (conf.isEnableWmail()) startScanner(conf.getDirWmail(), conf.getDataPath(), wmailQueue);
 		log.info("START_SCAN | LOAD END\n");
 	}
 
-	private void startScanner(final String dir, final PriorityBlockingQueue<ScanData> queue) {
+	private void startScanner(final String dir, final String dataPath, final PriorityBlockingQueue<ScanData> queue) {
 		if (Common.isEmpty(dir)) return;
 
 		int waitingSec = conf.getScanDirectoryScanningWaitingSec();
-		String dataPath = conf.getDataPath();
 		int split = conf.getDecoderSplitDir();
 		int fileWaitTime = conf.getInterval();
 

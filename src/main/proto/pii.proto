@@ -4,6 +4,7 @@ package xcn.pii.v1;
 
 service PiiDetector {
   rpc Detect(DetectRequest) returns (DetectResponse);
+  rpc ReplaceExclusions(ReplaceExclusionsRequest) returns (ReplaceExclusionsResponse);
   rpc Health(HealthRequest) returns (HealthResponse);
 }
 
@@ -84,6 +85,24 @@ message PiiData {
 
   int32 an_cnt = 47;
   repeated MatchItem an = 48;
+
+  int32 vn_cccd_cnt = 49;
+  repeated MatchItem vn_cccd = 50;
+
+  int32 vn_mn_cnt = 51;
+  repeated MatchItem vn_mn = 52;
+
+  int32 vn_pn_cnt = 53;
+  repeated MatchItem vn_pn = 54;
+
+  int32 vn_tin_cnt = 55;
+  repeated MatchItem vn_tin = 56;
+
+  int32 vn_si_cnt = 57;
+  repeated MatchItem vn_si = 58;
+
+  int32 fn_cnt = 59;
+  repeated MatchItem fn = 60;
 }
 
 message PiiMeta {
@@ -98,6 +117,20 @@ message DetectResponse {
   string message = 3;
   PiiData data = 4;
   PiiMeta meta = 5;
+}
+
+message ReplaceExclusionsRequest {
+  string json_payload = 1;
+}
+
+message ReplaceExclusionsResponse {
+  bool success = 1;
+  int32 status = 2;
+  string message = 3;
+  string path = 4;
+  string updated_at = 5;
+  int32 total_values = 6;
+  map<string, int32> type_counts = 7;
 }
 
 message HealthRequest {}

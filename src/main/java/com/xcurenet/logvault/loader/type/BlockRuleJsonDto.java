@@ -13,7 +13,9 @@ import java.util.List;
 public class BlockRuleJsonDto {
 
     private Long ruleVersion;
+    private Boolean ruleIgnoreCase;
     private List<RuleEntry> rules;
+    private List<CorpAccountEntry> corpAccount;
     private List<BlockMsgEntry> blockMsg;
 
     @Data
@@ -34,6 +36,9 @@ public class BlockRuleJsonDto {
         private Conditions conditions;
         private String alarmYn;
         private String syslogYn;
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private String blockedLoggingYn;
+        private String blockNonCorpAccountYn;
     }
 
     @Data
@@ -89,4 +94,14 @@ public class BlockRuleJsonDto {
         private String contentType;      // text/plain 또는 text/html
         private String blockMsg;         // Base64 인코딩된 content
     }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CorpAccountEntry {
+        private String serviceCd;
+        private String matchType;
+        private List<String> accounts;
+    }
+
 }

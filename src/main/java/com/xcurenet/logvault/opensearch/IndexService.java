@@ -198,6 +198,7 @@ public class IndexService {
         room.setMlResult(newDoc.getMlResult());
         room.setRuleSeq(newDoc.getRuleSeq());
         room.setRuleName(newDoc.getRuleName());
+        room.setRuleTarget(newDoc.getRuleTarget());
 
         String guardRailCategory = null;
         if (newDoc.getBody() != null)
@@ -237,6 +238,7 @@ public class IndexService {
         room.setMlResult(roomDoc.getMlResult());
         room.setRuleSeq(roomDoc.getRuleSeq());
         room.setRuleName(roomDoc.getRuleName());
+        room.setRuleTarget(roomDoc.getRuleTarget());
         room.setGuardrailCategory(roomDoc.getGuardrailCategory());
         room.setRecentMessage(roomDoc.getRecentMessage());
         room.setPrivacyTotal(roomDoc.getPrivacyTotal());

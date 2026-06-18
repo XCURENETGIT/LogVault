@@ -36,6 +36,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class MSGWorker extends AbstractWorker {
 
     private static final String PATTERN_FILE_UPLOAD = "FU";
+    private static final String RULE_TARGET_ACCOUNT = "ACCOUNT";
+    private static final String RULE_TARGET_CONTENT = "CONTENT";
 
     public MSGWorker(final ApplicationContext context, PriorityBlockingQueue<ScanData> queue, final AtomicBoolean run) {
         super(context, queue, run);
@@ -56,6 +58,7 @@ public class MSGWorker extends AbstractWorker {
             doc.setRuleSeq(msg.getRuleSeq());
 
             if (Common.isNotEmpty(msg.getRuleSeq())) {
+                doc.setRuleTarget(RULE_TARGET_CONTENT);
                 findRule(msg.getRuleSeq()).ifPresent(rule -> {
                     doc.setRuleName(rule.getRuleName());
                     if (isFileUploadRule(rule)) {
@@ -84,7 +87,7 @@ public class MSGWorker extends AbstractWorker {
             setSize(doc);
 
             String mlUsed = "N";
-            if (Common.isNotEquals(msg.getAction(), "BLOCK") && conf.isMlApiEnable() && Common.isEquals(doc.getService().getSvc3(), "S")) mlUsed = "P";
+//            if (Common.isNotEquals(msg.getAction(), "BLOCK") && conf.isMlApiEnable() && Common.isEquals(doc.getService().getSvc3(), "S")) mlUsed = "P";
             doc.setProcessStatus(EmassDoc.ProcessStatus.builder().ocr("N").ml(mlUsed).build()); //기본 OCR, ML 처리 대상여부, 처리 상태 값, 차단은 첨부 없어서 OCR은 대상아님.
 
             if (doc.getService() != null) { //생성형 AI 서비스중 수신 서비스의 경우 1밀리세컨드를 추가하여 Sort 처리를 한다.
@@ -119,6 +122,25 @@ public class MSGWorker extends AbstractWorker {
                 .filter(Objects::nonNull)
                 .map(BlockRuleJsonDto.PatternEntry::getPattern)
                 .anyMatch(pattern -> PATTERN_FILE_UPLOAD.equalsIgnoreCase(pattern));
+    }
+
+    private void setRuleTarget(EmassDoc doc) {
+        if (doc == null || doc.getRuleSeq() == null) return;
+
+        String ruleTarget = RULE_TARGET_CONTENT;
+        Optional<BlockRuleJsonDto.RuleEntry> rule = findRule(doc.getRuleSeq());
+        if (rule.filter(this::isBlockNonCorpAccountRule).isPresent() && isNonCorpAccount(doc.getUser())) {
+            ruleTarget = RULE_TARGET_ACCOUNT;
+        }
+        doc.setRuleTarget(ruleTarget);
+    }
+
+    private boolean isBlockNonCorpAccountRule(BlockRuleJsonDto.RuleEntry rule) {
+        return rule != null && Common.isEquals(rule.getBlockNonCorpAccountYn(), "Y");
+    }
+
+    private boolean isNonCorpAccount(EmassDoc.User user) {
+        return user != null && Boolean.FALSE.equals(user.getCompanyAccount());
     }
 
     @Override
@@ -158,6 +180,7 @@ public class MSGWorker extends AbstractWorker {
             log.warn("{} | SRCIP={} err={}", ErrorCode.INSA_MAPPING_FAIL.toString(), data.getMsgData().getSourceIp(), e.toString(), e);
         }
         data.getEmassDoc().setUser(user);
+        setRuleTarget(data.getEmassDoc());
     }
 
     @Override

@@ -72,6 +72,10 @@ public class AegisRoomDoc {
     @Field("rule_name") // 정책 명
     private String ruleName;
 
+    @Field("rule_target")
+    @JsonProperty("rule_target")
+    private String ruleTarget;
+
     @Field("block_extension") // 차단 파일 확장자
     private String blockExtension;
 

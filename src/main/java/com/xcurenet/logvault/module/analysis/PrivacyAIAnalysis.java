@@ -250,6 +250,12 @@ public class PrivacyAIAnalysis {
 				result.put("CN", data.getCnList());
 				result.put("AN", data.getAnList());
 				result.put("BRN", data.getBrnList());
+                result.put("FN", data.getFnList());
+                result.put("VN_CCCD", data.getVnCccdList());
+                result.put("VN_MN", data.getVnMnList());
+                result.put("VN_PN", data.getVnPnList());
+                result.put("VN_TIN", data.getVnTinList());
+                result.put("VN_SI", data.getVnSiList());
 				log.info("{}", result);
 				log.debug("ML_PRIVACY_GRPC_RESPONSE | TEXT.LENGTH:{} | META:ruleset={}, version={}, updatedAt={}", text.length(), res.getMeta().getRulesetName(), res.getMeta().getRulesetVersion(), res.getMeta().getRulesetUpdatedAt());
 				return result;

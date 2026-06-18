@@ -55,6 +55,6 @@ public class RuleLoader {
 	}
 
 	private BlockRuleJsonDto emptyRule() {
-		return new BlockRuleJsonDto(0L, Collections.emptyList(), Collections.emptyList());
+		return new BlockRuleJsonDto(0L, null, Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
 	}
 }

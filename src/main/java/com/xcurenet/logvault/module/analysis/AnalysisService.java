@@ -56,7 +56,7 @@ public class AnalysisService {
         //networkGEOLocation.networkGEO(data);       // source ip, dest ip MAXMIND 유틸을 활용하여 국가 탐지 * 현재는 사용하지 않음
         //bodyLanguage.detect(data);                 // 본문 텍스트의 국가 탐지 (최대 2000자 기준, 나머지는 자르고 탐지) * 현재는 사용하지 않음
 
-//        if (Common.isEquals(data.getMsgData().getAction(), "ALLOW")) {
+        if (Common.isEquals(data.getMsgData().getAction(), "ALLOW")) {
             // ALLOW 일때는 추가 분석 실행
 
             // 첨부 텍스트 추출 (후속 분석에 텍스트를 제공하므로 가장 먼저 실행)
@@ -101,7 +101,7 @@ public class AnalysisService {
                 log.warn("ANALYSE_USERAGENT | {}", e.getMessage(), e);
             }
 
-//        }
+        }
 
 
         // BLOCK 일때도 이상행위 점수 계산

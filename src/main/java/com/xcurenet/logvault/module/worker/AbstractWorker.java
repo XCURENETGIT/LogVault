@@ -190,6 +190,8 @@ public abstract class AbstractWorker implements Runnable {
 	}
 
 	protected void checkAttachments(ScanData data) throws SkipFileException {
+		if (isBlockAction(data)) return;
+
 		MSGData msg = data.getMsgData();
 		if (msg.getMsgFile() != null) checkFiles(data, conf.getPath(msg.getMsgFile()));
 
@@ -198,6 +200,10 @@ public abstract class AbstractWorker implements Runnable {
 				checkFiles(data, conf.getPath(appFile));
 			}
 		}
+	}
+
+	protected boolean isBlockAction(ScanData data) {
+		return data != null && data.getMsgData() != null && Common.isEquals(data.getMsgData().getAction(), "BLOCK");
 	}
 
 	protected abstract void parse(ScanData data) throws ParsingException;
@@ -210,6 +216,8 @@ public abstract class AbstractWorker implements Runnable {
 	 * 첨부파일 전송 (NIO 기반)
 	 */
 	protected void transToAttach(ScanData data) throws FileSendException {
+		if (isBlockAction(data)) return;
+
 		MSGData msg = data.getMsgData();
 
 		for (String src : msg.getAppFile()) {
@@ -238,6 +246,8 @@ public abstract class AbstractWorker implements Runnable {
 
 	//첨부에 포함된 객체
 	protected void transToAttachEmbedded(ScanData data) throws FileSendException {
+		if (isBlockAction(data)) return;
+
 		MSGData msg = data.getMsgData();
 		for (String src : msg.getEmbeddedFile()) {
 			if (src == null) continue;
@@ -292,6 +302,8 @@ public abstract class AbstractWorker implements Runnable {
 	 * 본문 전송
 	 */
 	protected void transToBody(ScanData data) throws FileSendException {
+		if (isBlockAction(data)) return;
+
 		MSGData msg = data.getMsgData();
 		if (msg.getMsgFile() == null) return;
 

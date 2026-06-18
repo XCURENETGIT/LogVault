@@ -43,8 +43,9 @@ public class FileScanner implements Runnable {
 	private final int split;
 	private final int fileWaitTime;
 	private final String nokRoot;
+	private final boolean validateReferenceFiles;
 
-	public FileScanner(final String dir, final PriorityBlockingQueue<ScanData> queue, final AtomicBoolean run, final int scanningWaitingSec, final String dataPath, final int split, final int fileWaitTime, final String nokRoot) {
+	public FileScanner(final String dir, final PriorityBlockingQueue<ScanData> queue, final AtomicBoolean run, final int scanningWaitingSec, final String dataPath, final int split, final int fileWaitTime, final String nokRoot, final boolean validateReferenceFiles) {
 		this.startDirectory = Paths.get(Objects.requireNonNull(dir, "dir must not be null"));
 		this.queue = Objects.requireNonNull(queue, "queue must not be null");
 		this.run = Objects.requireNonNull(run, "run must not be null");
@@ -54,6 +55,7 @@ public class FileScanner implements Runnable {
 		this.split = split;
 		this.fileWaitTime = fileWaitTime;
 		this.nokRoot = nokRoot;
+		this.validateReferenceFiles = validateReferenceFiles;
 
 		final String threadName = startDirectory.getFileName() + "_scan";
 		Thread.currentThread().setName(threadName);
@@ -139,6 +141,8 @@ public class FileScanner implements Runnable {
 	 * @return true: 참조 파일이 모두 존재하거나 대기 시간 초과, false: 참조 파일 미도착 (대기 필요)
 	 */
 	private boolean isFileValid(final Path path, final long lastModified) {
+		if (!validateReferenceFiles) return true;
+
 		CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE);
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(Files.newInputStream(path), decoder))) {
 			int foundCount = 0;

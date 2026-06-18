@@ -114,12 +114,12 @@ public class LogVaultApplication implements CommandLineRunner {
 	}
 
 	private void startScanner() {
-		if (conf.isEnableWmailBlock()) startScanner(conf.getDirWmailBlock(), conf.getBlockDataPath(), wmailBlockQueue);
-		if (conf.isEnableWmail()) startScanner(conf.getDirWmail(), conf.getDataPath(), wmailQueue);
+		if (conf.isEnableWmailBlock()) startScanner(conf.getDirWmailBlock(), conf.getBlockDataPath(), wmailBlockQueue, false);
+		if (conf.isEnableWmail()) startScanner(conf.getDirWmail(), conf.getDataPath(), wmailQueue, true);
 		log.info("START_SCAN | LOAD END\n");
 	}
 
-	private void startScanner(final String dir, final String dataPath, final PriorityBlockingQueue<ScanData> queue) {
+	private void startScanner(final String dir, final String dataPath, final PriorityBlockingQueue<ScanData> queue, final boolean validateReferenceFiles) {
 		if (Common.isEmpty(dir)) return;
 
 		int waitingSec = conf.getScanDirectoryScanningWaitingSec();
@@ -127,7 +127,7 @@ public class LogVaultApplication implements CommandLineRunner {
 		int fileWaitTime = conf.getInterval();
 
 		ExecutorService executor = Executors.newFixedThreadPool(2, new NamedThreadFactory(new File(dir).getName()));
-		executor.execute(new FileScanner(dir, queue, run, waitingSec, dataPath, split, fileWaitTime, conf.getNokRoot()));
+		executor.execute(new FileScanner(dir, queue, run, waitingSec, dataPath, split, fileWaitTime, conf.getNokRoot(), validateReferenceFiles));
 		executor.shutdown();
 		executors.add(executor);
 

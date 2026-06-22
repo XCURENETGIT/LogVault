@@ -92,7 +92,7 @@ public class Config {
 	@Value("${data.path:/users/las/msg/data}") //디코더 데이터 경로 - 운영중 설정 변경 불가 (재시작필요)
 	private String dataPath;
 
-	@Value("${data.path:/run/ngpii}") //디코더 데이터 경로 - 운영중 설정 변경 불가 (재시작필요)
+	@Value("${data.path:/run/ngpii}") //차단 데이터 경로 - 운영중 설정 변경 불가 (재시작필요)
 	private String blockDataPath;
 
 	@Value("${data.backup.enable:false}") //데이터 백업 (첨부, 본문, OpenSearch Index)
@@ -355,9 +355,9 @@ public class Config {
 		return fileWaitTime * 1000;
 	}
 
-	public String getPath(final String fileName) {
+	public String getPath(final String fileName, final boolean blocked) {
 		if (Common.isEmpty(fileName)) return null;
-		return Common.makeFilepath(getDataPath(), Long.toString(Common.getSplitNum(fileName, getDecoderSplitDir())), fileName);
+		return Common.makeFilepath(blocked? getBlockDataPath() : getDataPath(), Long.toString(Common.getSplitNum(fileName, getDecoderSplitDir())), fileName);
 	}
 
 	public String getDestPath(final DateTime ctime, final String msgId) {
@@ -369,21 +369,37 @@ public class Config {
 	}
 
 	public String getWmailPathSmall(final String path) {
+		return getSmallPath(path, getDirWmail(), getDirWmailBlock());
+	}
+
+	public String getWmailPathSmall(final String path, final boolean blocked) {
+		return blocked ? getSmallPath(path, getDirWmailBlock(), getDirWmail()) : getSmallPath(path, getDirWmail(), getDirWmailBlock());
+	}
+
+	public String getDataPathSmall(final String path) {
+		return getSmallPath(path, getDataPath(), getBlockDataPath());
+	}
+
+	public String getDataPathSmall(final String path, final boolean blocked) {
+		return blocked ? getSmallPath(path, getBlockDataPath(), getDataPath()) : getSmallPath(path, getDataPath(), getBlockDataPath());
+	}
+
+	private String getSmallPath(final String path, final String primaryRoot, final String fallbackRoot) {
 		try {
-			int idx = path.indexOf(getDirWmail());
-			return (idx != -1) ? path.substring(idx + getDirWmail().length()) : path;
+			String smallPath = removeRoot(path, primaryRoot);
+			if (smallPath != null) return smallPath;
+
+			smallPath = removeRoot(path, fallbackRoot);
+			return smallPath != null ? smallPath : path;
 		} catch (Exception e) {
 			return path;
 		}
 	}
 
-	public String getDataPathSmall(final String path) {
-		try {
-			int idx = path.indexOf(getDataPath());
-			return (idx != -1) ? path.substring(idx + getDataPath().length()) : path;
-		} catch (Exception e) {
-			return path;
-		}
+	private String removeRoot(final String path, final String root) {
+		if (Common.isEmpty(path) || Common.isEmpty(root)) return null;
+		int idx = path.indexOf(root);
+		return (idx != -1) ? path.substring(idx + root.length()) : null;
 	}
 
 	public String getDestPathSmall(final String path) {

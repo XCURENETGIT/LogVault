@@ -13,6 +13,7 @@ import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.module.ScanData;
+import com.xcurenet.logvault.module.util.ActionType;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -87,6 +88,7 @@ public class AttachAnalysis {
 		}
 
 		EmassDoc doc = msg.getEmassDoc();
+		boolean blocked = isBlocked(doc);
 		List<EmassDoc.Attach> attaches = doc.getAttach();
 		if (attaches == null) {
 			return;
@@ -120,13 +122,13 @@ public class AttachAnalysis {
 				attach.setChangeExtension(data.isChangeExtension());
 				attach.setEncrypted(data.isEncrypted());
 
-				setExcelHiddenSheet(attach, data);
+				setExcelHiddenSheet(attach, data, blocked);
 				setEmbeddedImage(doc, msg.getMsgData(), attach, data);
 				setOCRTarget(doc, attach);
 
-				log.info("ATT_TEXT | {} | TXT_LEN:{} | EXT:{} | {}", conf.getDataPathSmall(attach.getSrcPath()), Common.nvl(attach.getText()).length(), attach.getExtension(), DateUtils.stop(sw));
+				log.info("ATT_TEXT | {} | TXT_LEN:{} | EXT:{} | {}", conf.getDataPathSmall(attach.getSrcPath(), blocked), Common.nvl(attach.getText()).length(), attach.getExtension(), DateUtils.stop(sw));
 			} else {
-				log.warn("{} | DATA_PATH:{}", ErrorCode.ATTACH_TEXT_EXTRACT_FAIL.toString(), conf.getDataPathSmall(attach.getSrcPath()));
+				log.warn("{} | DATA_PATH:{}", ErrorCode.ATTACH_TEXT_EXTRACT_FAIL.toString(), conf.getDataPathSmall(attach.getSrcPath(), blocked));
 			}
 		}
 	}
@@ -165,7 +167,7 @@ public class AttachAnalysis {
 				}
 			}
 		} catch (Exception e) {
-			log.warn("{} | PATH:{} | {}", ErrorCode.ATTACH_IMAGE_EXTRACT_FAIL.toString(), conf.getDataPathSmall(attach.getSrcPath()), e.getMessage(), e);
+			log.warn("{} | PATH:{} | {}", ErrorCode.ATTACH_IMAGE_EXTRACT_FAIL.toString(), conf.getDataPathSmall(attach.getSrcPath(), isBlocked(doc)), e.getMessage(), e);
 		}
 	}
 
@@ -189,7 +191,7 @@ public class AttachAnalysis {
 	/* =========================
 	 * Excel Hidden Sheet
 	 * ========================= */
-	private void setExcelHiddenSheet(EmassDoc.Attach attach, TextInfoVO data) {
+	private void setExcelHiddenSheet(EmassDoc.Attach attach, TextInfoVO data, boolean blocked) {
 		try {
 			if (data.getSheetInfo() != null) {
 				SheetDetector.SheetInfo sheet = data.getSheetInfo();
@@ -200,7 +202,7 @@ public class AttachAnalysis {
 				attach.setSheetInfo(info);
 			}
 		} catch (Exception e) {
-			log.warn("{} | PATH:{} | {}", ErrorCode.ATTACH_SHEET_INFO_FAIL.toString(), conf.getDataPathSmall(attach.getSrcPath()), e.getMessage(), e);
+			log.warn("{} | PATH:{} | {}", ErrorCode.ATTACH_SHEET_INFO_FAIL.toString(), conf.getDataPathSmall(attach.getSrcPath(), blocked), e.getMessage(), e);
 		}
 	}
 
@@ -224,6 +226,7 @@ public class AttachAnalysis {
 		}
 
 		EmassDoc doc = msg.getEmassDoc();
+		boolean blocked = isBlocked(doc);
 		try {
 			List<EmassDoc.Attach> attaches = doc.getAttach();
 			if (attaches == null) return;
@@ -239,13 +242,17 @@ public class AttachAnalysis {
 					String thumbnail = fileThumbnail.execute(attach.getExpectedExtension(), path, attach.getText());
 					if (thumbnail != null) {
 						fileThumbnail.insertThumbnail(attach.getHash(), thumbnail);
-						log.info("THUMBNAIL | {} | {}", conf.getDataPathSmall(attach.getSrcPath()), DateUtils.stop(sw));
+						log.info("THUMBNAIL | {} | {}", conf.getDataPathSmall(attach.getSrcPath(), blocked), DateUtils.stop(sw));
 					}
 				}
 			}
 		} catch (Exception e) {
 			log.warn("{} | {}", ErrorCode.ATTACH_THUMBNAIL_FAIL.toString(), e.getMessage(), e);
 		}
+	}
+
+	private boolean isBlocked(EmassDoc doc) {
+		return doc != null && doc.getAction() == ActionType.BLOCK;
 	}
 
 	public static void main(String[] args) {

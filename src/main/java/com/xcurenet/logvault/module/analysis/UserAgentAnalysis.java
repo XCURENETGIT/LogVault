@@ -2,6 +2,7 @@ package com.xcurenet.logvault.module.analysis;
 
 import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.msg.MSGData;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.FileUtil;
 import com.xcurenet.common.utils.HttpHeaderUtil;
 import com.xcurenet.logvault.conf.Config;
@@ -34,7 +35,7 @@ public class UserAgentAnalysis {
 			return;
 		}
 
-		String headerPath = conf.getPath(msg.getHeader());
+		String headerPath = conf.getPath(msg.getHeader(), Common.isEquals(msg.getAction(), "BLOCK"));
 		if (!Files.exists(Paths.get(headerPath))) {
 			log.warn("{} | PATH:{}", ErrorCode.UA_HEADER_FILE_NOT_FOUND.toString(), headerPath);
 			return;

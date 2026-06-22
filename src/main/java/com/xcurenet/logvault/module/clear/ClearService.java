@@ -2,6 +2,7 @@ package com.xcurenet.logvault.module.clear;
 
 import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.msg.MSGData;
+import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.module.ScanData;
@@ -33,20 +34,21 @@ public class ClearService {
 		int embeddedDeleted = 0;
 		int msgDeleted = remove(data.getFilePath().toAbsolutePath().toString());
 		if (msg != null) {
+			boolean blocked = Common.isEquals(msg.getAction(), "BLOCK");
 			if (msg.getMsgFile() != null) {
-				bodyDeleted = remove(conf.getPath(msg.getMsgFile()));
+				bodyDeleted = remove(conf.getPath(msg.getMsgFile(), blocked));
 			}
 			if (msg.getHeader() != null) {
-				headerDeleted = remove(conf.getPath(msg.getHeader()));
+				headerDeleted = remove(conf.getPath(msg.getHeader(), blocked));
 			}
 
 			List<String> appFilePaths = msg.getAppFile();
 			for (String path : appFilePaths) {
-				attachDeleted += remove(conf.getPath(path));
+				attachDeleted += remove(conf.getPath(path, blocked));
 			}
 			List<String> pcFilePaths = msg.getPcFile();
 			for (String path : pcFilePaths) {
-				attachDeleted += remove(conf.getPath(path));
+				attachDeleted += remove(conf.getPath(path, blocked));
 			}
 
 			List<String> embeddedFiles = msg.getEmbeddedFile();

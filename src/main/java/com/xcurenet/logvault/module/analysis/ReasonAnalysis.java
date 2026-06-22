@@ -173,6 +173,12 @@ public class ReasonAnalysis {
             case 8 -> "SSN";
             case 9 -> "AN";
             case 10 -> "BRN";
+            case 11 -> "FN";
+            case 12 -> "VN_CCCD";
+            case 13 -> "VN_MN";
+            case 14 -> "VN_PN";
+            case 15 -> "VN_TIN";
+            case 16 -> "VN_SI";
             default -> "-";
         };
     }

@@ -82,14 +82,12 @@ public class MSGWorker extends AbstractWorker {
             setService(msg, doc);
             setNetwork(msg, doc);
             setHttp(msg, doc);
-            if (!isBlockAction(data)) {
-                setBody(msg, doc);
-                setAttach(msg, doc);
-            }
+            setBody(msg, doc);
+            setAttach(msg, doc);
             setSize(doc);
 
             String mlUsed = "N";
-            if (Common.isNotEquals(msg.getAction(), "BLOCK") && conf.isMlApiEnable() && Common.isEquals(doc.getService().getSvc3(), "S")) mlUsed = "P";
+//            if (Common.isNotEquals(msg.getAction(), "BLOCK") && conf.isMlApiEnable() && Common.isEquals(doc.getService().getSvc3(), "S")) mlUsed = "P";
             doc.setProcessStatus(EmassDoc.ProcessStatus.builder().ocr("N").ml(mlUsed).build()); //기본 OCR, ML 처리 대상여부, 처리 상태 값, 차단은 첨부 없어서 OCR은 대상아님.
 
             if (doc.getService() != null) { //생성형 AI 서비스중 수신 서비스의 경우 1밀리세컨드를 추가하여 Sort 처리를 한다.
@@ -245,7 +243,7 @@ public class MSGWorker extends AbstractWorker {
     private void setBody(MSGData msg, EmassDoc doc) {
         if (msg.getMsgFile() == null) return;
 
-        Path filePath = Path.of(conf.getPath(msg.getMsgFile()));
+        Path filePath = Path.of(conf.getPath(msg.getMsgFile(), Common.isEquals(msg.getAction(), "BLOCK")));
         if (!Files.exists(filePath)) return;
 
         try {
@@ -300,7 +298,7 @@ public class MSGWorker extends AbstractWorker {
 
             String srcPathStr = Common.get(appFiles, i);
             if (srcPathStr != null) {
-                Path srcPath = Path.of(conf.getPath(srcPathStr));
+                Path srcPath = Path.of(conf.getPath(srcPathStr, Common.isEquals(msg.getAction(), "BLOCK")));
                 at.setSrcPath(srcPath.toAbsolutePath().toString());
 
                 exists = Files.exists(srcPath);

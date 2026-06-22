@@ -1,5 +1,6 @@
 package com.xcurenet.logvault.module.analysis;
 
+import com.xcurenet.common.msg.MSGData;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.module.util.CheckWorkingDay;
@@ -52,12 +53,14 @@ public class AnalysisService {
         } catch (Exception e) {
             log.warn("ANALYSE_REASON | {}", e.getMessage(), e);
         }
-
         //networkGEOLocation.networkGEO(data);       // source ip, dest ip MAXMIND 유틸을 활용하여 국가 탐지 * 현재는 사용하지 않음
         //bodyLanguage.detect(data);                 // 본문 텍스트의 국가 탐지 (최대 2000자 기준, 나머지는 자르고 탐지) * 현재는 사용하지 않음
-
-//        if (Common.isEquals(data.getMsgData().getAction(), "ALLOW")) {
-            // ALLOW 일때는 추가 분석 실행
+        MSGData msg = data.getMsgData();
+        boolean hasMsgFile = Common.isNotEmpty(msg.getMsgFile());
+        boolean hasAppFile = msg.getAppFile() != null && !msg.getAppFile().isEmpty();
+        if (Common.isEquals(msg.getAction(), "ALLOW") || hasMsgFile || hasAppFile) {
+            // ALLOW 일때 추가 분석
+            // BLOCK 일 때는 Msg, app 파일이 있을 때만 추가 분석 실행
 
             // 첨부 텍스트 추출 (후속 분석에 텍스트를 제공하므로 가장 먼저 실행)
             try {
@@ -101,7 +104,7 @@ public class AnalysisService {
                 log.warn("ANALYSE_USERAGENT | {}", e.getMessage(), e);
             }
 
-//        }
+        }
 
 
         // BLOCK 일때도 이상행위 점수 계산

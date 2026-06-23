@@ -95,6 +95,9 @@ public class PrivacyAIAnalysis {
 			return;
 		}
 
+		doc.setPrivacyInfo(null);
+		doc.setPrivacyTotal(0);
+
 		int total = 0;
 		if (doc.getBody() != null) {
 			total += processText(doc, doc.getBody().getText(), "B", "-");

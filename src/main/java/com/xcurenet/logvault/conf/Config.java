@@ -224,6 +224,20 @@ public class Config {
 	@Value("${ml.privacy.grpc.circuit.open.ms:30000}") //ML Privacy GRPC Circuit Breaker Open Duration (ms)
 	private int mlPrivacyGrpcCircuitOpenMs;
 
+	@Value("${privacy.vietnam.enable:Y}") //VN_* 개인정보 탐지 여부 (Y/N)
+	private String privacyVietnamEnable;
+
+	@Value("${gs.enable:Y}") //GS 모드 여부 (Y/N)
+	private String gsEnable;
+
+	public boolean isVietnamPrivacyEnabled() {
+		return !isYnDisabled(privacyVietnamEnable) && isYnDisabled(gsEnable);
+	}
+
+	private boolean isYnDisabled(String value) {
+		return Common.isEquals(Common.nvl(value).trim().toUpperCase(), "N");
+	}
+
 	@Value("${guardrail.api.url:http://xgenai-manager:9901/guardrail}") //guardrail Rest API URL
 	private String guardRailApiUrl;
 

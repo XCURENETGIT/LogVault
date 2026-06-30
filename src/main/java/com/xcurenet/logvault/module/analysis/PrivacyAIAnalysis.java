@@ -49,7 +49,7 @@ public class PrivacyAIAnalysis {
 	 * ML API가 반환하는 키(탐지 타입)
 	 * processText()에서 이 순서대로 JSON 배열을 읽는다.
 	 */
-	private static final String[] PI_TYPE = {"SN", "DN", "AN", "PN", "MN", "BN", "EML", "IP", "SSN", "BRN", "FN", "VN_CCCD", "VN_MN", "VN_PN", "VN_TIN", "VN_SI"};
+	private static final String[] PI_TYPE = {"AN", "BN", "BRN", "CN", "DN", "EML", "FN", "MN", "PN", "SN", "SSN", "IP", "VN_CCCD", "VN_MN", "VN_PN", "VN_TIN", "VN_SI"};
 
 	@PostConstruct
 	public void initGrpcClient() {
@@ -253,12 +253,14 @@ public class PrivacyAIAnalysis {
 				result.put("CN", data.getCnList());
 				result.put("AN", data.getAnList());
 				result.put("BRN", data.getBrnList());
-                result.put("FN", data.getFnList());
-                result.put("VN_CCCD", data.getVnCccdList());
-                result.put("VN_MN", data.getVnMnList());
-                result.put("VN_PN", data.getVnPnList());
-                result.put("VN_TIN", data.getVnTinList());
-                result.put("VN_SI", data.getVnSiList());
+				result.put("FN", data.getFnList());
+				if (conf.isVietnamPrivacyEnabled()) {
+					result.put("VN_CCCD", data.getVnCccdList());
+					result.put("VN_MN", data.getVnMnList());
+					result.put("VN_PN", data.getVnPnList());
+					result.put("VN_TIN", data.getVnTinList());
+					result.put("VN_SI", data.getVnSiList());
+				}
 				log.info("{}", result);
 				log.debug("ML_PRIVACY_GRPC_RESPONSE | TEXT.LENGTH:{} | META:ruleset={}, version={}, updatedAt={}", text.length(), res.getMeta().getRulesetName(), res.getMeta().getRulesetVersion(), res.getMeta().getRulesetUpdatedAt());
 				return result;
@@ -283,6 +285,16 @@ public class PrivacyAIAnalysis {
 			}
 		}
 		return null;
+	}
+
+	private void removeVietnamPrivacyIfDisabled(JSONObject data) {
+		if (data == null || conf.isVietnamPrivacyEnabled()) return;
+
+		data.remove("VN_CCCD");
+		data.remove("VN_MN");
+		data.remove("VN_PN");
+		data.remove("VN_TIN");
+		data.remove("VN_SI");
 	}
 
 	private boolean isCircuitOpen() {
@@ -373,7 +385,9 @@ public class PrivacyAIAnalysis {
 				log.debug("ML_PRIVACY_API_RESPONSE | {}", response);
 				JSONObject obj = JSONObject.parseObject(response);
 				if (Boolean.TRUE.equals(obj.getBoolean("success"))) {
-					return obj.getJSONObject("data");
+					JSONObject data = obj.getJSONObject("data");
+					removeVietnamPrivacyIfDisabled(data);
+					return data;
 				}
 				log.warn("{} | TEXT.LENGTH:{} | {}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), response);
 			} else {

@@ -158,7 +158,9 @@ public class MSGWorker extends AbstractWorker {
         }
 
         user.setIp(data.getMsgData().getSourceIp().toCanonicalAddr());
-        user.setAccount(data.getMsgData().getAccount());
+
+        String account = data.getMsgData().getAccount();
+        user.setAccount(Common.isEmpty(account) || Common.isEquals(account, "NA") ? null : account);
 
         try {
             if (conf.getUserIdentificationMode() == IdentificationMode.PORT && Common.isNumeric(data.getFileNameInfo().getDeviceName())) {

@@ -77,7 +77,7 @@ class ConfigTest {
 		void validFileName_shouldBuildPath() {
 			ReflectionTestUtils.setField(config, "dataPath", "/users/las/msg/data");
 			ReflectionTestUtils.setField(config, "decoderSplitDir", 100);
-			String path = config.getPath("testfile.hdr");
+			String path = config.getPath("testfile.hdr", false);
 			assertNotNull(path);
 			assertTrue(path.startsWith("/users/las/msg/data"));
 			assertTrue(path.endsWith("testfile.hdr"));
@@ -86,13 +86,13 @@ class ConfigTest {
 		@Test
 		@DisplayName("null 파일명 → null 반환")
 		void nullFileName_shouldReturnNull() {
-			assertNull(config.getPath(null));
+			assertNull(config.getPath(null, false));
 		}
 
 		@Test
 		@DisplayName("빈 파일명 → null 반환")
 		void emptyFileName_shouldReturnNull() {
-			assertNull(config.getPath(""));
+			assertNull(config.getPath("", false));
 		}
 	}
 

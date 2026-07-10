@@ -11,12 +11,14 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.Normalizer;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Log4j2
 @Service
@@ -32,6 +34,7 @@ public class ClearService {
 		int headerDeleted = 0;
 		int attachDeleted = 0;
 		int embeddedDeleted = 0;
+		int tempDeleted = 0;
 		int msgDeleted = remove(data.getFilePath().toAbsolutePath().toString());
 		if (msg != null) {
 			boolean blocked = Common.isEquals(msg.getAction(), "BLOCK");
@@ -55,7 +58,8 @@ public class ClearService {
 			for (String path : embeddedFiles) {
 				embeddedDeleted += remove(path); //embeddedFile의 경우 src 패스가 전체 경로로 된다.
 			}
-			log.info("DEL_FILE | MSG:{} | BODY:{} | HEADER:{} | ATTACH:{} | EMBEDDED:{} | {}", msgDeleted, bodyDeleted, headerDeleted, attachDeleted, embeddedDeleted, DateUtils.stop(sw));
+			tempDeleted = removeMessageTempDirectory(msg.getMsgid());
+			log.info("DEL_FILE | MSG:{} | BODY:{} | HEADER:{} | ATTACH:{} | EMBEDDED:{} | TEMP:{} | {}", msgDeleted, bodyDeleted, headerDeleted, attachDeleted, embeddedDeleted, tempDeleted, DateUtils.stop(sw));
 		}
 	}
 
@@ -75,5 +79,42 @@ public class ClearService {
 			log.warn("{} | PATH:{} | ERR:{}", ErrorCode.REMOVE_FILE_FAIL, path, e.toString(), e);
 		}
 		return 0;
+	}
+
+	private int removeMessageTempDirectory(final String msgId) {
+		if (Common.isEmpty(msgId) || Common.isEmpty(conf.getMemoryDiskPath())) return 0;
+
+		try {
+			Path rootPath = Path.of(Normalizer.normalize(conf.getMemoryDiskPath(), Normalizer.Form.NFC)).toAbsolutePath().normalize();
+			Path targetPath = rootPath.resolve(Normalizer.normalize(msgId, Normalizer.Form.NFC)).toAbsolutePath().normalize();
+			if (!targetPath.startsWith(rootPath) || targetPath.equals(rootPath)) {
+				log.warn("DEL_TEMP_SKIP | ROOT:{} | TARGET:{}", rootPath, targetPath);
+				return 0;
+			}
+			if (Files.notExists(targetPath)) {
+				return 0;
+			}
+
+			int deleted = deleteRecursively(targetPath);
+			log.debug("DEL_TEMP | {} | {}", targetPath, deleted);
+			return deleted;
+		} catch (InvalidPathException e) {
+			//ignore
+		} catch (Exception e) {
+			log.warn("{} | MSGID:{} | ERR:{}", ErrorCode.REMOVE_FILE_FAIL, msgId, e.toString(), e);
+		}
+		return 0;
+	}
+
+	private int deleteRecursively(final Path targetPath) throws IOException {
+		try (Stream<Path> paths = Files.walk(targetPath)) {
+			List<Path> deleteTargets = paths.sorted(Comparator.reverseOrder()).toList();
+			int deleted = 0;
+			for (Path path : deleteTargets) {
+				Files.deleteIfExists(path);
+				deleted++;
+			}
+			return deleted;
+		}
 	}
 }

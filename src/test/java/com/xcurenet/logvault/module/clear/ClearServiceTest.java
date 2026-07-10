@@ -49,9 +49,9 @@ class ClearServiceTest {
 			msgData.setPcFile(new ArrayList<>());
 			msgData.setEmbeddedFile(new ArrayList<>());
 
-			when(conf.getPath("body.html")).thenReturn(bodyFile.toString());
-			when(conf.getPath("test.hdr")).thenReturn(headerFile.toString());
-			when(conf.getPath("attach.zip")).thenReturn(attachFile.toString());
+			when(conf.getPath("body.html", false)).thenReturn(bodyFile.toString());
+			when(conf.getPath("test.hdr", false)).thenReturn(headerFile.toString());
+			when(conf.getPath("attach.zip", false)).thenReturn(attachFile.toString());
 
 			ScanData scanData = mock(ScanData.class);
 			when(scanData.getFilePath()).thenReturn(msgFile);
@@ -85,9 +85,10 @@ class ClearServiceTest {
 		}
 
 		@Test
-		@DisplayName("pcFile은 더 이상 삭제 대상이 아님 (수정 검증)")
-		void pcFile_shouldNotBeDeleted() throws Exception {
+		@DisplayName("pcFile도 삭제 대상")
+		void pcFile_shouldBeDeleted() throws Exception {
 			Path msgFile = Files.createFile(tempDir.resolve("test.msg"));
+			Path pcFile = Files.createFile(tempDir.resolve("pcfile.docx"));
 
 			MSGData msgData = new MSGData();
 			msgData.setMsgFile(null);
@@ -99,11 +100,11 @@ class ClearServiceTest {
 			ScanData scanData = mock(ScanData.class);
 			when(scanData.getFilePath()).thenReturn(msgFile);
 			when(scanData.getMsgData()).thenReturn(msgData);
+			when(conf.getPath("pcfile.docx", false)).thenReturn(pcFile.toString());
 
 			clearService.clear(scanData);
 
-			// pcFile은 삭제 대상에서 제외되었으므로 conf.getPath() 호출 없음
-			verify(conf, never()).getPath("pcfile.docx");
+			assertFalse(Files.exists(pcFile), "pcFile 삭제됨");
 		}
 
 		@Test
@@ -127,6 +128,34 @@ class ClearServiceTest {
 
 			assertFalse(Files.exists(embeddedFile), "embedded 파일은 전체 경로로 삭제됨");
 		}
+
+		@Test
+		@DisplayName("메시지 ID 임시 디렉터리 전체 삭제")
+		void messageTempDirectory_shouldBeDeleted() throws Exception {
+			Path msgFile = Files.createFile(tempDir.resolve("test.msg"));
+			Path memoryRoot = Files.createDirectory(tempDir.resolve("memory"));
+			String msgId = "20260702165512.TAZPQY7KGAAAK4ZRZ64GTXZ75IR76EDT";
+			Path imageDir = Files.createDirectories(memoryRoot.resolve(msgId).resolve("_img"));
+			Files.createFile(imageDir.resolve("embedded.png"));
+
+			MSGData msgData = new MSGData();
+			msgData.setMsgid(msgId);
+			msgData.setMsgFile(null);
+			msgData.setHeader(null);
+			msgData.setAppFile(new ArrayList<>());
+			msgData.setPcFile(new ArrayList<>());
+			msgData.setEmbeddedFile(new ArrayList<>());
+
+			ScanData scanData = mock(ScanData.class);
+			when(scanData.getFilePath()).thenReturn(msgFile);
+			when(scanData.getMsgData()).thenReturn(msgData);
+			when(conf.getMemoryDiskPath()).thenReturn(memoryRoot.toString());
+
+			clearService.clear(scanData);
+
+			assertFalse(Files.exists(memoryRoot.resolve(msgId)), "메시지 ID 임시 디렉터리 삭제됨");
+			assertTrue(Files.exists(memoryRoot), "memory root는 유지됨");
+		}
 	}
 
 	@Nested
@@ -143,7 +172,7 @@ class ClearServiceTest {
 			msgData.setAppFile(new ArrayList<>());
 			msgData.setPcFile(new ArrayList<>());
 			msgData.setEmbeddedFile(new ArrayList<>());
-			when(conf.getPath("nonexistent.html")).thenReturn(tempDir.resolve("nonexistent.html").toString());
+			when(conf.getPath("nonexistent.html", false)).thenReturn(tempDir.resolve("nonexistent.html").toString());
 
 			ScanData scanData = mock(ScanData.class);
 			when(scanData.getFilePath()).thenReturn(msgFile);

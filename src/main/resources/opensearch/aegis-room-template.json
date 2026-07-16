@@ -212,6 +212,12 @@
 								"count": { "type": "integer" }
 							}
 						},
+						"image_similarity": {
+							"properties": {
+								"score": { "type": "integer" },
+								"count": { "type": "integer" }
+							}
+						},
 						"attach": {
 							"properties": {
 								"score": { "type": "integer" },

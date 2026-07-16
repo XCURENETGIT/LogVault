@@ -6,21 +6,29 @@ import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
+import com.xcurenet.logvault.fs.FileProcessor;
 import com.xcurenet.logvault.module.analysis.AnomalyScoreCalculator;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import com.xcurenet.logvault.opensearch.IndexService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.util.StopWatch;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.function.Function;
 
 @Log4j2
@@ -29,12 +37,14 @@ public class MLWorker implements PipelineWorker {
 
 	private final Config conf;
 	private final RestTemplate restTemplate;
+	private final FileProcessor fileProcessor;
 	private final IndexService indexService;
 	private final AnomalyScoreCalculator anomalyScoreCalculator;
 
-	public MLWorker(Config conf, @Qualifier("mlRestTemplate") RestTemplate restTemplate, IndexService indexService, AnomalyScoreCalculator anomalyScoreCalculator) {
+	public MLWorker(Config conf, @Qualifier("mlRestTemplate") RestTemplate restTemplate, FileProcessor fileProcessor, IndexService indexService, AnomalyScoreCalculator anomalyScoreCalculator) {
 		this.conf = conf;
 		this.restTemplate = restTemplate;
+		this.fileProcessor = fileProcessor;
 		this.indexService = indexService;
 		this.anomalyScoreCalculator = anomalyScoreCalculator;
 	}
@@ -63,6 +73,7 @@ public class MLWorker implements PipelineWorker {
 	public EmassDoc process(EmassDoc doc) throws Exception {
 		analyzeBody(doc);
 		analyzeAttach(doc);
+		analyzeImageSimilarity(doc);
 		buildSummary(doc);
 		EmassDoc.ProcessStatus st = doc.getProcessStatus() == null ? EmassDoc.ProcessStatus.builder().build() : doc.getProcessStatus();
 		st.setMl("E");
@@ -92,6 +103,72 @@ public class MLWorker implements PipelineWorker {
 			String text = Common.limitLength(a.getText(), conf.getMlApiTextLimit());
 			apply(a, text, "ML__TASK", this::callML);
 			apply(a, text, "SIMILARITY", this::callSimilarity);
+		}
+	}
+
+	private void analyzeImageSimilarity(EmassDoc doc) {
+		if (doc.getAttach() == null) return;
+		for (EmassDoc.Attach a : doc.getAttach()) {
+			analyzeAttachImageSimilarity(a);
+			analyzeEmbeddedImageSimilarity(a);
+		}
+	}
+
+	private void analyzeAttachImageSimilarity(EmassDoc.Attach a) {
+		if (a == null || !a.isExist() || !isImageSimilarityTarget(a) || Common.isEmpty(a.getPath())) return;
+
+		try (InputStream in = fileProcessor.open(a.getPath())) {
+			StopWatch sw = DateUtils.start();
+			ImageSimilarityResponse r = callImageSimilarity(in, fileName(a.getName(), a.getPath()));
+			a.setImageSimilarity(r.imageSimilarity());
+			log.info("IMG_SIM | ATTACH:{} | {} | {}", a.getName(), r.imageSimilarity(), DateUtils.stop(sw));
+		} catch (Exception e) {
+			log.warn("IMG_SIM_WARN | ATTACH:{} | {}", a.getName(), e.getMessage(), e);
+			a.setImageSimilarity(null);
+		}
+	}
+
+	private void analyzeEmbeddedImageSimilarity(EmassDoc.Attach a) {
+		if (a == null || a.getImageExtractorInfo() == null || a.getImageExtractorInfo().isEmpty()) return;
+
+		List<EmassDoc.ImageExtractorInfo> keep = new ArrayList<>();
+		for (EmassDoc.ImageExtractorInfo img : a.getImageExtractorInfo()) {
+			if (img == null || Common.isEmpty(img.getPath())) {
+				continue;
+			}
+
+			try (InputStream in = fileProcessor.open(img.getPath())) {
+				StopWatch sw = DateUtils.start();
+				ImageSimilarityResponse r = callImageSimilarity(in, fileName(img.getName(), img.getPath()));
+				img.setImageSimilarity(r.imageSimilarity());
+				log.info("IMG_SIM | EMBED:{} | {} | {}", img.getName(), r.imageSimilarity(), DateUtils.stop(sw));
+				if (hasImageSimilarity(img)) {
+					keep.add(img);
+				} else {
+					deleteEmbeddedImage(img);
+				}
+			} catch (Exception e) {
+				log.warn("IMG_SIM_WARN | EMBED:{} | {}", img.getName(), e.getMessage(), e);
+				img.setImageSimilarity(null);
+				keep.add(img);
+			}
+		}
+		a.setImageExtractorInfo(keep.isEmpty() ? null : keep);
+	}
+
+	private boolean hasImageSimilarity(EmassDoc.ImageExtractorInfo img) {
+		return img != null && img.getImageSimilarity() != null && Common.isNotEmpty(img.getImageSimilarity().getCategoryId());
+	}
+
+	private void deleteEmbeddedImage(EmassDoc.ImageExtractorInfo img) {
+		if (img == null || Common.isEmpty(img.getPath())) return;
+
+		try {
+			if (fileProcessor.delete(img.getPath())) {
+				log.info("IMG_SIM_DELETE | {}", conf.getDestPathSmall(img.getPath()));
+			}
+		} catch (Exception e) {
+			log.warn("IMG_SIM_DELETE_WARN | {} | {}", img.getPath(), e.getMessage(), e);
 		}
 	}
 
@@ -199,5 +276,98 @@ public class MLWorker implements PipelineWorker {
 		m.setSimilarityScore(o.getFloatValue("score"));
 		m.setSimilarityName(o.getJSONObject("metadata").getString("file_name"));
 		return m;
+	}
+
+	private ImageSimilarityResponse callImageSimilarity(InputStream in, String name) throws IOException {
+		ByteArrayResource res = new ByteArrayResource(in.readAllBytes()) {
+			@Override
+			public String getFilename() {
+				return name;
+			}
+		};
+
+		MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+		body.add("file", res);
+
+		HttpHeaders h = new HttpHeaders();
+		h.setContentType(MediaType.MULTIPART_FORM_DATA);
+		h.setAccept(List.of(MediaType.APPLICATION_JSON));
+
+		ResponseEntity<String> r = restTemplate.postForEntity(imageSimilarityDetectUrl(), new HttpEntity<>(body, h), String.class);
+		if (!r.getStatusCode().is2xxSuccessful()) {
+			throw new IOException("HTTP " + r.getStatusCode());
+		}
+
+		JSONObject b = JSONObject.parseObject(r.getBody());
+		if (b == null) throw new IOException("empty response");
+
+		Object error = b.get("error");
+		if (error != null) {
+			throw new IOException(String.valueOf(error));
+		}
+
+		JSONObject verdict = b.getJSONObject("verdict");
+		if (verdict == null) throw new IOException("missing verdict");
+
+		String category = verdict.getString("final_category");
+		if (Common.isEmpty(category)) return new ImageSimilarityResponse(null);
+
+		return new ImageSimilarityResponse(EmassDoc.ImageSimilarity.builder()
+				.categoryId(category)
+				.riskScore(verdict.getInteger("final_risk_score"))
+				.confidence(verdict.getFloat("confidence"))
+				.build());
+	}
+
+	private String imageSimilarityDetectUrl() {
+		String host = Common.nvl(conf.getImageSimilarityApiHost()).trim();
+		String detect = Common.nvl(conf.getImageSimilarityApiDetect()).trim();
+		if (host.endsWith("/") && detect.startsWith("/")) return host + detect.substring(1);
+		if (!host.endsWith("/") && !detect.startsWith("/")) return host + "/" + detect;
+		return host + detect;
+	}
+
+	private boolean isImageSimilarityTarget(EmassDoc.Attach a) {
+		return isImageSimilarityTargetExt(a.getExtension()) || isImageSimilarityTargetExt(a.getExpectedExtension());
+	}
+
+	private boolean isImageSimilarityTargetExt(String value) {
+		Set<String> targetExts = conf.getImageSimilarityTargetExt();
+		if (targetExts == null || targetExts.isEmpty()) return false;
+
+		String ext = normalizeExt(value);
+		if (Common.isEmpty(ext)) return false;
+
+		for (String targetExt : targetExts) {
+			if (ext.equals(normalizeExt(targetExt))) return true;
+		}
+		return false;
+	}
+
+	private String normalizeExt(String value) {
+		String ext = Common.nvl(value).trim().toLowerCase(Locale.ROOT);
+		int slash = Math.max(ext.lastIndexOf('/'), ext.lastIndexOf('\\'));
+		if (slash >= 0 && slash < ext.length() - 1) {
+			ext = ext.substring(slash + 1);
+		}
+		int dot = ext.lastIndexOf('.');
+		if (dot >= 0 && dot < ext.length() - 1) {
+			ext = ext.substring(dot + 1);
+		}
+		return ext;
+	}
+
+	private String fileName(String name, String path) {
+		if (Common.isNotEmpty(name)) return name;
+
+		String fileName = Common.nvl(path);
+		int slash = Math.max(fileName.lastIndexOf('/'), fileName.lastIndexOf('\\'));
+		if (slash >= 0 && slash < fileName.length() - 1) {
+			fileName = fileName.substring(slash + 1);
+		}
+		return Common.isEmpty(fileName) ? "image" : fileName;
+	}
+
+	private record ImageSimilarityResponse(EmassDoc.ImageSimilarity imageSimilarity) {
 	}
 }

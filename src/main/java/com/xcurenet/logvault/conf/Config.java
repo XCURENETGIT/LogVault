@@ -183,6 +183,9 @@ public class Config {
 	@Value("${ocr.target.ext:tiff,tif,png,gif,jpg,jpeg,bmp,pcx,dcx,jb2,jfif,jp2,jpc,j2k,pdf}") //OCR 대상 확장자
 	private Set<String> ocrTargetExt;
 
+	@Value("${image.similarity.target.ext:jpg,png,webp,bmp,gif,tiff,heic,heif}")
+	private Set<String> imageSimilarityTargetExt;
+
 	/**
 	 * OCR 처리 모듈에 따라 지원 확장자가 다르다.
 	 *
@@ -258,6 +261,12 @@ public class Config {
 
 	@Value("${ml.similarity.key:xcn-rag}") //SIMILARITY KEY
 	private String similarityKey;
+
+	@Value("${image.similarity.api.host:http://xgenai-manager:15001}")
+	private String imageSimilarityApiHost;
+
+	@Value("${image.similarity.api.detect:/detect}")
+	private String imageSimilarityApiDetect;
 
 	@Value("${ml.api.timeout:600}") //ML Rest API TimeOut
 	private int mlTimeoutSec;

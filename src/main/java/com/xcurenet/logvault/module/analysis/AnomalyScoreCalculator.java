@@ -26,7 +26,7 @@ public class AnomalyScoreCalculator {
 
     private static final String PATTERN_PERSONAL_ACCOUNT = "PA";
     private static final String PATTERN_WORK = "WRK";
-    private static final int ML_CATEGORY_NOT_WORK = 0;
+    private static final int ML_CATEGORY_NOT_WORK = 2;
 
     private final AnomalyScoreLoader anomalyScoreLoader;
     private final KeywordLoader keywordLoader;
@@ -50,14 +50,16 @@ public class AnomalyScoreCalculator {
         calcGuardrail(doc, score.getGuardrail());
         calcKeyword(doc, score.getKeyword());
         calcPattern(doc, score.getPattern(), score.getAttach(), score.getCodeExist(), score.getSimilarity(), score.getAccount(), score.getWork());
+        calcImageSimilarity(doc, score.getImageSimilarity());
 
-        log.debug("ANOMALY_SCORE | msgid={} | guardrail={}({}) keyword={}({}) pattern={}({}) code_exist={}({}) similarity={}({}) account={}({}) work={}({})",
+        log.debug("ANOMALY_SCORE | msgid={} | guardrail={}({}) keyword={}({}) pattern={}({}) code_exist={}({}) similarity={}({}) image_similarity={}({}) account={}({}) work={}({})",
                 doc.getMsgid(),
                 score.getGuardrail().getScore(), score.getGuardrail().getCount(),
                 score.getKeyword().getScore(), score.getKeyword().getCount(),
                 score.getPattern().getScore(), score.getPattern().getCount(),
                 score.getCodeExist().getScore(), score.getCodeExist().getCount(),
                 score.getSimilarity().getScore(), score.getSimilarity().getCount(),
+                score.getImageSimilarity().getScore(), score.getImageSimilarity().getCount(),
                 score.getAccount().getScore(), score.getAccount().getCount(),
                 score.getWork().getScore(), score.getWork().getCount());
 
@@ -171,6 +173,25 @@ public class AnomalyScoreCalculator {
         for (int i = 0; i < attachExistCount; i++) {
             entry.add(fileUploadScore);
         }
+    }
+
+    private void calcImageSimilarity(EmassDoc doc, EmassDoc.AnomalyScore.ScoreEntry entry) {
+        if (doc.getAttach() == null || doc.getAttach().isEmpty()) return;
+
+        for (EmassDoc.Attach attach : doc.getAttach()) {
+            addImageSimilarityScore(entry, attach.getImageSimilarity());
+            List<EmassDoc.ImageExtractorInfo> imageInfos = attach.getImageExtractorInfo();
+            if (imageInfos == null || imageInfos.isEmpty()) continue;
+
+            for (EmassDoc.ImageExtractorInfo imageInfo : imageInfos) {
+                addImageSimilarityScore(entry, imageInfo.getImageSimilarity());
+            }
+        }
+    }
+
+    private void addImageSimilarityScore(EmassDoc.AnomalyScore.ScoreEntry entry, EmassDoc.ImageSimilarity imageSimilarity) {
+        if (imageSimilarity == null || Common.isEmpty(imageSimilarity.getCategoryId()) || imageSimilarity.getRiskScore() == null) return;
+        entry.add(imageSimilarity.getRiskScore());
     }
 
     private void calcAccountPattern(EmassDoc doc, EmassDoc.AnomalyScore.ScoreEntry entry) {

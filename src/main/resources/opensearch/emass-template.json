@@ -401,6 +401,19 @@
 						"guardrail_category": {
 							"type": "keyword"
 						},
+						"image_similarity": {
+							"properties": {
+								"category_id": {
+									"type": "keyword"
+								},
+								"risk_score": {
+									"type": "integer"
+								},
+								"confidence": {
+									"type": "float"
+								}
+							}
+						},
 						"image_extractor_info": {
 							"properties": {
 								"name": {
@@ -408,6 +421,19 @@
 								},
 								"path": {
 									"type": "keyword"
+								},
+								"image_similarity": {
+									"properties": {
+										"category_id": {
+											"type": "keyword"
+										},
+										"risk_score": {
+											"type": "integer"
+										},
+										"confidence": {
+											"type": "float"
+										}
+									}
 								}
 							}
 						},
@@ -517,6 +543,12 @@
 							}
 						},
 						"similarity": {
+							"properties": {
+								"score": { "type": "integer" },
+								"count": { "type": "integer" }
+							}
+						},
+						"image_similarity": {
 							"properties": {
 								"score": { "type": "integer" },
 								"count": { "type": "integer" }

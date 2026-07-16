@@ -137,7 +137,7 @@ public class EmassDoc {
 	public static class MLResult {
 		@Field("code_exist")
 		private boolean codeExist;
-        // 0: 업무, 1:비업무
+        // category: 1=업무, 2=비업무
 		@Field("category")
 		private int category;
 		@Field("probs")
@@ -178,6 +178,17 @@ public class EmassDoc {
 				this.result = other.getResult();
 			if (other.getMessage() != null && !other.getMessage().isBlank()) this.message = other.getMessage();
 		}
+	}
+
+	@Data
+	@Builder
+	public static class ImageSimilarity {
+		@Field("category_id")
+		private String categoryId;
+		@Field("risk_score")
+		private Integer riskScore;
+		@Field("confidence")
+		private Float confidence;
 	}
 
 	@Data
@@ -325,6 +336,9 @@ public class EmassDoc {
 		@Field("guardrail_category")
 		private String guardrailCategory;
 
+		@Field("image_similarity")
+		private ImageSimilarity imageSimilarity;
+
 		@Field("image_extractor_info")
 		private List<ImageExtractorInfo> imageExtractorInfo;
 
@@ -430,6 +444,8 @@ public class EmassDoc {
 		private String name;
 		@Field("path")
 		private String path;
+		@Field("image_similarity")
+		private ImageSimilarity imageSimilarity;
 	}
 
 	@Data
@@ -455,6 +471,8 @@ public class EmassDoc {
 		private ScoreEntry codeExist = new ScoreEntry();
 		@Field("similarity")
 		private ScoreEntry similarity = new ScoreEntry();
+		@Field("image_similarity")
+		private ScoreEntry imageSimilarity = new ScoreEntry();
 		@Field("attach")
 		private ScoreEntry attach = new ScoreEntry();
 		@Field("account")
@@ -466,10 +484,10 @@ public class EmassDoc {
 
 		public void calculateTotal() {
 			this.total.setScore(guardrail.getScore() + keyword.getScore() + pattern.getScore()
-					+ codeExist.getScore() + similarity.getScore() + attach.getScore()
+					+ codeExist.getScore() + similarity.getScore() + imageSimilarity.getScore() + attach.getScore()
 					+ account.getScore() + work.getScore());
 			this.total.setCount(guardrail.getCount() + keyword.getCount() + pattern.getCount()
-					+ codeExist.getCount() + similarity.getCount() + attach.getCount()
+					+ codeExist.getCount() + similarity.getCount() + imageSimilarity.getCount() + attach.getCount()
 					+ account.getCount() + work.getCount());
 			// score/count 가 모두 0인 항목은 null 처리하여 인덱싱에서 제외
 			guardrail = nullIfEmpty(guardrail);
@@ -477,6 +495,7 @@ public class EmassDoc {
 			pattern = nullIfEmpty(pattern);
 			codeExist = nullIfEmpty(codeExist);
 			similarity = nullIfEmpty(similarity);
+			imageSimilarity = nullIfEmpty(imageSimilarity);
 			attach = nullIfEmpty(attach);
 			account = nullIfEmpty(account);
 			work = nullIfEmpty(work);

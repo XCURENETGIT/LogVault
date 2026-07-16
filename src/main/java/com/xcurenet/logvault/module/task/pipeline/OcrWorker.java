@@ -8,7 +8,6 @@ import com.xcurenet.common.utils.FileUtil;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.fs.FileProcessor;
 import com.xcurenet.logvault.module.analysis.AnomalyScoreCalculator;
-import com.xcurenet.logvault.module.analysis.GuardRailAnalysis;
 import com.xcurenet.logvault.module.analysis.KeywordAnalysis;
 import com.xcurenet.logvault.module.analysis.PrivacyAIAnalysis;
 import com.xcurenet.logvault.opensearch.EmassDoc;
@@ -45,17 +44,15 @@ public class OcrWorker implements PipelineWorker {
 	private final IndexService indexService;
 	private final KeywordAnalysis keywordAnalysis;
 	private final PrivacyAIAnalysis privacyAnalysis;
-	private final GuardRailAnalysis guardRailAnalysis;
 	private final AnomalyScoreCalculator anomalyScoreCalculator;
 	private final RestTemplate restTemplate;
 
-	public OcrWorker(Config conf, FileProcessor fileProcessor, IndexService indexService, KeywordAnalysis keywordAnalysis, PrivacyAIAnalysis privacyAnalysis, GuardRailAnalysis guardRailAnalysis, AnomalyScoreCalculator anomalyScoreCalculator, @Qualifier("ocrRestTemplate") RestTemplate restTemplate) {
+	public OcrWorker(Config conf, FileProcessor fileProcessor, IndexService indexService, KeywordAnalysis keywordAnalysis, PrivacyAIAnalysis privacyAnalysis, AnomalyScoreCalculator anomalyScoreCalculator, @Qualifier("ocrRestTemplate") RestTemplate restTemplate) {
 		this.conf = conf;
 		this.fileProcessor = fileProcessor;
 		this.indexService = indexService;
 		this.keywordAnalysis = keywordAnalysis;
 		this.privacyAnalysis = privacyAnalysis;
-		this.guardRailAnalysis = guardRailAnalysis;
 		this.anomalyScoreCalculator = anomalyScoreCalculator;
 		this.restTemplate = restTemplate;
 	}
@@ -106,7 +103,6 @@ public class OcrWorker implements PipelineWorker {
 			doc.setPrivacyTotal(0);
 			keywordAnalysis.detect(doc);
 			privacyAnalysis.detect(doc);
-			guardRailAnalysis.detect(doc);
 		}
 		EmassDoc.ProcessStatus st = doc.getProcessStatus() == null ? EmassDoc.ProcessStatus.builder().build() : doc.getProcessStatus();
 		st.setOcr("E");

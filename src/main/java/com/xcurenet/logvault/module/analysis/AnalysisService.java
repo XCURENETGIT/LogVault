@@ -20,7 +20,6 @@ public class AnalysisService {
     private final PrivacyAIAnalysis privacyAnalysis;
     private final CheckWorkingDay checkWorkingDay;
     private final ReasonAnalysis reasonAnalysis;
-    private final GuardRailAnalysis guardRailAnalysis;
     private final AnomalyScoreCalculator anomalyScoreCalculator;
     private final AccountAnalysis accountAnalysis;
 
@@ -34,7 +33,7 @@ public class AnalysisService {
      * 실행 순서:
      * <pre>
      *   [공통]  checkWorkingDay → reasonAnalysis
-     *   [ALLOW] attachText → thumbnail → keyword → privacy → guardRail → userAgent
+     *   [ALLOW] attachText → thumbnail → keyword → privacy → userAgent
      * </pre>
      * ※ attachText는 후속 분석(keyword, privacy 등)에 텍스트를 제공하므로 가장 먼저 실행.
      * attachText 실패 시에도 본문(body) 텍스트 기반의 키워드/개인정보 탐지는 수행 가능.
@@ -88,13 +87,6 @@ public class AnalysisService {
                 privacyAnalysis.detect(data);
             } catch (Exception e) {
                 log.warn("ANALYSE_PRIVACY | {}", e.getMessage(), e);
-            }
-
-            // GuardRail 탐지
-            try {
-                guardRailAnalysis.detect(data);
-            } catch (Exception e) {
-                log.warn("ANALYSE_GUARDRAIL | {}", e.getMessage(), e);
             }
 
             // User-Agent 분석 (OS, 브라우저, 디바이스)

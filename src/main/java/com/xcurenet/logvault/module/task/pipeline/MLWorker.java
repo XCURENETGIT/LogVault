@@ -8,6 +8,7 @@ import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.fs.FileProcessor;
 import com.xcurenet.logvault.module.analysis.AnomalyScoreCalculator;
+import com.xcurenet.logvault.module.analysis.GuardRailAnalysis;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import com.xcurenet.logvault.opensearch.IndexService;
 import lombok.extern.log4j.Log4j2;
@@ -39,13 +40,15 @@ public class MLWorker implements PipelineWorker {
 	private final RestTemplate restTemplate;
 	private final FileProcessor fileProcessor;
 	private final IndexService indexService;
+	private final GuardRailAnalysis guardRailAnalysis;
 	private final AnomalyScoreCalculator anomalyScoreCalculator;
 
-	public MLWorker(Config conf, @Qualifier("mlRestTemplate") RestTemplate restTemplate, FileProcessor fileProcessor, IndexService indexService, AnomalyScoreCalculator anomalyScoreCalculator) {
+	public MLWorker(Config conf, @Qualifier("mlRestTemplate") RestTemplate restTemplate, FileProcessor fileProcessor, IndexService indexService, GuardRailAnalysis guardRailAnalysis, AnomalyScoreCalculator anomalyScoreCalculator) {
 		this.conf = conf;
 		this.restTemplate = restTemplate;
 		this.fileProcessor = fileProcessor;
 		this.indexService = indexService;
+		this.guardRailAnalysis = guardRailAnalysis;
 		this.anomalyScoreCalculator = anomalyScoreCalculator;
 	}
 
@@ -75,6 +78,7 @@ public class MLWorker implements PipelineWorker {
 		analyzeAttach(doc);
 		analyzeImageSimilarity(doc);
 		buildSummary(doc);
+		detectGuardRail(doc);
 		EmassDoc.ProcessStatus st = doc.getProcessStatus() == null ? EmassDoc.ProcessStatus.builder().build() : doc.getProcessStatus();
 		st.setMl("E");
 		doc.setProcessStatus(st);
@@ -103,6 +107,14 @@ public class MLWorker implements PipelineWorker {
 			String text = Common.limitLength(a.getText(), conf.getMlApiTextLimit());
 			apply(a, text, "ML__TASK", this::callML);
 			apply(a, text, "SIMILARITY", this::callSimilarity);
+		}
+	}
+
+	private void detectGuardRail(EmassDoc doc) {
+		try {
+			guardRailAnalysis.detect(doc);
+		} catch (Exception e) {
+			log.warn("ML_GUARDRAIL | {}", e.getMessage(), e);
 		}
 	}
 

@@ -43,19 +43,20 @@ class EmassDocMLResultTest {
 		void category_takesMax() {
 			EmassDoc.MLResult r = base();
 			EmassDoc.MLResult other = new EmassDoc.MLResult();
-			other.setCategory(5);
+			other.setCategory(2);
 			r.merge(other);
-			assertEquals(5, r.getCategory());
+			assertEquals(2, r.getCategory());
 		}
 
 		@Test
 		@DisplayName("category: 작은 값은 무시")
 		void category_ignoresSmaller() {
 			EmassDoc.MLResult r = base();
+			r.setCategory(2);
 			EmassDoc.MLResult other = new EmassDoc.MLResult();
-			other.setCategory(0);
+			other.setCategory(1);
 			r.merge(other);
-			assertEquals(1, r.getCategory());
+			assertEquals(2, r.getCategory());
 		}
 
 		@Test

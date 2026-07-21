@@ -262,6 +262,9 @@ public class Config {
 	@Value("${ml.similarity.key:xcn-rag}") //SIMILARITY KEY
 	private String similarityKey;
 
+    @Value("${image.similarity.enable:true}") // ML Image similarity API ENABLE
+    private boolean imageSimilarityEnable;
+
 	@Value("${image.similarity.api.host:http://xgenai-manager:15001}")
 	private String imageSimilarityApiHost;
 

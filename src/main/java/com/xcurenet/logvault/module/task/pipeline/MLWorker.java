@@ -119,7 +119,7 @@ public class MLWorker implements PipelineWorker {
 	}
 
 	private void analyzeImageSimilarity(EmassDoc doc) {
-		if (doc.getAttach() == null) return;
+		if (doc.getAttach() == null || !conf.isImageSimilarityEnable()) return;
 		for (EmassDoc.Attach a : doc.getAttach()) {
 			analyzeAttachImageSimilarity(a);
 			analyzeEmbeddedImageSimilarity(a);

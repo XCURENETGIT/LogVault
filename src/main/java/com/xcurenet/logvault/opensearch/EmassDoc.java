@@ -337,7 +337,7 @@ public class EmassDoc {
 		private String guardrailCategory;
 
 		@Field("image_similarity")
-		private ImageSimilarity imageSimilarity;
+		private List<ImageSimilarity> imageSimilarity;
 
 		@Field("image_extractor_info")
 		private List<ImageExtractorInfo> imageExtractorInfo;
@@ -352,19 +352,25 @@ public class EmassDoc {
 		private String srcPath;
 	}
 
-	@Data
-	public static class PrivacyInfo {
-		@Field("id") //SN:주민번호, CN:카드번호
-		private String id;
-		@Field("type") //B:본문, A:첨부
-		private String type;
-		@Field("attach_name")
-		private String attachName;
-		@Field("privacy_data") //탐지 키워드 정보
-		private List<String> privacyData;
-		@Field("count")
-		private int count;
-	}
+    @Data
+    public static class PrivacyInfo {
+        @Field("id") //SN:주민번호, CN:카드번호
+        private String id;
+        @Field("type") //B:본문, A:첨부
+        private String type;
+        @Field("attach_name")
+        private String attachName;
+        @Field("privacy_data") //탐지 키워드 정보
+        private List<String> privacyData;
+        @Field("count")
+        private int count;
+        @Field("blocked")
+        private Boolean blocked;
+
+        public boolean isBlocked() {
+            return Boolean.TRUE.equals(blocked);
+        }
+    }
 
 	@Data
 	public static class KeywordInfo {
@@ -379,15 +385,21 @@ public class EmassDoc {
 		@Field("body")
 		private List<Keyword> body;
 
-		@Data
-		@Builder
-		public static class Keyword {
-			@Field("name")
-			private String name;
-			@Field("count")
-			private int count;
-		}
-	}
+        @Data
+        @Builder
+        public static class Keyword {
+            @Field("name")
+            private String name;
+            @Field("count")
+            private int count;
+            @Field("blocked")
+            private Boolean blocked;
+
+            public boolean isBlocked() {
+                return Boolean.TRUE.equals(blocked);
+            }
+        }
+    }
 
 	@Data
 	public static class Agent {
@@ -444,8 +456,6 @@ public class EmassDoc {
 		private String name;
 		@Field("path")
 		private String path;
-		@Field("image_similarity")
-		private ImageSimilarity imageSimilarity;
 	}
 
 	@Data

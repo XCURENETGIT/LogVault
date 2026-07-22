@@ -121,6 +121,7 @@ public class MLWorker implements PipelineWorker {
 	private void analyzeImageSimilarity(EmassDoc doc) {
 		if (doc.getAttach() == null || !conf.isImageSimilarityEnable()) return;
 		for (EmassDoc.Attach a : doc.getAttach()) {
+			if (a == null) continue;
 			analyzeAttachImageSimilarity(a);
 			analyzeEmbeddedImageSimilarity(a);
 		}
@@ -132,18 +133,16 @@ public class MLWorker implements PipelineWorker {
 		try (InputStream in = fileProcessor.open(a.getPath())) {
 			StopWatch sw = DateUtils.start();
 			ImageSimilarityResponse r = callImageSimilarity(in, fileName(a.getName(), a.getPath()));
-			a.setImageSimilarity(r.imageSimilarity());
+			appendImageSimilarity(a, r.imageSimilarity());
 			log.info("IMG_SIM | ATTACH:{} | {} | {}", a.getName(), r.imageSimilarity(), DateUtils.stop(sw));
 		} catch (Exception e) {
 			log.warn("IMG_SIM_WARN | ATTACH:{} | {}", a.getName(), e.getMessage(), e);
-			a.setImageSimilarity(null);
 		}
 	}
 
 	private void analyzeEmbeddedImageSimilarity(EmassDoc.Attach a) {
 		if (a == null || a.getImageExtractorInfo() == null || a.getImageExtractorInfo().isEmpty()) return;
 
-		List<EmassDoc.ImageExtractorInfo> keep = new ArrayList<>();
 		for (EmassDoc.ImageExtractorInfo img : a.getImageExtractorInfo()) {
 			if (img == null || Common.isEmpty(img.getPath())) {
 				continue;
@@ -152,24 +151,23 @@ public class MLWorker implements PipelineWorker {
 			try (InputStream in = fileProcessor.open(img.getPath())) {
 				StopWatch sw = DateUtils.start();
 				ImageSimilarityResponse r = callImageSimilarity(in, fileName(img.getName(), img.getPath()));
-				img.setImageSimilarity(r.imageSimilarity());
+				appendImageSimilarity(a, r.imageSimilarity());
 				log.info("IMG_SIM | EMBED:{} | {} | {}", img.getName(), r.imageSimilarity(), DateUtils.stop(sw));
-				if (hasImageSimilarity(img)) {
-					keep.add(img);
-				} else {
-					deleteEmbeddedImage(img);
-				}
 			} catch (Exception e) {
 				log.warn("IMG_SIM_WARN | EMBED:{} | {}", img.getName(), e.getMessage(), e);
-				img.setImageSimilarity(null);
-				keep.add(img);
+			} finally {
+				deleteEmbeddedImage(img);
 			}
 		}
-		a.setImageExtractorInfo(keep.isEmpty() ? null : keep);
+		a.setImageExtractorInfo(null);
 	}
 
-	private boolean hasImageSimilarity(EmassDoc.ImageExtractorInfo img) {
-		return img != null && img.getImageSimilarity() != null && Common.isNotEmpty(img.getImageSimilarity().getCategoryId());
+	private void appendImageSimilarity(EmassDoc.Attach attach, EmassDoc.ImageSimilarity imageSimilarity) {
+		if (attach == null || imageSimilarity == null || Common.isEmpty(imageSimilarity.getCategoryId())) return;
+		if (attach.getImageSimilarity() == null) {
+			attach.setImageSimilarity(new ArrayList<>());
+		}
+		attach.getImageSimilarity().add(imageSimilarity);
 	}
 
 	private void deleteEmbeddedImage(EmassDoc.ImageExtractorInfo img) {

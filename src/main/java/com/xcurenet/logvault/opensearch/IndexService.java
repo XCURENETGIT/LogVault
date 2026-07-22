@@ -164,7 +164,9 @@ public class IndexService {
         String oldSvc3 = Common.nvl(roomDoc.getSvc3());
         boolean newData = recentCtime <= newDoc.getTimestamp().getTime();
         boolean update = false;
-        if (Common.isEquals(oldSvc3, "S") && Common.isEquals(svc3, "S")) {
+        if (Common.isEmpty(oldSvc3)) {
+            update = true;
+        } else if (Common.isEquals(oldSvc3, "S") && Common.isEquals(svc3, "S")) {
             // 1. 둘다 발신(S)일 때 최신 것이면 update
             if (newData) {
                 update = true;

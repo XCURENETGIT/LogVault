@@ -402,6 +402,7 @@
 							"type": "keyword"
 						},
 						"image_similarity": {
+							"type": "nested",
 							"properties": {
 								"category_id": {
 									"type": "keyword"
@@ -421,19 +422,6 @@
 								},
 								"path": {
 									"type": "keyword"
-								},
-								"image_similarity": {
-									"properties": {
-										"category_id": {
-											"type": "keyword"
-										},
-										"risk_score": {
-											"type": "integer"
-										},
-										"confidence": {
-											"type": "float"
-										}
-									}
 								}
 							}
 						},
@@ -510,6 +498,9 @@
 						},
 						"count": {
 							"type": "integer"
+						},
+						"blocked": {
+							"type": "boolean"
 						}
 					}
 				},
@@ -593,6 +584,9 @@
 								},
 								"count": {
 									"type": "integer"
+								},
+								"blocked": {
+									"type": "boolean"
 								}
 							}
 						},
@@ -604,6 +598,9 @@
 								},
 								"count": {
 									"type": "integer"
+								},
+								"blocked": {
+									"type": "boolean"
 								}
 							}
 						},
@@ -615,6 +612,9 @@
 								},
 								"count": {
 									"type": "integer"
+								},
+								"blocked": {
+									"type": "boolean"
 								}
 							}
 						},
@@ -626,6 +626,9 @@
 								},
 								"count": {
 									"type": "integer"
+								},
+								"blocked": {
+									"type": "boolean"
 								}
 							}
 						}

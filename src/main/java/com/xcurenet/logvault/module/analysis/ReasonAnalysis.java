@@ -69,7 +69,7 @@ public class ReasonAnalysis {
             int total = doc.getPrivacyInfo().stream().mapToInt(EmassDoc.PrivacyInfo::getCount).sum();
             doc.setPrivacyTotal(total);
         }
-        if (doc.getKeywordInfo() != null && !doc.getKeywordInfo().getKeywords().isEmpty()) {
+        if (doc.getKeywordInfo() != null && doc.getKeywordInfo().getKeywords() != null && !doc.getKeywordInfo().getKeywords().isEmpty()) {
             doc.setKeywordTotal(doc.getKeywordInfo().getKeywords().size());
             int sum = doc.getKeywordInfo().getKeywords().stream().mapToInt(EmassDoc.KeywordInfo.Keyword::getCount).sum();
             doc.setKeywordTotal(sum);
@@ -88,14 +88,14 @@ public class ReasonAnalysis {
 
         EmassDoc.KeywordInfo.Keyword exist = null;
         for (EmassDoc.KeywordInfo.Keyword k : keywords) {
-            if (keyword.equals(k.getName())) {
+            if (keyword.equals(k.getName()) && k.isBlocked()) {
                 exist = k;
                 break;
             }
         }
 
-        if (exist == null) keywords.add(EmassDoc.KeywordInfo.Keyword.builder().name(keyword).count(count).build());
-        else exist.setCount(exist.getCount() + 1);
+        if (exist == null) keywords.add(EmassDoc.KeywordInfo.Keyword.builder().name(keyword).count(count).blocked(true).build());
+        else exist.setCount(exist.getCount() + count);
 
         keywordInfo.setExist(true);
         if (isAttach) {
@@ -110,22 +110,27 @@ public class ReasonAnalysis {
 
     @SafeVarargs
     private List<EmassDoc.KeywordInfo.Keyword> mergeKeywords(List<EmassDoc.KeywordInfo.Keyword>... sources) {
-        Map<String, Integer> merged = new LinkedHashMap<>();
+        Map<String, EmassDoc.KeywordInfo.Keyword> merged = new LinkedHashMap<>();
         for (List<EmassDoc.KeywordInfo.Keyword> source : sources) {
             if (source == null) continue;
             for (EmassDoc.KeywordInfo.Keyword keyword : source) {
                 if (keyword == null || keyword.getName() == null) continue;
-                merged.merge(keyword.getName(), keyword.getCount(), Integer::sum);
+                String key = keyword.getName() + "\u0000" + keyword.isBlocked();
+                EmassDoc.KeywordInfo.Keyword existing = merged.get(key);
+                if (existing == null) {
+                    merged.put(key, EmassDoc.KeywordInfo.Keyword.builder()
+                            .name(keyword.getName())
+                            .count(keyword.getCount())
+                            .blocked(keyword.isBlocked())
+                            .build());
+                } else {
+                    existing.setCount(existing.getCount() + keyword.getCount());
+                }
             }
         }
 
         if (merged.isEmpty()) return null;
-
-        List<EmassDoc.KeywordInfo.Keyword> keywords = new ArrayList<>();
-        for (Map.Entry<String, Integer> entry : merged.entrySet()) {
-            keywords.add(EmassDoc.KeywordInfo.Keyword.builder().name(entry.getKey()).count(entry.getValue()).build());
-        }
-        return keywords;
+        return new ArrayList<>(merged.values());
     }
 
     private void appendPrivacy(EmassDoc doc, int id, int confidence, String detectStr, boolean isAttach) {
@@ -136,7 +141,7 @@ public class ReasonAnalysis {
         List<EmassDoc.PrivacyInfo> privacyInfos = doc.getPrivacyInfo();
         if (doc.getPrivacyInfo() == null) privacyInfos = new ArrayList<>();
 
-        EmassDoc.PrivacyInfo info = getPrivacyInfo(privacyInfos, piId);
+        EmassDoc.PrivacyInfo info = getPrivacyInfo(privacyInfos, piId, true);
         if (info == null) {
             info = new EmassDoc.PrivacyInfo();
             info.setId(piId);
@@ -144,6 +149,7 @@ public class ReasonAnalysis {
             info.setAttachName("-");
             info.setPrivacyData(new ArrayList<>(List.of(encrypted)));
             info.setCount(info.getPrivacyData().size());
+            info.setBlocked(true);
             privacyInfos.add(info);
         } else {
             info.getPrivacyData().add(encrypted);
@@ -152,9 +158,9 @@ public class ReasonAnalysis {
         doc.setPrivacyInfo(privacyInfos);
     }
 
-    private EmassDoc.PrivacyInfo getPrivacyInfo(List<EmassDoc.PrivacyInfo> privacyInfos, String piId) {
+    private EmassDoc.PrivacyInfo getPrivacyInfo(List<EmassDoc.PrivacyInfo> privacyInfos, String piId, boolean blocked) {
         for (EmassDoc.PrivacyInfo info : privacyInfos) {
-            if (info.getId().equals(piId)) {
+            if (info.getId().equals(piId) && info.isBlocked() == blocked) {
                 return info;
             }
         }

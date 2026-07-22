@@ -95,9 +95,6 @@ public class PrivacyAIAnalysis {
 			return;
 		}
 
-		doc.setPrivacyInfo(null);
-		doc.setPrivacyTotal(0);
-
 		int total = 0;
 		if (doc.getBody() != null) {
 			total += processText(doc, doc.getBody().getText(), "B", "-");
@@ -110,6 +107,7 @@ public class PrivacyAIAnalysis {
 			}
 		}
 
+		total = sumPrivacyTotal(doc.getPrivacyInfo());
 		if (total == 0) {
 			doc.setPrivacyInfo(null);
 		}
@@ -142,6 +140,7 @@ public class PrivacyAIAnalysis {
 		for (String key : PI_TYPE) {
 			List<Pii.MatchItem> matches = matchesByType.get(key);
 			if (matches == null || matches.isEmpty()) continue;
+			if (containsBlockReasonPrivacy(doc, key)) continue;
 
 			EmassDoc.PrivacyInfo info = toPrivacyInfo(key, type, attachName, matches);
 			log.debug("type:{}, info:{}", type, info);
@@ -189,7 +188,28 @@ public class PrivacyAIAnalysis {
 		info.setAttachName(attachName);
 		info.setPrivacyData(new ArrayList<>(items));
 		info.setCount(items.size());
+		info.setBlocked(false);
 		return info;
+	}
+
+	private boolean containsBlockReasonPrivacy(EmassDoc doc, String key) {
+		List<EmassDoc.PrivacyInfo> privacyInfos = doc.getPrivacyInfo();
+		if (privacyInfos == null || privacyInfos.isEmpty()) return false;
+
+		for (EmassDoc.PrivacyInfo info : privacyInfos) {
+			if (info == null || !info.isBlocked() || !Common.isEquals(info.getId(), key)) continue;
+			if (info.getCount() > 0 || (info.getPrivacyData() != null && !info.getPrivacyData().isEmpty())) return true;
+		}
+		return false;
+	}
+
+	private int sumPrivacyTotal(List<EmassDoc.PrivacyInfo> privacyInfos) {
+		if (privacyInfos == null) return 0;
+		int total = 0;
+		for (EmassDoc.PrivacyInfo info : privacyInfos) {
+			if (info != null) total += info.getCount();
+		}
+		return total;
 	}
 
 	public JSONObject detectPII(String text) {

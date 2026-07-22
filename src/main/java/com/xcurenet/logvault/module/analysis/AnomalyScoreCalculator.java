@@ -4,6 +4,7 @@ import com.xcurenet.common.utils.Common;
 import com.xcurenet.logvault.loader.AnomalyScoreLoader;
 import com.xcurenet.logvault.loader.KeywordLoader;
 import com.xcurenet.logvault.module.ScanData;
+import com.xcurenet.logvault.module.util.ActionType;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -26,6 +27,7 @@ public class AnomalyScoreCalculator {
 
     private static final String PATTERN_PERSONAL_ACCOUNT = "PA";
     private static final String PATTERN_WORK = "WRK";
+    private static final String RULE_TARGET_ACCOUNT = "ACCOUNT";
     private static final int ML_CATEGORY_NOT_WORK = 2;
 
     private final AnomalyScoreLoader anomalyScoreLoader;
@@ -104,13 +106,14 @@ public class AnomalyScoreCalculator {
         EmassDoc.KeywordInfo ki = doc.getKeywordInfo();
         if (ki == null || !ki.isExist()) return;
 
-        sumKeywordList(entry, ki.getKeywords());
+        sumKeywordList(entry, ki.getKeywords(), isBlocked(doc));
     }
 
-    private void sumKeywordList(EmassDoc.AnomalyScore.ScoreEntry entry, List<EmassDoc.KeywordInfo.Keyword> keywords) {
+    private void sumKeywordList(EmassDoc.AnomalyScore.ScoreEntry entry, List<EmassDoc.KeywordInfo.Keyword> keywords, boolean blockedOnly) {
         if (keywords == null || keywords.isEmpty()) return;
 
         for (EmassDoc.KeywordInfo.Keyword kw : keywords) {
+            if (kw == null || Common.isEmpty(kw.getName()) || (blockedOnly && !kw.isBlocked())) continue;
             String categorySeq = keywordLoader.getCategorySeq(kw.getName());
             if (categorySeq == null) continue;
 
@@ -159,7 +162,9 @@ public class AnomalyScoreCalculator {
         List<EmassDoc.PrivacyInfo> privacyInfos = doc.getPrivacyInfo();
         if (privacyInfos == null || privacyInfos.isEmpty()) return;
 
+        boolean blockedOnly = isBlocked(doc);
         for (EmassDoc.PrivacyInfo info : privacyInfos) {
+            if (info == null || Common.isEmpty(info.getId()) || (blockedOnly && !info.isBlocked())) continue;
             for (int i = 0; i < info.getCount(); i++) {
                 entry.add(anomalyScoreLoader.getScore(AnomalyScoreLoader.TABLE_PATTERN, info.getId()));
             }
@@ -168,6 +173,9 @@ public class AnomalyScoreCalculator {
 
     private void calcFileUploadPattern(EmassDoc doc, EmassDoc.AnomalyScore.ScoreEntry entry) {
         int attachExistCount = doc.getAttachExistCount();
+        if (attachExistCount <= 0) return;
+        if (isBlocked(doc) && !isFileUploadBlockReason(doc)) return;
+
         int fileUploadScore = anomalyScoreLoader.getScore(AnomalyScoreLoader.TABLE_PATTERN, PATTERN_FILE_UPLOAD);
 
         for (int i = 0; i < attachExistCount; i++) {
@@ -180,23 +188,35 @@ public class AnomalyScoreCalculator {
 
         for (EmassDoc.Attach attach : doc.getAttach()) {
             addImageSimilarityScore(entry, attach.getImageSimilarity());
-            List<EmassDoc.ImageExtractorInfo> imageInfos = attach.getImageExtractorInfo();
-            if (imageInfos == null || imageInfos.isEmpty()) continue;
-
-            for (EmassDoc.ImageExtractorInfo imageInfo : imageInfos) {
-                addImageSimilarityScore(entry, imageInfo.getImageSimilarity());
-            }
         }
     }
 
-    private void addImageSimilarityScore(EmassDoc.AnomalyScore.ScoreEntry entry, EmassDoc.ImageSimilarity imageSimilarity) {
-        if (imageSimilarity == null || Common.isEmpty(imageSimilarity.getCategoryId()) || imageSimilarity.getRiskScore() == null) return;
-        entry.add(imageSimilarity.getRiskScore());
+    private void addImageSimilarityScore(EmassDoc.AnomalyScore.ScoreEntry entry, List<EmassDoc.ImageSimilarity> imageSimilarities) {
+        if (imageSimilarities == null || imageSimilarities.isEmpty()) return;
+
+        for (EmassDoc.ImageSimilarity imageSimilarity : imageSimilarities) {
+            if (imageSimilarity == null || Common.isEmpty(imageSimilarity.getCategoryId()) || imageSimilarity.getRiskScore() == null) continue;
+            entry.add(imageSimilarity.getRiskScore());
+        }
     }
 
     private void calcAccountPattern(EmassDoc doc, EmassDoc.AnomalyScore.ScoreEntry entry) {
         if (doc.getUser() == null || doc.getUser().getCompanyAccount() == null || doc.getUser().getCompanyAccount()) return;
+        if (isBlocked(doc) && !isAccountBlockReason(doc)) return;
+
         entry.add(anomalyScoreLoader.getScore(AnomalyScoreLoader.TABLE_PATTERN, PATTERN_PERSONAL_ACCOUNT));
+    }
+
+    private boolean isFileUploadBlockReason(EmassDoc doc) {
+        return isBlocked(doc) && Common.isNotEmpty(doc.getBlockExtension());
+    }
+
+    private boolean isAccountBlockReason(EmassDoc doc) {
+        return isBlocked(doc) && Common.isEquals(doc.getRuleTarget(), RULE_TARGET_ACCOUNT);
+    }
+
+    private boolean isBlocked(EmassDoc doc) {
+        return doc != null && doc.getAction() == ActionType.BLOCK;
     }
 
     /**

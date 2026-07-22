@@ -3,8 +3,10 @@ package com.xcurenet.common.types;
 import com.xcurenet.common.Constants;
 import com.xcurenet.common.utils.Common;
 import lombok.Data;
+import lombok.extern.log4j.Log4j2;
 
 @Data
+@Log4j2
 public class AttachExtension {
 	private boolean fileNameExist;  //파일명 탐지 여부
 	private String ext;             // 확장자
@@ -17,13 +19,17 @@ public class AttachExtension {
 	public AttachExtension(final String input) {
 		if (input == null) return;
 
-		String[] parts = input.split("\\|");
-		if (parts.length >= 1 && Common.isEquals(parts[0], "1")) this.fileNameExist = true;
-		if (parts.length >= 2) this.ext = parts[1].toLowerCase();
-		if (parts.length >= 3) this.filterType = FILTERTYPE.valueOf(parts[2]);
-		if (parts.length >= 4) this.desc = parts[3];
-		if (parts.length >= 5 && Common.isEquals(parts[4], "1")) this.encrypted = true;
-		this.unknown = Constants.UNKNOWN.equalsIgnoreCase(this.ext);
+        try {
+            String[] parts = input.split("\\|");
+            if (parts.length >= 1 && Common.isEquals(parts[0], "1")) this.fileNameExist = true;
+            if (parts.length >= 2) this.ext = parts[1].toLowerCase();
+            if (parts.length >= 3) this.filterType = FILTERTYPE.valueOf(parts[2]);
+            if (parts.length >= 4) this.desc = parts[3];
+            if (parts.length >= 5 && Common.isEquals(parts[4], "1")) this.encrypted = true;
+            this.unknown = Constants.UNKNOWN.equalsIgnoreCase(this.ext);
+        } catch (Exception e) {
+            log.error("Error parsing info AttachExtension", e);
+        }
 	}
 
 	public enum FILTERTYPE { // 첨부 분석 방식

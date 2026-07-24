@@ -76,4 +76,11 @@ public class InfoLoaderController {
 		infoLoader.aiServiceLoad();
 		return ResponseEntity.ok().build();
 	}
+
+	@ResponseBody
+	@GetMapping(value = "/insa/image-category/reload")
+	public ResponseEntity<Object> imageCategoryReload() {
+		infoLoader.imageCategoryLoad();
+		return ResponseEntity.ok().build();
+	}
 }

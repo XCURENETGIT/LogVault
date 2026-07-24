@@ -22,6 +22,7 @@ public class InfoLoader {
   private final GuardRailLoader guardRailLoader;
   private final AiServiceLoader aiServiceLoader;
   private final AccountsLoader accountsLoader;
+  private final ImageCategoryLoader imageCategoryLoader;
 
 	public void init() {
 		StopWatch sw = DateUtils.start();
@@ -37,6 +38,7 @@ public class InfoLoader {
     guardRailLoad();
     aiServiceLoad();
 		companyAccountLoad();
+		imageCategoryLoad();
 
 		log.info("INFO_LOAD | END | {}\n", DateUtils.stop(sw));
 	}
@@ -108,6 +110,13 @@ public class InfoLoader {
 		log.debug("INFO_LOAD | Company Accounts START");
 		synchronized (this) {
 			accountsLoader.load();
+		}
+	}
+
+	public void imageCategoryLoad() {
+		log.debug("INFO_LOAD | ImageCategory START");
+		synchronized (this) {
+			imageCategoryLoader.load();
 		}
 	}
 

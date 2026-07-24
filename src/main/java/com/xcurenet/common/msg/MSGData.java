@@ -147,11 +147,14 @@ public class MSGData {
 	@FieldKey({"USER", "LOGIN_ID"}) // 디코더에서 사용자를 찾을 수 있도록 남겨주는 IP 값 (bnr.yum@xcurenet.com 혹은 bnr.yum)
 	private String loginId;
 
-	@FieldKey("ACCOUNT")
+	@FieldKey("ACCOUNT") // 접속 계정 정보
 	private String account;
 
 	@FieldKey("REPROCESS")
 	private int reProcess = 0;
+
+	@FieldKey("IMG_SIMILARITY_CATE_IDS") // 이미지 유사도 카테고리 정보
+	private List<String> imageSimilarityCategoryIds;
 
 	private String infoFilePath; // INFO(MSG) 파일 경로
 

@@ -28,6 +28,7 @@ public class AnomalyScoreLoader {
     public static final String TABLE_GUARD_RAIL = "UI_GUARD_RAIL";
     public static final String TABLE_KEYWORD_CATEGORY = "UI_KEYWORD_CATEGORY";
     public static final String TABLE_PATTERN = "UI_PATTERN";
+    public static final String TABLE_IMAGE_CATEGORY = "UI_IMAGE_CATEGORY";
 
     private final InfoLoaderService infoLoaderService;
 
@@ -88,6 +89,19 @@ public class AnomalyScoreLoader {
         String level = SCORE_LEVEL_REF.get().get(key);
         if (level == null) return 0;
         return levelScoreMap.getOrDefault(level, 0);
+    }
+
+    public int getImageCategoryScore(String imageCategorySeq) {
+        if (imageCategorySeq == null) return 0;
+
+        if (hasScore(TABLE_IMAGE_CATEGORY, imageCategorySeq)) {
+            return getScore(TABLE_IMAGE_CATEGORY, imageCategorySeq);
+        }
+        return getScore(TABLE_KEYWORD_CATEGORY, imageCategorySeq);
+    }
+
+    private boolean hasScore(String mapperTable, String targetId) {
+        return SCORE_LEVEL_REF.get().containsKey(compositeKey(mapperTable, targetId));
     }
 
     private void addEnabledPatternTargets(Set<String> targetSet, List<PatternInfo> patterns) {

@@ -3,6 +3,8 @@ package com.xcurenet.logvault.module.analysis;
 import com.xcurenet.common.msg.MSGData;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.logvault.conf.Config;
+import com.xcurenet.logvault.loader.AnomalyScoreLoader;
+import com.xcurenet.logvault.loader.ImageCategoryLoader;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +21,11 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class ReasonAnalysis {
+    private static final String RULE_TARGET_ATTACH = "ATTACH";
+
     private final Config conf;
+    private final AnomalyScoreLoader anomalyScoreLoader;
+    private final ImageCategoryLoader imageCategoryLoader;
 
     /**
      * 샘플 메시지
@@ -47,11 +53,13 @@ public class ReasonAnalysis {
      * ========================= */
     public void setReason(final ScanData data) {
         MSGData msg = data.getMsgData();
+        EmassDoc doc = data.getEmassDoc();
+        appendImageSimilarityReason(doc, msg);
+
         if (msg.getDetections() == null) return;
 
         log.info("MGREASON | {}", msg.getDetections());
 
-        EmassDoc doc = data.getEmassDoc();
         List<String> items = Common.split(msg.getDetections(), ",");
         for (String item : items) {
             List<String> reason = Common.split(item, ";");
@@ -74,6 +82,52 @@ public class ReasonAnalysis {
             int sum = doc.getKeywordInfo().getKeywords().stream().mapToInt(EmassDoc.KeywordInfo.Keyword::getCount).sum();
             doc.setKeywordTotal(sum);
         }
+    }
+
+    private void appendImageSimilarityReason(EmassDoc doc, MSGData msg) {
+        if (doc == null || msg == null || !Common.isEquals(msg.getAction(), "BLOCK")) return;
+        List<String> categoryIds = normalizeImageSimilarityCategoryIds(msg.getImageSimilarityCategoryIds());
+        if (categoryIds.isEmpty()) return;
+
+        doc.setRuleTarget(RULE_TARGET_ATTACH);
+
+        EmassDoc.Attach attach = firstAttach(doc);
+        if (attach == null) return;
+
+        if (attach.getImageSimilarity() == null) {
+            attach.setImageSimilarity(new ArrayList<>());
+        }
+
+        for (String categoryId : categoryIds) {
+            String id = Common.nvl(categoryId).trim();
+            if (Common.isEmpty(id)) continue;
+            String seq = imageCategoryLoader.getCategorySeq(id);
+
+            attach.getImageSimilarity().add(EmassDoc.ImageSimilarity.builder()
+                    .categoryId(id)
+                    .riskScore(anomalyScoreLoader.getImageCategoryScore(seq))
+                    .build());
+        }
+    }
+
+    private List<String> normalizeImageSimilarityCategoryIds(List<String> categoryIds) {
+        List<String> result = new ArrayList<>();
+        if (categoryIds == null || categoryIds.isEmpty()) return result;
+
+        for (String categoryId : categoryIds) {
+            String id = Common.nvl(categoryId).trim();
+            if (Common.isEmpty(id) || Common.isEquals(id, "-")) continue;
+            result.add(id);
+        }
+        return result;
+    }
+
+    private EmassDoc.Attach firstAttach(EmassDoc doc) {
+        if (doc.getAttach() == null || doc.getAttach().isEmpty()) return null;
+        for (EmassDoc.Attach attach : doc.getAttach()) {
+            if (attach != null) return attach;
+        }
+        return null;
     }
 
     private void appendKeyword(EmassDoc doc, int id, int count, String detectStr, boolean isAttach) {

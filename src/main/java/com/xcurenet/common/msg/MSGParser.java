@@ -150,8 +150,17 @@ public class MSGParser {
 		if (List.class.isAssignableFrom(type)) {
 			Class<?> elementType = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
 			List<Object> resultList = new ArrayList<>();
-			for (Object item : (List<?>) value) {
-				resultList.add(parseValue(elementType, item, field));
+			if (value instanceof List<?> items) {
+				for (Object item : items) {
+					resultList.add(parseValue(elementType, item, field));
+				}
+				return resultList;
+			}
+
+			for (String item : StringUtils.split(strVal, ",")) {
+				String trimmed = item == null ? null : item.trim();
+				if (Common.isEmpty(trimmed)) continue;
+				resultList.add(parseValue(elementType, trimmed, field));
 			}
 			return resultList;
 		}

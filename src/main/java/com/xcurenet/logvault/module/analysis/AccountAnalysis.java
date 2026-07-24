@@ -21,6 +21,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 
 public class AccountAnalysis {
+    private static final String RULE_TARGET_ATTACH = "ATTACH";
     private static final String RULE_TARGET_ACCOUNT = "ACCOUNT";
 
     private final ServiceLoader serviceLoader;
@@ -61,6 +62,7 @@ public class AccountAnalysis {
 
     private void setAccountBlockReason(EmassDoc doc, boolean companyAccount) {
         if (doc == null || doc.getAction() != ActionType.BLOCK || companyAccount || doc.getRuleSeq() == null) return;
+        if (Common.isEquals(doc.getRuleTarget(), RULE_TARGET_ATTACH)) return;
 
         boolean accountBlockRule = ruleLoader.getRules().stream()
                 .filter(Objects::nonNull)

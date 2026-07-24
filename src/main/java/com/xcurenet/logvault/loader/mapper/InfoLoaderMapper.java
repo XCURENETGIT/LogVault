@@ -73,6 +73,15 @@ public interface InfoLoaderMapper {
 	List<AiServiceVO> getAiServices();
 
 	@Select("""
+			SELECT	IMAGE_CATEGORY_SEQ AS imageCategorySeq,
+					IMAGE_CATEGORY_ID AS imageCategoryId
+			FROM	UI_IMAGE_CATEGORY
+			ORDER	BY IMAGE_CATEGORY_SEQ
+			""")
+	@ResultType(ImageCategoryVO.class)
+	List<ImageCategoryVO> getImageCategories();
+
+	@Select("""
 			SELECT	RULE_CONTENT AS ruleContent
 			FROM	UI_RULE_HISTORY
 			WHERE	RULE_TABLE_NAME = #{ruleTableName}

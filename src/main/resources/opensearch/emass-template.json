@@ -407,6 +407,9 @@
 								"category_id": {
 									"type": "keyword"
 								},
+								"category_name": {
+									"type": "keyword"
+								},
 								"risk_score": {
 									"type": "integer"
 								},

@@ -8,4 +8,5 @@ import org.apache.ibatis.type.Alias;
 public class ImageCategoryVO {
     private String imageCategorySeq;
     private String imageCategoryId;
+    private String imageCategoryNm;
 }

@@ -7,6 +7,7 @@ import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.fs.FileProcessor;
+import com.xcurenet.logvault.loader.ImageCategoryLoader;
 import com.xcurenet.logvault.module.analysis.AnomalyScoreCalculator;
 import com.xcurenet.logvault.module.analysis.GuardRailAnalysis;
 import com.xcurenet.logvault.opensearch.EmassDoc;
@@ -42,14 +43,16 @@ public class MLWorker implements PipelineWorker {
 	private final IndexService indexService;
 	private final GuardRailAnalysis guardRailAnalysis;
 	private final AnomalyScoreCalculator anomalyScoreCalculator;
+	private final ImageCategoryLoader imageCategoryLoader;
 
-	public MLWorker(Config conf, @Qualifier("mlRestTemplate") RestTemplate restTemplate, FileProcessor fileProcessor, IndexService indexService, GuardRailAnalysis guardRailAnalysis, AnomalyScoreCalculator anomalyScoreCalculator) {
+	public MLWorker(Config conf, @Qualifier("mlRestTemplate") RestTemplate restTemplate, FileProcessor fileProcessor, IndexService indexService, GuardRailAnalysis guardRailAnalysis, AnomalyScoreCalculator anomalyScoreCalculator, ImageCategoryLoader imageCategoryLoader) {
 		this.conf = conf;
 		this.restTemplate = restTemplate;
 		this.fileProcessor = fileProcessor;
 		this.indexService = indexService;
 		this.guardRailAnalysis = guardRailAnalysis;
 		this.anomalyScoreCalculator = anomalyScoreCalculator;
+		this.imageCategoryLoader = imageCategoryLoader;
 	}
 
 	@Override
@@ -324,6 +327,7 @@ public class MLWorker implements PipelineWorker {
 
 		return new ImageSimilarityResponse(EmassDoc.ImageSimilarity.builder()
 				.categoryId(category)
+				.categoryName(imageCategoryLoader.getCategoryName(category))
 				.riskScore(verdict.getInteger("final_risk_score"))
 				.confidence(verdict.getFloat("confidence"))
 				.build());

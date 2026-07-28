@@ -105,6 +105,7 @@ public class ReasonAnalysis {
 
             attach.getImageSimilarity().add(EmassDoc.ImageSimilarity.builder()
                     .categoryId(id)
+                    .categoryName(imageCategoryLoader.getCategoryName(id))
                     .riskScore(anomalyScoreLoader.getImageCategoryScore(seq))
                     .build());
         }

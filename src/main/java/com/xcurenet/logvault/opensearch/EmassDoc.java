@@ -185,6 +185,8 @@ public class EmassDoc {
 	public static class ImageSimilarity {
 		@Field("category_id")
 		private String categoryId;
+		@Field("category_name")
+		private String categoryName;
 		@Field("risk_score")
 		private Integer riskScore;
 		@Field("confidence")

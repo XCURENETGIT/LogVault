@@ -74,7 +74,8 @@ public interface InfoLoaderMapper {
 
 	@Select("""
 			SELECT	IMAGE_CATEGORY_SEQ AS imageCategorySeq,
-					IMAGE_CATEGORY_ID AS imageCategoryId
+					IMAGE_CATEGORY_ID AS imageCategoryId,
+					IMAGE_CATEGORY_NM AS imageCategoryNm
 			FROM	UI_IMAGE_CATEGORY
 			ORDER	BY IMAGE_CATEGORY_SEQ
 			""")

@@ -83,6 +83,26 @@ public interface InfoLoaderMapper {
 	List<ImageCategoryVO> getImageCategories();
 
 	@Select("""
+			SELECT DISTINCT
+					N.DEVICE_TYPE AS deviceType,
+					N.DEVICE_NM AS deviceName,
+					N.DEVICE_IP AS deviceIp,
+					N.DEVICE_ORDER AS deviceOrder,
+					N.USE_YN AS useYn
+			FROM	UI_DEVICE_INFO_MAPR M
+					INNER JOIN UI_DEVICE_NODE N ON N.DEVICE_TYPE = M.DEVICE_TYPE
+			WHERE	N.USE_YN = 'Y'
+			AND		M.USE_YN = 'Y'
+			AND		(
+						M.INFO_KEY = #{infoKey}
+						OR M.INFO_KEY LIKE CONCAT(#{infoKey}, '-%')
+					)
+			ORDER	BY N.DEVICE_ORDER, N.DEVICE_TYPE
+			""")
+	@ResultType(DeviceNodeVO.class)
+	List<DeviceNodeVO> getDeviceNodesByInfoKey(@Param("infoKey") String infoKey);
+
+	@Select("""
 			SELECT	RULE_CONTENT AS ruleContent
 			FROM	UI_RULE_HISTORY
 			WHERE	RULE_TABLE_NAME = #{ruleTableName}

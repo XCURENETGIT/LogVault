@@ -8,6 +8,8 @@ import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
+import com.xcurenet.logvault.device.DeviceEndpointResolver;
+import com.xcurenet.logvault.device.DeviceServiceKey;
 import com.xcurenet.logvault.loader.PatternLoader;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
@@ -40,8 +42,11 @@ import java.util.concurrent.TimeUnit;
 public class PrivacyAIAnalysis {
 
 	private final Config conf;
+	private final DeviceEndpointResolver endpointResolver;
 	private PiiDetectorGrpc.PiiDetectorBlockingStub stub;
 	private ManagedChannel channel;
+	private String channelHost;
+	private int channelPort = -1;
 	private final AtomicInteger grpcConsecutiveFailures = new AtomicInteger(0);
 	private volatile long circuitOpenUntilMs = 0L;
 
@@ -53,17 +58,15 @@ public class PrivacyAIAnalysis {
 
 	@PostConstruct
 	public void initGrpcClient() {
-		ManagedChannelBuilder<?> channelBuilder = ManagedChannelBuilder.forAddress(conf.getMlPrivacyGrpcHost(), conf.getMlPrivacyGrpcPort());
-		if (!conf.isMlPrivacyGrpcTlsEnable()) {
-			channelBuilder.usePlaintext();
-		}
-		this.channel = channelBuilder.build();
-		this.stub = PiiDetectorGrpc.newBlockingStub(channel);
-		log.info("PII_INIT | PII gRPC Client Initialized | {}:{} | TLS:{} | DEADLINE:{}ms | RETRY:{}", conf.getMlPrivacyGrpcHost(), conf.getMlPrivacyGrpcPort(), conf.isMlPrivacyGrpcTlsEnable(), conf.getMlPrivacyGrpcDeadlineMs(), conf.getMlPrivacyGrpcRetryMaxAttempts());
+		log.info("PII_INIT | PII gRPC Client Lazy Initialized | HOST:{} | PORT:{} | TLS:{} | DEADLINE:{}ms | RETRY:{}", conf.getMlPrivacyGrpcHost(), conf.getMlPrivacyGrpcPort(), conf.isMlPrivacyGrpcTlsEnable(), conf.getMlPrivacyGrpcDeadlineMs(), conf.getMlPrivacyGrpcRetryMaxAttempts());
 	}
 
 	@PreDestroy
-	public void destroy() {
+	public synchronized void destroy() {
+		shutdownGrpcChannel();
+	}
+
+	private void shutdownGrpcChannel() {
 		if (channel != null) {
 			try {
 				channel.shutdown();
@@ -75,6 +78,10 @@ public class PrivacyAIAnalysis {
 				channel.shutdownNow();
 			}
 		}
+		channel = null;
+		stub = null;
+		channelHost = null;
+		channelPort = -1;
 	}
 
 	public void detect(final ScanData scanData) {
@@ -246,65 +253,96 @@ public class PrivacyAIAnalysis {
 		int deadlineMs = Math.max(500, conf.getMlPrivacyGrpcDeadlineMs());
 		int backoffMs = Math.max(0, conf.getMlPrivacyGrpcRetryBackoffMs());
 		Pii.DetectRequest req = Pii.DetectRequest.newBuilder().setText(text).setMaxResultsPerType(max).setRuleset("default").build();
+		String host;
+		try {
+			host = privacyGrpcHost();
+		} catch (Exception e) {
+			log.error("{} | TEXT.LENGTH:{} | ENDPOINT_RESOLVE_ERROR", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), e);
+			markGrpcFailure();
+			return null;
+		}
 
 		for (int attempt = 1; attempt <= maxAttempts; attempt++) {
 			try {
-				Pii.DetectResponse res = stub.withDeadlineAfter(deadlineMs, TimeUnit.MILLISECONDS).detect(req);
+				Pii.DetectResponse res = getGrpcStub(host, conf.getMlPrivacyGrpcPort()).withDeadlineAfter(deadlineMs, TimeUnit.MILLISECONDS).detect(req);
 				if (!res.getSuccess()) {
-					log.warn("{} | TEXT.LENGTH:{} | ATTEMPT:{}/{} | STATUS:{} | MESSAGE:{}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), attempt, maxAttempts, res.getStatus(), res.getMessage());
+					log.warn("{} | TEXT.LENGTH:{} | HOST:{}:{} | ATTEMPT:{}/{} | STATUS:{} | MESSAGE:{}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), host, conf.getMlPrivacyGrpcPort(), attempt, maxAttempts, res.getStatus(), res.getMessage());
 					if (attempt < maxAttempts) {
 						sleepRetry(backoffMs, attempt);
 						continue;
 					}
-					markGrpcFailure();
-					return null;
+					break;
 				}
 
 				markGrpcSuccess();
-				Pii.PiiData data = res.getData();
-				Map<String, List<Pii.MatchItem>> result = new LinkedHashMap<>();
-				result.put("SN", data.getSnList());
-				result.put("SSN", data.getSsnList());
-				result.put("DN", data.getDnList());
-				result.put("PN", data.getPnList());
-				result.put("MN", data.getMnList());
-				result.put("BN", data.getBnList());
-				result.put("EML", data.getEmlList());
-				result.put("CN", data.getCnList());
-				result.put("AN", data.getAnList());
-				result.put("BRN", data.getBrnList());
-				result.put("FN", data.getFnList());
-				if (conf.isVietnamPrivacyEnabled()) {
-					result.put("VN_CCCD", data.getVnCccdList());
-					result.put("VN_MN", data.getVnMnList());
-					result.put("VN_PN", data.getVnPnList());
-					result.put("VN_TIN", data.getVnTinList());
-					result.put("VN_SI", data.getVnSiList());
-				}
+				Map<String, List<Pii.MatchItem>> result = toMatchesByType(res.getData());
 				log.info("{}", result);
-				log.debug("ML_PRIVACY_GRPC_RESPONSE | TEXT.LENGTH:{} | META:ruleset={}, version={}, updatedAt={}", text.length(), res.getMeta().getRulesetName(), res.getMeta().getRulesetVersion(), res.getMeta().getRulesetUpdatedAt());
+				log.debug("ML_PRIVACY_GRPC_RESPONSE | TEXT.LENGTH:{} | HOST:{}:{} | META:ruleset={}, version={}, updatedAt={}", text.length(), host, conf.getMlPrivacyGrpcPort(), res.getMeta().getRulesetName(), res.getMeta().getRulesetVersion(), res.getMeta().getRulesetUpdatedAt());
 				return result;
 			} catch (StatusRuntimeException e) {
-				log.warn("{} | TEXT.LENGTH:{} | ATTEMPT:{}/{} | STATUS:{}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), attempt, maxAttempts, e.getStatus(), e);
+				log.warn("{} | TEXT.LENGTH:{} | HOST:{}:{} | ATTEMPT:{}/{} | STATUS:{}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), host, conf.getMlPrivacyGrpcPort(), attempt, maxAttempts, e.getStatus(), e);
 				if (attempt < maxAttempts) {
 					sleepRetry(backoffMs, attempt);
 					continue;
 				}
-				markGrpcFailure();
-				log.error("{} | TEXT.LENGTH:{}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), e);
-				return null;
+				log.error("{} | TEXT.LENGTH:{} | HOST:{}:{}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), host, conf.getMlPrivacyGrpcPort(), e);
+				break;
 			} catch (Exception e) {
-				log.warn("{} | TEXT.LENGTH:{} | ATTEMPT:{}/{} | {}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), attempt, maxAttempts, e.getMessage(), e);
+				log.warn("{} | TEXT.LENGTH:{} | HOST:{}:{} | ATTEMPT:{}/{} | {}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), host, conf.getMlPrivacyGrpcPort(), attempt, maxAttempts, e.getMessage(), e);
 				if (attempt < maxAttempts) {
 					sleepRetry(backoffMs, attempt);
 					continue;
 				}
-				markGrpcFailure();
-				log.error("{} | TEXT.LENGTH:{}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), e);
-				return null;
+				log.error("{} | TEXT.LENGTH:{} | HOST:{}:{}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), host, conf.getMlPrivacyGrpcPort(), e);
+				break;
 			}
 		}
+		markGrpcFailure();
 		return null;
+	}
+
+	private String privacyGrpcHost() {
+		return endpointResolver.resolveHost(conf.getMlPrivacyGrpcHost(), DeviceServiceKey.PII);
+	}
+
+	private synchronized PiiDetectorGrpc.PiiDetectorBlockingStub getGrpcStub(String host, int port) {
+		boolean endpointChanged = !Common.isEquals(host, channelHost) || port != channelPort;
+		if (stub == null || channel == null || channel.isShutdown() || channel.isTerminated() || endpointChanged) {
+			shutdownGrpcChannel();
+			ManagedChannelBuilder<?> channelBuilder = ManagedChannelBuilder.forAddress(host, port);
+			if (!conf.isMlPrivacyGrpcTlsEnable()) {
+				channelBuilder.usePlaintext();
+			}
+			channel = channelBuilder.build();
+			stub = PiiDetectorGrpc.newBlockingStub(channel);
+			channelHost = host;
+			channelPort = port;
+			log.info("PII_GRPC_ENDPOINT | {}:{} | TLS:{}", channelHost, channelPort, conf.isMlPrivacyGrpcTlsEnable());
+		}
+		return stub;
+	}
+
+	private Map<String, List<Pii.MatchItem>> toMatchesByType(Pii.PiiData data) {
+		Map<String, List<Pii.MatchItem>> result = new LinkedHashMap<>();
+		result.put("SN", data.getSnList());
+		result.put("SSN", data.getSsnList());
+		result.put("DN", data.getDnList());
+		result.put("PN", data.getPnList());
+		result.put("MN", data.getMnList());
+		result.put("BN", data.getBnList());
+		result.put("EML", data.getEmlList());
+		result.put("CN", data.getCnList());
+		result.put("AN", data.getAnList());
+		result.put("BRN", data.getBrnList());
+		result.put("FN", data.getFnList());
+		if (conf.isVietnamPrivacyEnabled()) {
+			result.put("VN_CCCD", data.getVnCccdList());
+			result.put("VN_MN", data.getVnMnList());
+			result.put("VN_PN", data.getVnPnList());
+			result.put("VN_TIN", data.getVnTinList());
+			result.put("VN_SI", data.getVnSiList());
+		}
+		return result;
 	}
 
 	private void removeVietnamPrivacyIfDisabled(JSONObject data) {
@@ -388,7 +426,8 @@ public class PrivacyAIAnalysis {
 			param.put("max_results_per_type", max);
 
 			byte[] body = JSON.toJSONBytes(param, JSONWriter.Feature.LargeObject);
-			HttpURLConnection conn = (HttpURLConnection) new URL(conf.getMlPrivacyApiUrl()).openConnection();
+			String url = endpointResolver.resolveConfiguredUrl(conf.getMlPrivacyApiUrl(), DeviceServiceKey.PII);
+			HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
 			conn.setRequestMethod("POST");
 			conn.setConnectTimeout(60000);
 			conn.setReadTimeout(60000);
@@ -409,9 +448,9 @@ public class PrivacyAIAnalysis {
 					removeVietnamPrivacyIfDisabled(data);
 					return data;
 				}
-				log.warn("{} | TEXT.LENGTH:{} | {}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), response);
+				log.warn("{} | TEXT.LENGTH:{} | URL:{} | {}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), url, response);
 			} else {
-				log.warn("REG_INFO | RESPONSE ERROR | {} | TEXT.LENGTH:{} | HTTP:{}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), responseCode);
+				log.warn("REG_INFO | RESPONSE ERROR | {} | TEXT.LENGTH:{} | URL:{} | HTTP:{}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), url, responseCode);
 			}
 		} catch (Exception e) {
 			log.error("{} | TEXT.LENGTH:{}", ErrorCode.PRIVACY_ML_API_ERROR.toString(), text.length(), e);

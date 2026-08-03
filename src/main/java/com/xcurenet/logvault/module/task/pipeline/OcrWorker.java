@@ -6,6 +6,8 @@ import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.common.utils.FileUtil;
 import com.xcurenet.logvault.conf.Config;
+import com.xcurenet.logvault.device.DeviceEndpointResolver;
+import com.xcurenet.logvault.device.DeviceServiceKey;
 import com.xcurenet.logvault.fs.FileProcessor;
 import com.xcurenet.logvault.module.analysis.AnomalyScoreCalculator;
 import com.xcurenet.logvault.module.analysis.KeywordAnalysis;
@@ -46,8 +48,9 @@ public class OcrWorker implements PipelineWorker {
 	private final PrivacyAIAnalysis privacyAnalysis;
 	private final AnomalyScoreCalculator anomalyScoreCalculator;
 	private final RestTemplate restTemplate;
+	private final DeviceEndpointResolver endpointResolver;
 
-	public OcrWorker(Config conf, FileProcessor fileProcessor, IndexService indexService, KeywordAnalysis keywordAnalysis, PrivacyAIAnalysis privacyAnalysis, AnomalyScoreCalculator anomalyScoreCalculator, @Qualifier("ocrRestTemplate") RestTemplate restTemplate) {
+	public OcrWorker(Config conf, FileProcessor fileProcessor, IndexService indexService, KeywordAnalysis keywordAnalysis, PrivacyAIAnalysis privacyAnalysis, AnomalyScoreCalculator anomalyScoreCalculator, @Qualifier("ocrRestTemplate") RestTemplate restTemplate, DeviceEndpointResolver endpointResolver) {
 		this.conf = conf;
 		this.fileProcessor = fileProcessor;
 		this.indexService = indexService;
@@ -55,6 +58,7 @@ public class OcrWorker implements PipelineWorker {
 		this.privacyAnalysis = privacyAnalysis;
 		this.anomalyScoreCalculator = anomalyScoreCalculator;
 		this.restTemplate = restTemplate;
+		this.endpointResolver = endpointResolver;
 	}
 
 	@Override
@@ -171,7 +175,12 @@ public class OcrWorker implements PipelineWorker {
 	}
 
 	private String xcn_ocr_version(InputStream in, String name) throws IOException {
-		ByteArrayResource res = new ByteArrayResource(in.readAllBytes()) {
+		byte[] bytes = in.readAllBytes();
+		return xcn_ocr_version(appendPath(ocrBaseUrl(), "/ocr"), bytes, name);
+	}
+
+	private String xcn_ocr_version(String url, byte[] bytes, String name) throws IOException {
+		ByteArrayResource res = new ByteArrayResource(bytes) {
 			@Override
 			public String getFilename() {
 				return name;
@@ -182,7 +191,7 @@ public class OcrWorker implements PipelineWorker {
 		HttpHeaders h = new HttpHeaders();
 		h.setContentType(MediaType.MULTIPART_FORM_DATA);
 		h.setAccept(List.of(MediaType.APPLICATION_JSON));
-		ResponseEntity<String> r = restTemplate.postForEntity(String.format(URL_FMT, conf.getOcrApiHost(), conf.getOcrApiPort()) + "/ocr", new HttpEntity<>(body, h), String.class);
+		ResponseEntity<String> r = restTemplate.postForEntity(url, new HttpEntity<>(body, h), String.class);
 		if (!r.getStatusCode().is2xxSuccessful()) throw new IOException("HTTP " + r.getStatusCode());
 		JSONObject j = JSONObject.parseObject(r.getBody());
 		return j != null ? j.getString("text") : null;
@@ -197,15 +206,34 @@ public class OcrWorker implements PipelineWorker {
 		p.put("temperature", 0.0);
 		HttpHeaders h = new HttpHeaders();
 		h.setContentType(MediaType.APPLICATION_JSON);
-		ResponseEntity<String> r = restTemplate.postForEntity(String.format(URL_FMT, conf.getOcrApiHost(), conf.getOcrApiPort()) + "/v1/chat/completions", new HttpEntity<>(JSON.toJSONString(p), h), String.class);
+		String payload = JSON.toJSONString(p);
+		String url = appendPath(ocrBaseUrl(), "/v1/chat/completions");
+		ResponseEntity<String> r = restTemplate.postForEntity(url, new HttpEntity<>(payload, h), String.class);
 		if (!r.getStatusCode().is2xxSuccessful()) throw new IOException("HTTP " + r.getStatusCode());
 		JSONObject j = JSONObject.parseObject(r.getBody());
 		return j != null ? j.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content") : null;
 	}
 
 	private String synap_ocr_version(InputStream in, String name) throws IOException {
-		String url = String.format(URL_FMT, conf.getOcrApiHost(), conf.getOcrApiPort()) + "/sdk/ocr";
+		String url = appendPath(ocrBaseUrl(), "/sdk/ocr");
 		Connection.Response r = Jsoup.connect(url).timeout(conf.getOcrTimeoutSec() * 1000).method(Connection.Method.POST).ignoreContentType(true).data("api_key", conf.getOcrApiKey()).data("type", "upload").data("textout", "true").data("boxes_type", "line").data("image", name, in).execute();
 		return JSONObject.parseObject(r.body()).getJSONObject("result").getString("full_text");
+	}
+
+	private String ocrBaseUrl() {
+		return endpointResolver.resolveConfiguredUrl(ocrBaseUrlConfig(), DeviceServiceKey.OCR);
+	}
+
+	private String ocrBaseUrlConfig() {
+		String host = Common.nvl(conf.getOcrApiHost()).trim();
+		if (host.contains("://")) return host;
+		if (host.contains(":") || Common.isEmpty(conf.getOcrApiPort())) return "http://" + host;
+		return String.format(URL_FMT, host, conf.getOcrApiPort());
+	}
+
+	private String appendPath(String baseUrl, String path) {
+		if (baseUrl.endsWith("/") && path.startsWith("/")) return baseUrl + path.substring(1);
+		if (!baseUrl.endsWith("/") && !path.startsWith("/")) return baseUrl + "/" + path;
+		return baseUrl + path;
 	}
 }

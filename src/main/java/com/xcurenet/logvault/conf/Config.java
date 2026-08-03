@@ -165,7 +165,7 @@ public class Config {
 	@Value("${ocr.api.type:LC}") //OCR TYPE (SY: Synap OCR, LG: Local GPU, LC:Local CPU)
 	private String ocrApiType;
 
-	@Value("${ocr.api.host:xgenai-manager}") //OCR Rest API Host
+	@Value("${ocr.api.host:{device.host}}") //OCR Rest API Host
 	private String ocrApiHost;
 
 	@Value("${ocr.api.port:8001}") //OCR Rest API PORT
@@ -200,10 +200,10 @@ public class Config {
 	@Value("${ocr.limit.size:20485760}") //OCR 파일 사이즈 LIMIT (default 20MB)
 	private int ocrLimitSize;
 
-	@Value("${ml.privacy.api.url:http://xgenai-manager:8005/pii/detect}") //ML Privacy Rest API URL
+	@Value("${ml.privacy.api.url:http://{device.host}:8005/pii/detect}") //ML Privacy Rest API URL
 	private String mlPrivacyApiUrl;
 
-	@Value("${ml.privacy.grpc.host:xgenai-manager}") //ML Privacy GRPC HOST
+	@Value("${ml.privacy.grpc.host:{device.host}}") //ML Privacy GRPC HOST
 	private String mlPrivacyGrpcHost;
 
 	@Value("${ml.privacy.grpc.port:50055}") //ML Privacy GRPC PORT
@@ -241,7 +241,7 @@ public class Config {
 		return Common.isEquals(Common.nvl(value).trim().toUpperCase(), "N");
 	}
 
-	@Value("${guardrail.api.url:http://xgenai-manager:9901/guardrail}") //guardrail Rest API URL
+	@Value("${guardrail.api.url:http://{device.host}:9901/guardrail}") //guardrail Rest API URL
 	private String guardRailApiUrl;
 
 	@Value("${guardrail.limit.rate:70}") //guardrail limit rate
@@ -253,10 +253,10 @@ public class Config {
 	@Value("${ml.api.enable:true}") //ML Rest API ENABLE
 	private boolean mlApiEnable;
 
-	@Value("${ml.api.url:http://xgenai-manager:15000/api/data-analyze}") //ML Rest API URL
+	@Value("${ml.api.url:http://{device.host}:15000/api/data-analyze}") //ML Rest API URL
 	private String mlApiUrl;
 
-	@Value("${ml.similarity.url:http://xgenai-manager:18000/api/search}") //SIMILARITY API URL
+	@Value("${ml.similarity.url:http://{device.host}:18000/api/search}") //SIMILARITY API URL
 	private String similarityUrl;
 
 	@Value("${ml.similarity.key:xcn-rag}") //SIMILARITY KEY
@@ -265,7 +265,7 @@ public class Config {
     @Value("${image.similarity.enable:true}") // ML Image similarity API ENABLE
     private boolean imageSimilarityEnable;
 
-	@Value("${image.similarity.api.host:http://xgenai-manager:15001}")
+	@Value("${image.similarity.api.host:http://{device.host}:15001}")
 	private String imageSimilarityApiHost;
 
 	@Value("${image.similarity.api.detect:/detect}")

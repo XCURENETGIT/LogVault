@@ -19,10 +19,10 @@ public class InfoLoader {
 	private final WorkDayLoader workDayLoader;
 	private final AnomalyScoreLoader anomalyScoreLoader;
 	private final RuleLoader ruleLoader;
-  private final GuardRailLoader guardRailLoader;
-  private final AiServiceLoader aiServiceLoader;
-  private final AccountsLoader accountsLoader;
-  private final ImageCategoryLoader imageCategoryLoader;
+    private final GuardRailLoader guardRailLoader;
+    private final AiServiceLoader aiServiceLoader;
+    private final AccountsLoader accountsLoader;
+    private final ImageCategoryLoader imageCategoryLoader;
 
 	public void init() {
 		StopWatch sw = DateUtils.start();
@@ -35,8 +35,8 @@ public class InfoLoader {
 		workDayLoad();
 		anomalyScoreLoad();
 		ruleLoad();
-    guardRailLoad();
-    aiServiceLoad();
+        guardRailLoad();
+        aiServiceLoad();
 		companyAccountLoad();
 		imageCategoryLoad();
 

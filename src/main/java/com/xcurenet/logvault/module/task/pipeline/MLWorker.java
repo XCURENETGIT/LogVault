@@ -6,6 +6,8 @@ import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
+import com.xcurenet.logvault.device.DeviceEndpointResolver;
+import com.xcurenet.logvault.device.DeviceServiceKey;
 import com.xcurenet.logvault.fs.FileProcessor;
 import com.xcurenet.logvault.loader.ImageCategoryLoader;
 import com.xcurenet.logvault.module.analysis.AnomalyScoreCalculator;
@@ -44,8 +46,9 @@ public class MLWorker implements PipelineWorker {
 	private final GuardRailAnalysis guardRailAnalysis;
 	private final AnomalyScoreCalculator anomalyScoreCalculator;
 	private final ImageCategoryLoader imageCategoryLoader;
+	private final DeviceEndpointResolver endpointResolver;
 
-	public MLWorker(Config conf, @Qualifier("mlRestTemplate") RestTemplate restTemplate, FileProcessor fileProcessor, IndexService indexService, GuardRailAnalysis guardRailAnalysis, AnomalyScoreCalculator anomalyScoreCalculator, ImageCategoryLoader imageCategoryLoader) {
+	public MLWorker(Config conf, @Qualifier("mlRestTemplate") RestTemplate restTemplate, FileProcessor fileProcessor, IndexService indexService, GuardRailAnalysis guardRailAnalysis, AnomalyScoreCalculator anomalyScoreCalculator, ImageCategoryLoader imageCategoryLoader, DeviceEndpointResolver endpointResolver) {
 		this.conf = conf;
 		this.restTemplate = restTemplate;
 		this.fileProcessor = fileProcessor;
@@ -53,6 +56,7 @@ public class MLWorker implements PipelineWorker {
 		this.guardRailAnalysis = guardRailAnalysis;
 		this.anomalyScoreCalculator = anomalyScoreCalculator;
 		this.imageCategoryLoader = imageCategoryLoader;
+		this.endpointResolver = endpointResolver;
 	}
 
 	@Override
@@ -248,9 +252,11 @@ public class MLWorker implements PipelineWorker {
 		HttpHeaders h = new HttpHeaders();
 		h.setContentType(MediaType.APPLICATION_JSON);
 		h.setAccept(List.of(MediaType.APPLICATION_JSON));
-		ResponseEntity<String> r = restTemplate.postForEntity(conf.getMlApiUrl(), new HttpEntity<>(d.toJSONString(), h), String.class);
+		String payload = d.toJSONString();
+		String url = endpointResolver.resolveConfiguredUrl(conf.getMlApiUrl(), DeviceServiceKey.DA);
+		ResponseEntity<String> r = restTemplate.postForEntity(url, new HttpEntity<>(payload, h), String.class);
 		if (!r.getStatusCode().is2xxSuccessful()) {
-			log.warn("ML_ERR | {}", r.getStatusCode());
+			log.warn("ML_ERR | {} | {}", url, r.getStatusCode());
 			return null;
 		}
 		JSONObject b = JSONObject.parseObject(r.getBody());
@@ -273,9 +279,11 @@ public class MLWorker implements PipelineWorker {
 		h.setContentType(MediaType.APPLICATION_JSON);
 		h.setAccept(List.of(MediaType.APPLICATION_JSON));
 		h.add("x-api-key", conf.getSimilarityKey());
-		ResponseEntity<String> r = restTemplate.postForEntity(conf.getSimilarityUrl(), new HttpEntity<>(d.toJSONString(), h), String.class);
+		String payload = d.toJSONString();
+		String url = endpointResolver.resolveConfiguredUrl(conf.getSimilarityUrl(), DeviceServiceKey.DA);
+		ResponseEntity<String> r = restTemplate.postForEntity(url, new HttpEntity<>(payload, h), String.class);
 		if (!r.getStatusCode().is2xxSuccessful()) {
-			log.warn("SIM_ERR | {}", r.getStatusCode());
+			log.warn("SIM_ERR | {} | {}", url, r.getStatusCode());
 			return null;
 		}
 		JSONObject b = JSONObject.parseObject(r.getBody());
@@ -292,7 +300,12 @@ public class MLWorker implements PipelineWorker {
 	}
 
 	private ImageSimilarityResponse callImageSimilarity(InputStream in, String name) throws IOException {
-		ByteArrayResource res = new ByteArrayResource(in.readAllBytes()) {
+		byte[] bytes = in.readAllBytes();
+		return callImageSimilarity(imageSimilarityDetectUrl(), bytes, name);
+	}
+
+	private ImageSimilarityResponse callImageSimilarity(String url, byte[] bytes, String name) throws IOException {
+		ByteArrayResource res = new ByteArrayResource(bytes) {
 			@Override
 			public String getFilename() {
 				return name;
@@ -306,7 +319,7 @@ public class MLWorker implements PipelineWorker {
 		h.setContentType(MediaType.MULTIPART_FORM_DATA);
 		h.setAccept(List.of(MediaType.APPLICATION_JSON));
 
-		ResponseEntity<String> r = restTemplate.postForEntity(imageSimilarityDetectUrl(), new HttpEntity<>(body, h), String.class);
+		ResponseEntity<String> r = restTemplate.postForEntity(url, new HttpEntity<>(body, h), String.class);
 		if (!r.getStatusCode().is2xxSuccessful()) {
 			throw new IOException("HTTP " + r.getStatusCode());
 		}
@@ -334,8 +347,12 @@ public class MLWorker implements PipelineWorker {
 	}
 
 	private String imageSimilarityDetectUrl() {
-		String host = Common.nvl(conf.getImageSimilarityApiHost()).trim();
 		String detect = Common.nvl(conf.getImageSimilarityApiDetect()).trim();
+		String host = endpointResolver.resolveConfiguredUrl(conf.getImageSimilarityApiHost(), DeviceServiceKey.IMAGE_SIMILARITY);
+		return imageSimilarityDetectUrl(host, detect);
+	}
+
+	private String imageSimilarityDetectUrl(String host, String detect) {
 		if (host.endsWith("/") && detect.startsWith("/")) return host + detect.substring(1);
 		if (!host.endsWith("/") && !detect.startsWith("/")) return host + "/" + detect;
 		return host + detect;

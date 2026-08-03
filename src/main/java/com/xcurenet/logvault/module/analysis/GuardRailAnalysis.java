@@ -7,6 +7,8 @@ import com.xcurenet.common.error.ErrorCode;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
 import com.xcurenet.logvault.conf.Config;
+import com.xcurenet.logvault.device.DeviceEndpointResolver;
+import com.xcurenet.logvault.device.DeviceServiceKey;
 import com.xcurenet.logvault.loader.GuardRailLoader;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
@@ -26,6 +28,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class GuardRailAnalysis {
 	private final Config conf;
+	private final DeviceEndpointResolver endpointResolver;
 
 	public void detect(final ScanData scanData) {
 		if (scanData == null || scanData.getEmassDoc() == null) {
@@ -64,7 +67,8 @@ public class GuardRailAnalysis {
 			param.put("text", text);
 			byte[] body = JSON.toJSONBytes(param, JSONWriter.Feature.LargeObject);
 
-			HttpURLConnection conn = (HttpURLConnection) new URL(conf.getGuardRailApiUrl()).openConnection();
+			String url = endpointResolver.resolveConfiguredUrl(conf.getGuardRailApiUrl(), DeviceServiceKey.GUARDRAIL);
+			HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
 			conn.setRequestMethod("POST");
 			conn.setConnectTimeout(60000);
 			conn.setReadTimeout(60000);
@@ -74,31 +78,36 @@ public class GuardRailAnalysis {
 			if (conn.getResponseCode() == 200) {
 				String response = new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
 				log.debug("MG_GUARD | GUARDRAIL_API_RESPONSE | {}", response);
-
-				JSONObject obj = JSONObject.parseObject(response);
-				if (!obj.isEmpty()) {
-					Map.Entry<String, Object> maxEntry = obj.entrySet().stream().max(Comparator.comparingDouble(e -> Double.parseDouble(e.getValue().toString().replace("%", "")))).orElse(null);
-					if (maxEntry.getKey() != null) {
-						double val = Double.parseDouble(maxEntry.getValue().toString().replace("%", ""));
-						if (conf.getGuardRailLimitRate() > val || conf.getGuardRailLimitLength() > text.length()) {
-							log.info("MG_GUARD | {} | {} > {} | {} | {}", type, maxEntry.getKey(), "SAFE", maxEntry.getValue(), DateUtils.stop(sw));
-							return "SAFE";
-						}
-						if (!GuardRailLoader.isDetectCode(maxEntry.getKey())) {
-							log.info("MG_GUARD | {} | DISABLED | {} | {} | {}", type, maxEntry.getKey(), maxEntry.getValue(), DateUtils.stop(sw));
-							return null;
-						}
-						log.info("MG_GUARD | {} | {} | {} | {}", type, maxEntry.getKey(), maxEntry.getValue(), DateUtils.stop(sw));
-						return maxEntry.getKey();
-					}
-				} else {
-					log.warn("MG_GUARD | {} | TEXT.LENGTH:{} | {} | {}", ErrorCode.GUARDRAIL_ML_API_ERROR.toString(), text.length(), response, DateUtils.stop(sw));
-					return null;
-				}
+				return parseGuardrailResponse(response, text, type, sw);
+			} else {
+				log.warn("MG_GUARD | {} | TEXT.LENGTH:{} | HTTP:{} | URL:{} | {}", ErrorCode.GUARDRAIL_ML_API_ERROR.toString(), text.length(), conn.getResponseCode(), url, DateUtils.stop(sw));
 			}
 		} catch (Exception e) {
 			log.error("MG_GUARD | {} | TEXT.LENGTH:{} | {}", ErrorCode.GUARDRAIL_UNKNOWN_ERROR.toString(), text.length(), DateUtils.stop(sw), e);
 		}
+		return null;
+	}
+
+	private String parseGuardrailResponse(String response, String text, String type, StopWatch sw) {
+		JSONObject obj = JSONObject.parseObject(response);
+		if (obj != null && !obj.isEmpty()) {
+			Map.Entry<String, Object> maxEntry = obj.entrySet().stream().max(Comparator.comparingDouble(e -> Double.parseDouble(e.getValue().toString().replace("%", "")))).orElse(null);
+			if (maxEntry != null && maxEntry.getKey() != null) {
+				double val = Double.parseDouble(maxEntry.getValue().toString().replace("%", ""));
+				if (conf.getGuardRailLimitRate() > val || conf.getGuardRailLimitLength() > text.length()) {
+					log.info("MG_GUARD | {} | {} > {} | {} | {}", type, maxEntry.getKey(), "SAFE", maxEntry.getValue(), DateUtils.stop(sw));
+					return "SAFE";
+				}
+				if (!GuardRailLoader.isDetectCode(maxEntry.getKey())) {
+					log.info("MG_GUARD | {} | DISABLED | {} | {} | {}", type, maxEntry.getKey(), maxEntry.getValue(), DateUtils.stop(sw));
+					return null;
+				}
+				log.info("MG_GUARD | {} | {} | {} | {}", type, maxEntry.getKey(), maxEntry.getValue(), DateUtils.stop(sw));
+				return maxEntry.getKey();
+			}
+		}
+
+		log.warn("MG_GUARD | {} | TEXT.LENGTH:{} | {} | {}", ErrorCode.GUARDRAIL_ML_API_ERROR.toString(), text.length(), response, DateUtils.stop(sw));
 		return null;
 	}
 }

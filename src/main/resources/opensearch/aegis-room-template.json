@@ -177,6 +177,9 @@
 						},
 						"count": {
 							"type": "integer"
+						},
+					  	"blocked": {
+							"type": "boolean"
 						}
 					}
 				},
@@ -260,7 +263,10 @@
 								},
 								"count": {
 									"type": "integer"
-								}
+								},
+							  	"blocked": {
+									"type": "boolean"
+							  	}
 							}
 						},
 						"attach": {
@@ -271,6 +277,9 @@
 								},
 								"count": {
 									"type": "integer"
+								},
+								"blocked": {
+								  	"type": "boolean"
 								}
 							}
 						},
@@ -282,6 +291,9 @@
 								},
 								"count": {
 									"type": "integer"
+								},
+								"blocked": {
+								  	"type": "boolean"
 								}
 							}
 						},
@@ -293,6 +305,9 @@
 								},
 								"count": {
 									"type": "integer"
+								},
+								"blocked": {
+								  	"type": "boolean"
 								}
 							}
 						}

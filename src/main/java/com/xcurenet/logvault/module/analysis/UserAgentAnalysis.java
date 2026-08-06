@@ -70,7 +70,7 @@ public class UserAgentAnalysis {
 					agent.setOs(client.os != null ? client.os.family : null);
 					agent.setOsVersion(client.os != null ? client.os.major : null);
 					agent.setClient(client.userAgent != null ? client.userAgent.family : null);
-					agent.setClientVersion(String.join(".", client.userAgent != null ? client.userAgent.major : "0", client.userAgent != null ? client.userAgent.minor : "0"));
+                    agent.setClientVersion(client.userAgent != null ? joinVersion(client.userAgent.major, client.userAgent.minor) : null);
 					scanData.getEmassDoc().getHttp().setAgent(agent);
 				}
 			} catch (Exception e) {
@@ -102,4 +102,14 @@ public class UserAgentAnalysis {
 		if (response.getHeaders() == null) return null;
 		return response.getHeaders().get("content-type");
 	}
+
+    private String joinVersion(String... parts) {
+        StringBuilder version = new StringBuilder();
+        for (String part : parts) {
+            if (Common.isEmpty(part)) continue;
+            if (version.length() > 0) version.append(".");
+            version.append(part);
+        }
+        return version.length() == 0 ? null : version.toString();
+    }
 }

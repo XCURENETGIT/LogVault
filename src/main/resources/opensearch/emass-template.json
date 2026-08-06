@@ -510,6 +510,9 @@
 						},
 						"count": {
 							"type": "integer"
+						},
+						"blocked": {
+						  	"type": "boolean"
 						}
 					}
 				},
@@ -593,6 +596,9 @@
 								},
 								"count": {
 									"type": "integer"
+								},
+								"blocked": {
+								  	"type": "boolean"
 								}
 							}
 						},
@@ -604,6 +610,9 @@
 								},
 								"count": {
 									"type": "integer"
+								},
+								"blocked": {
+								  	"type": "boolean"
 								}
 							}
 						},
@@ -615,6 +624,9 @@
 								},
 								"count": {
 									"type": "integer"
+								},
+								"blocked": {
+								  	"type": "boolean"
 								}
 							}
 						},
@@ -626,6 +638,9 @@
 								},
 								"count": {
 									"type": "integer"
+								},
+								"blocked": {
+								  	"type": "boolean"
 								}
 							}
 						}

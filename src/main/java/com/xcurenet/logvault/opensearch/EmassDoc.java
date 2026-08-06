@@ -364,6 +364,12 @@ public class EmassDoc {
 		private List<String> privacyData;
 		@Field("count")
 		private int count;
+        @Field("blocked")
+        private Boolean blocked;
+
+        public boolean isBlocked() {
+            return Boolean.TRUE.equals(blocked);
+        }
 	}
 
 	@Data
@@ -386,6 +392,12 @@ public class EmassDoc {
 			private String name;
 			@Field("count")
 			private int count;
+            @Field("blocked")
+            private Boolean blocked;
+
+            public boolean isBlocked() {
+                return Boolean.TRUE.equals(blocked);
+            }
 		}
 	}
 

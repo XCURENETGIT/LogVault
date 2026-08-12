@@ -1,6 +1,6 @@
 package com.xcurenet.logvault.module.task.pipeline;
 
-import com.alibaba.fastjson2.JSON;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xcurenet.common.utils.Common;
 import com.xcurenet.common.utils.DateUtils;
@@ -21,6 +21,7 @@ import org.springframework.util.StopWatch;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -126,7 +127,7 @@ public class PipelineManager {
 		TaskMessage msg = new TaskMessage();
 		msg.setMsgId(doc.getMsgid());
 		msg.setTaskType(firstType);
-		msg.setData(JSON.toJSONString(doc));
+		msg.setData(serialize(doc));
 
 		StopWatch sw = DateUtils.start();
 		repository.insertMessage(msg);
@@ -213,6 +214,7 @@ public class PipelineManager {
 		private void process(TaskMessage m) throws Exception {
 			StopWatch sw = DateUtils.start();
 			EmassDoc doc = mapper.readValue(m.getData(), EmassDoc.class);
+			normalizeTimestamp(doc);
 
 			// ① Worker 처리 — 실패해도 다음 Step으로 반드시 이동
 			if (worker.isEnabled() && worker.isTarget(doc)) {
@@ -247,7 +249,7 @@ public class PipelineManager {
 			TaskMessage next = new TaskMessage();
 			next.setMsgId(msgId);
 			next.setTaskType(nextType);
-			next.setData(JSON.toJSONString(doc));
+			next.setData(serialize(doc));
 
 			for (int attempt = 1; attempt <= 3; attempt++) {
 				try {
@@ -269,6 +271,25 @@ public class PipelineManager {
 			// 3회 실패 시 현재 레코드를 FAILED로 마킹 (수동 조치 필요)
 			log.error("TSK_NEXT_GIVEUP | {} → {} | 3회 재시도 실패, 수동 조치 필요", taskType, nextType);
 			repository.updateStatusFailed(msgId, taskType, "Failed to enqueue next: " + nextType);
+		}
+	}
+
+	private String serialize(EmassDoc doc) {
+		try {
+			return mapper.writeValueAsString(doc);
+		} catch (JsonProcessingException e) {
+			throw new IllegalStateException("Failed to serialize pipeline message: " + doc.getMsgid(), e);
+		}
+	}
+
+	private void normalizeTimestamp(EmassDoc doc) {
+		if (doc == null || Common.isEmpty(doc.getCtime())) return;
+
+		try {
+			Date date = new Date(DateUtils.parseDateTime(doc.getCtime()).getMillis());
+			doc.setTimestamp(date);
+		} catch (Exception e) {
+			log.warn("TSK_TIMESTAMP_WARN | msgid:{} ctime:{} | {}", doc.getMsgid(), doc.getCtime(), e.getMessage());
 		}
 	}
 }

@@ -168,7 +168,7 @@ public class Config {
 	@Value("${ocr.api.host:{device.host}}") //OCR Rest API Host
 	private String ocrApiHost;
 
-	@Value("${ocr.api.port:8001}") //OCR Rest API PORT
+	@Value("${ocr.api.port:8000}") //OCR Rest API PORT
 	private String ocrApiPort;
 
 	@Value("${ocr.api.local.gpu.model:/models/allenai/olmOCR-2-7B-1025-FP8}") //OCR LOCAL Model

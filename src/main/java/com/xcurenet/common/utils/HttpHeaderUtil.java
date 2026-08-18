@@ -1,25 +1,17 @@
 package com.xcurenet.common.utils;
 
+import com.xcurenet.common.useragent.AgentService;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.IOUtils;
 import ua_parser.Client;
-import ua_parser.Parser;
 
 import java.io.StringReader;
 import java.util.*;
 
 @Log4j2
 public class HttpHeaderUtil {
-	private static final Parser AGENT_PARSER = new Parser();
-	private static final int MAX_CACHE_SIZE = 100_000;
-	// LRU Cache: 가장 오래된 항목 자동 제거
-	private static final Map<String, Client> UA_CACHE = Collections.synchronizedMap(new LinkedHashMap<>(MAX_CACHE_SIZE, 0.75f, true) {
-		@Override
-		protected boolean removeEldestEntry(Map.Entry<String, Client> eldest) {
-			return size() > MAX_CACHE_SIZE;
-		}
-	});
+	private static final AgentService AGENT_SERVICE = new AgentService();
 
 	public static void main(String[] args) {
 		String raw = """
@@ -140,12 +132,7 @@ public class HttpHeaderUtil {
 
 
 	public static Client parse(final String userAgent) {
-		Client client = UA_CACHE.get(userAgent);
-		if (client == null) {
-			client = AGENT_PARSER.parse(userAgent);
-			UA_CACHE.put(userAgent, client);
-		}
-		return client;
+		return AGENT_SERVICE.parse(userAgent);
 	}
 
 	private static HttpHeader.HttpRequestHeader parseRequest(List<String> lines) {

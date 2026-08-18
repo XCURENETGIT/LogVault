@@ -1,0 +1,26 @@
+# uap-java 표준 regexes.yaml에서 처리하지 못하는 일반적인 app/CLI 형식용 보조 규칙
+#
+# 이 파일은 업무 분석 로직이 아니라 ua-parser의 Parser(InputStream)에 주입된다.
+# 표준 파서가 먼저 실행되며, 표준 결과가 Other인 경우에만 이 규칙이 적용된다.
+
+user_agent_parsers:
+  # antigravity/ide/2.5.5, GithubCopilot/1.250.0,
+  # python-requests/2.31.0, curl/8.7.1 형태
+  - regex: '^\s*([A-Za-z][A-Za-z0-9._-]*(?:/[A-Za-z][A-Za-z0-9._-]*)*)/([0-9]+(?:\.[0-9]+){0,5}(?:[-+._][0-9A-Za-z.-]+)?)'
+
+  # product 1.2.3 형태를 사용하는 app/CLI 보조
+  - regex: '^\s*([A-Za-z][A-Za-z0-9._-]*)\s+v?([0-9]+(?:\.[0-9]+){0,5}(?:[-+._][0-9A-Za-z.-]+)?)'
+
+os_parsers:
+  # os_type=windows, os_type=linux 등 key=value 형태
+  - regex: '(?i)(?:^|[;(,\s])os_type\s*=\s*(windows|win32|win64)(?:[;),\s]|$)'
+    os_replacement: 'Windows'
+  - regex: '(?i)(?:^|[;(,\s])os_type\s*=\s*(mac|macos|osx)(?:[;),\s]|$)'
+    os_replacement: 'macOS'
+  - regex: '(?i)(?:^|[;(,\s])os_type\s*=\s*(linux|ubuntu|debian)(?:[;),\s]|$)'
+    os_replacement: '$1'
+  - regex: '(?i)(?:^|[;(,\s])os_type\s*=\s*(android|ios|darwin|freebsd)(?:[;),\s]|$)'
+    os_replacement: '$1'
+  - regex: '(?i)(?:^|[;(,\s])os_type\s*=\s*([A-Za-z][A-Za-z0-9._-]*)(?:[;),\s]|$)'
+
+device_parsers: []

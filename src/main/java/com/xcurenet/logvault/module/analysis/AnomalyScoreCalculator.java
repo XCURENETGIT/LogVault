@@ -28,7 +28,7 @@ public class AnomalyScoreCalculator {
     private static final String PATTERN_PERSONAL_ACCOUNT = "PA";
     private static final String PATTERN_WORK = "WRK";
     private static final String RULE_TARGET_ACCOUNT = "ACCOUNT";
-    private static final int ML_CATEGORY_NOT_WORK = 2;
+    private static final int ML_CATEGORY_NOT_WORK = 1; // 1값이 비업무
 
     private final AnomalyScoreLoader anomalyScoreLoader;
     private final KeywordLoader keywordLoader;

@@ -137,7 +137,7 @@ public class EmassDoc {
 	public static class MLResult {
 		@Field("code_exist")
 		private boolean codeExist;
-        // category: 1=업무, 2=비업무
+        // category: 1=비업무, 2=업무
 		@Field("category")
 		private int category;
 		@Field("probs")

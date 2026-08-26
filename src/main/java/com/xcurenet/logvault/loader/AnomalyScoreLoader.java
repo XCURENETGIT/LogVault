@@ -29,6 +29,7 @@ public class AnomalyScoreLoader {
     public static final String TABLE_KEYWORD_CATEGORY = "UI_KEYWORD_CATEGORY";
     public static final String TABLE_PATTERN = "UI_PATTERN";
     public static final String TABLE_IMAGE_CATEGORY = "UI_IMAGE_CATEGORY";
+    public static final String TABLE_DOCUMENT_SIMILARITY = "UI_DOCUMENT_SIMILARITY";
 
     private final InfoLoaderService infoLoaderService;
 
@@ -78,8 +79,8 @@ public class AnomalyScoreLoader {
     /**
      * (MAPR_TABLE, TARGET_ID) 조합으로 점수를 반환한다.
      *
-     * @param mapperTable UI_GUARD_RAIL, UI_KEYWORD_CATEGORY, UI_PATTERN
-     * @param targetId    가드레일 카테고리, 키워드 SEQ, 패턴 코드
+     * @param mapperTable UI_GUARD_RAIL, UI_KEYWORD_CATEGORY, UI_PATTERN, UI_DOCUMENT_SIMILARITY
+     * @param targetId    가드레일 카테고리, 키워드 SEQ, 패턴 코드, 유사 문서 ID
      * @return 점수 (설정이 없으면 0)
      */
     public int getScore(String mapperTable, String targetId) {
@@ -98,6 +99,11 @@ public class AnomalyScoreLoader {
             return getScore(TABLE_IMAGE_CATEGORY, imageCategorySeq);
         }
         return getScore(TABLE_KEYWORD_CATEGORY, imageCategorySeq);
+    }
+
+    public int getDocumentSimilarityScore(String documentId) {
+        if (documentId == null) return 0;
+        return getScore(TABLE_DOCUMENT_SIMILARITY, documentId);
     }
 
     private boolean hasScore(String mapperTable, String targetId) {

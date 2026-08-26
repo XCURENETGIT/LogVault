@@ -83,6 +83,7 @@ public class MLWorker implements PipelineWorker {
 	public EmassDoc process(EmassDoc doc) throws Exception {
 		analyzeBody(doc);
 		analyzeAttach(doc);
+		analyzeSimilarity(doc);
 		analyzeImageSimilarity(doc);
 		buildSummary(doc);
 		detectGuardRail(doc);
@@ -113,7 +114,20 @@ public class MLWorker implements PipelineWorker {
 			if (a.getText() == null) continue;
 			String text = Common.limitLength(a.getText(), conf.getMlApiTextLimit());
 			apply(a, text, "ML__TASK", this::callML);
-			apply(a, text, "SIMILARITY", this::callSimilarity);
+		}
+	}
+
+	private void analyzeSimilarity(EmassDoc doc) {
+		if (!conf.isTrainingDocsEnable()) return;
+		try {
+			StopWatch sw = DateUtils.start();
+			SimilarityResponse response = callSimilarity(doc);
+			applySimilarity(doc.getBody(), response.body());
+			for (SimilarityAttachResult result : response.attachments()) {
+				applySimilarity(result.attach(), result.result());
+			}
+		} catch (Exception e) {
+			log.warn("SIM__ERR | {}", e.getMessage(), e);
 		}
 	}
 
@@ -213,10 +227,13 @@ public class MLWorker implements PipelineWorker {
 			if (t.getKeywords() == null) t.setKeywords(new ArrayList<>());
 			t.getKeywords().addAll(s.getKeywords());
 		}
-		if (s.isSimilarityExist()) t.setSimilarityExist(true);
-		if (s.getSimilarityId() != null) t.setSimilarityId(s.getSimilarityId());
-		if (s.getSimilarityName() != null) t.setSimilarityName(s.getSimilarityName());
-		if (s.getSimilarityScore() > 0f) t.setSimilarityScore(Math.max(t.getSimilarityScore(), s.getSimilarityScore()));
+		if (s.isSimilarityExist()
+				&& (!t.isSimilarityExist() || s.getSimilarityScore() > t.getSimilarityScore())) {
+			t.setSimilarityExist(true);
+			t.setSimilarityId(s.getSimilarityId());
+			t.setSimilarityName(s.getSimilarityName());
+			t.setSimilarityScore(s.getSimilarityScore());
+		}
 		if (s.getResult() > 0 && (t.getResult() <= 0 || s.getResult() > t.getResult())) t.setResult(s.getResult());
 		if (s.getMessage() != null && !s.getMessage().isBlank()) t.setMessage(s.getMessage());
 	}
@@ -271,32 +288,111 @@ public class MLWorker implements PipelineWorker {
 		return m;
 	}
 
-	private EmassDoc.MLResult callSimilarity(String text) {
-		JSONObject d = new JSONObject();
-		d.put("query", text);
-		d.put("top_k", 1);
+	private SimilarityResponse callSimilarity(EmassDoc doc) throws IOException {
+		MultiValueMap<String, Object> payload = new LinkedMultiValueMap<>();
+		String bodyText = doc.getBody() == null ? "" : Common.nvl(doc.getBody().getText());
+		payload.add("body", bodyText);
+
+		List<EmassDoc.Attach> sentAttachments = new ArrayList<>();
+		List<String> requestAttachmentSummary = new ArrayList<>();
+		if (doc.getAttach() != null) {
+			for (EmassDoc.Attach attach : doc.getAttach()) {
+				if (attach == null || !attach.isExist() || Common.isEmpty(attach.getPath())) continue;
+				try (InputStream in = fileProcessor.open(attach.getPath())) {
+					byte[] bytes = in.readAllBytes();
+					ByteArrayResource resource = new ByteArrayResource(bytes) {
+						@Override
+						public String getFilename() {
+							return fileName(attach.getName(), attach.getPath());
+						}
+					};
+					payload.add("attachments", resource);
+					sentAttachments.add(attach);
+					requestAttachmentSummary.add(String.format("%d:%s(%s)", sentAttachments.size() - 1,
+							resource.getFilename(), Common.convertFileSize(bytes.length)));
+				} catch (Exception e) {
+					log.warn("SIM_SKIP | {} | {}", attach.getName(), e.getMessage());
+				}
+			}
+		}
+
 		HttpHeaders h = new HttpHeaders();
-		h.setContentType(MediaType.APPLICATION_JSON);
+		h.setContentType(MediaType.MULTIPART_FORM_DATA);
 		h.setAccept(List.of(MediaType.APPLICATION_JSON));
-		h.add("x-api-key", conf.getSimilarityKey());
-		String payload = d.toJSONString();
-		String url = endpointResolver.resolveConfiguredUrl(conf.getSimilarityUrl(), DeviceServiceKey.DA);
+		String url = trainingDocsAnalyzeContentUrl();
+		log.info("SIM__REQ | BODY_LEN:{} | ATTACH_COUNT:{} | ATTACHMENTS:{}",
+				bodyText.length(), sentAttachments.size(), requestAttachmentSummary);
 		ResponseEntity<String> r = restTemplate.postForEntity(url, new HttpEntity<>(payload, h), String.class);
 		if (!r.getStatusCode().is2xxSuccessful()) {
-			log.warn("SIM_ERR | {} | {}", url, r.getStatusCode());
-			return null;
+			throw new IOException("HTTP " + r.getStatusCode());
 		}
 		JSONObject b = JSONObject.parseObject(r.getBody());
-		if (b == null) return null;
-		JSONArray res = b.getJSONArray("result");
-		if (res == null || res.isEmpty()) return null;
-		JSONObject o = res.getJSONObject(0);
+		if (b == null) throw new IOException("empty response");
+
+		EmassDoc.MLResult bodyResult = similarityResult(b.getJSONObject("body"));
+		List<SimilarityAttachResult> attachmentResults = new ArrayList<>();
+		List<String> responseAttachmentSummary = new ArrayList<>();
+		JSONArray attachments = b.getJSONArray("attachments");
+		if (attachments != null) for (Object value : attachments) {
+			JSONObject item = (JSONObject) value;
+			int index = item.getIntValue("attach_index", -1);
+			EmassDoc.MLResult result = similarityResult(item);
+			if (index >= 0 && index < sentAttachments.size()) {
+				EmassDoc.Attach attach = sentAttachments.get(index);
+				attachmentResults.add(new SimilarityAttachResult(attach, result));
+				responseAttachmentSummary.add(String.format("%d:%s[%s]", index,
+						fileName(attach.getName(), attach.getPath()), similaritySummary(result)));
+			} else {
+				responseAttachmentSummary.add(String.format("%d:UNKNOWN[%s]", index, similaritySummary(result)));
+			}
+		}
+		log.info("SIM__RES | BODY:[{}] | ATTACHMENTS:{}", similaritySummary(bodyResult), responseAttachmentSummary);
+		if (!b.getBooleanValue("success")) throw new IOException(Common.nvl(b.getString("message")));
+		return new SimilarityResponse(bodyResult, attachmentResults);
+	}
+
+	private String similaritySummary(EmassDoc.MLResult result) {
+		if (result == null || !result.isSimilarityExist()) return "NONE";
+		return String.format("ID:%s,NAME:%s,SCORE:%s", result.getSimilarityId(),
+				result.getSimilarityName(), result.getSimilarityScore());
+	}
+
+	private EmassDoc.MLResult similarityResult(JSONObject item) {
+		if (item == null) return null;
+		JSONArray matches = item.getJSONArray("matches");
+		if (matches == null || matches.isEmpty()) return null;
+		JSONObject best = null;
+		for (Object value : matches) {
+			JSONObject match = (JSONObject) value;
+			if (best == null || match.getFloatValue("score_percent") > best.getFloatValue("score_percent")) best = match;
+		}
+		if (best == null) return null;
 		EmassDoc.MLResult m = new EmassDoc.MLResult();
 		m.setSimilarityExist(true);
-		m.setSimilarityId(o.getString("doc_id"));
-		m.setSimilarityScore(o.getFloatValue("score"));
-		m.setSimilarityName(o.getJSONObject("metadata").getString("file_name"));
+		m.setSimilarityId(best.getString("document_id"));
+		m.setSimilarityScore(best.getFloatValue("score_percent"));
+		m.setSimilarityName(best.getString("document_title"));
 		return m;
+	}
+
+	private void applySimilarity(EmassDoc.Body body, EmassDoc.MLResult result) {
+		if (body == null || result == null) return;
+		if (body.getMlResult() == null) body.setMlResult(result);
+		else merge(body.getMlResult(), result);
+	}
+
+	private void applySimilarity(EmassDoc.Attach attach, EmassDoc.MLResult result) {
+		if (attach == null || result == null) return;
+		if (attach.getMlResult() == null) attach.setMlResult(result);
+		else merge(attach.getMlResult(), result);
+	}
+
+	private String trainingDocsAnalyzeContentUrl() {
+		String host = endpointResolver.resolveConfiguredUrl(conf.getTrainingDocsApiHost(), DeviceServiceKey.DA);
+		String path = Common.nvl(conf.getTrainingDocsApiAnalyzeContent()).trim();
+		if (host.endsWith("/") && path.startsWith("/")) return host + path.substring(1);
+		if (!host.endsWith("/") && !path.startsWith("/")) return host + "/" + path;
+		return host + path;
 	}
 
 	private ImageSimilarityResponse callImageSimilarity(InputStream in, String name) throws IOException {
@@ -336,14 +432,17 @@ public class MLWorker implements PipelineWorker {
 		if (verdict == null) throw new IOException("missing verdict");
 
 		String category = verdict.getString("final_category");
-		if (Common.isEmpty(category)) return new ImageSimilarityResponse(null);
-
-		return new ImageSimilarityResponse(EmassDoc.ImageSimilarity.builder()
+		EmassDoc.ImageSimilarity result = Common.isEmpty(category) ? null : EmassDoc.ImageSimilarity.builder()
 				.categoryId(category)
 				.categoryName(imageCategoryLoader.getCategoryName(category))
 				.riskScore(verdict.getInteger("final_risk_score"))
 				.confidence(verdict.getFloat("confidence"))
-				.build());
+				.build();
+		log.info("IMG__RES | FILE:{} | SIZE:{} | CATEGORY:{} | RISK:{} | CONFIDENCE:{}",
+				name, Common.convertFileSize(bytes.length),
+				result == null ? null : result.getCategoryId(), result == null ? null : result.getRiskScore(),
+				result == null ? null : result.getConfidence());
+		return new ImageSimilarityResponse(result);
 	}
 
 	private String imageSimilarityDetectUrl() {
@@ -400,5 +499,11 @@ public class MLWorker implements PipelineWorker {
 	}
 
 	private record ImageSimilarityResponse(EmassDoc.ImageSimilarity imageSimilarity) {
+	}
+
+	private record SimilarityResponse(EmassDoc.MLResult body, List<SimilarityAttachResult> attachments) {
+	}
+
+	private record SimilarityAttachResult(EmassDoc.Attach attach, EmassDoc.MLResult result) {
 	}
 }

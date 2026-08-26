@@ -123,6 +123,15 @@
 						"similarity_exist": {
 							"type": "boolean"
 						},
+						"similarity_id": {
+							"type": "keyword"
+						},
+						"similarity_name": {
+							"type": "keyword"
+						},
+						"similarity_score": {
+							"type": "float"
+						},
 						"result": {
 							"type": "integer"
 						},
@@ -323,6 +332,18 @@
 								},
 								"keywords": {
 									"type": "keyword"
+								},
+								"similarity_exist": {
+									"type": "boolean"
+								},
+								"similarity_id": {
+									"type": "keyword"
+								},
+								"similarity_name": {
+									"type": "keyword"
+								},
+								"similarity_score": {
+									"type": "float"
 								},
 								"result": {
 									"type": "integer"

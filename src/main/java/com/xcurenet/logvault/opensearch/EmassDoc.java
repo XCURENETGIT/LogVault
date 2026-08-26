@@ -170,10 +170,13 @@ public class EmassDoc {
 				if (this.keywords == null) this.keywords = new ArrayList<>();
 				this.keywords.addAll(other.getKeywords());
 			}
-			this.similarityExist |= other.isSimilarityExist();
-			if (other.getSimilarityId() != null) this.similarityId = other.getSimilarityId();
-			if (other.getSimilarityName() != null) this.similarityName = other.getSimilarityName();
-			this.similarityScore = Math.max(this.similarityScore, other.getSimilarityScore());
+			if (other.isSimilarityExist()
+					&& (!this.similarityExist || other.getSimilarityScore() > this.similarityScore)) {
+				this.similarityExist = true;
+				this.similarityId = other.getSimilarityId();
+				this.similarityName = other.getSimilarityName();
+				this.similarityScore = other.getSimilarityScore();
+			}
 			if (other.getResult() > 0 && (this.result <= 0 || other.getResult() > this.result))
 				this.result = other.getResult();
 			if (other.getMessage() != null && !other.getMessage().isBlank()) this.message = other.getMessage();

@@ -31,9 +31,6 @@ public class OpenSearchInitializer {
 	private static final String ROOM_TEMPLATE_NAME = "aegis-room-template";
 	private static final String ROOM_TEMPLATE_PATH = "opensearch/aegis-room-template.json";
 
-	private static final String RAG_DOCS_TEMPLATE_NAME = "rag-docs-template";
-	private static final String RAG_DOCS_TEMPLATE_PATH = "opensearch/rag-docs-template.json";
-
 	private static final String SHADOW_AI_TEMPLATE_NAME = "shadow-ai-template";
 	private static final String SHADOW_AI_TEMPLATE_PATH = "opensearch/shadow-ai-template.json";
 
@@ -55,9 +52,6 @@ public class OpenSearchInitializer {
 			Common.sleep(2000);
 
 			applyTemplate(loadJson(TEMPLATE_PATH), TEMPLATE_NAME);
-			Common.sleep(2000);
-
-			applyTemplate(loadJson(RAG_DOCS_TEMPLATE_PATH), RAG_DOCS_TEMPLATE_NAME);
 			Common.sleep(2000);
 
 			applyTemplate(loadJson(SHADOW_AI_TEMPLATE_PATH), SHADOW_AI_TEMPLATE_NAME);

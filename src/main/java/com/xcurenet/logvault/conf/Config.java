@@ -256,11 +256,14 @@ public class Config {
 	@Value("${ml.api.url:http://{device.host}:15000/api/data-analyze}") //ML Rest API URL
 	private String mlApiUrl;
 
-	@Value("${ml.similarity.url:http://{device.host}:18000/api/search}") //SIMILARITY API URL
-	private String similarityUrl;
+	@Value("${training.docs.enable:false}")
+	private boolean trainingDocsEnable;
 
-	@Value("${ml.similarity.key:xcn-rag}") //SIMILARITY KEY
-	private String similarityKey;
+	@Value("${training.docs.api.host:http://{device.host}:8010}")
+	private String trainingDocsApiHost;
+
+	@Value("${training.docs.api.analyze.content:/similarity/analyze/content}")
+	private String trainingDocsApiAnalyzeContent;
 
     @Value("${image.similarity.enable:true}") // ML Image similarity API ENABLE
     private boolean imageSimilarityEnable;

@@ -130,6 +130,38 @@ class EmassDocMLResultTest {
 		}
 
 		@Test
+		@DisplayName("similarity: ID, 이름, 점수는 최고 점수 결과를 한 세트로 유지")
+		void similarity_keepsHighestScoreResultAsSet() {
+			EmassDoc.MLResult r = base();
+			r.setSimilarityExist(true);
+			r.setSimilarityId("high-id");
+			r.setSimilarityName("high-name");
+			r.setSimilarityScore(95f);
+
+			EmassDoc.MLResult lower = new EmassDoc.MLResult();
+			lower.setSimilarityExist(true);
+			lower.setSimilarityId("low-id");
+			lower.setSimilarityName("low-name");
+			lower.setSimilarityScore(70f);
+			r.merge(lower);
+
+			assertEquals("high-id", r.getSimilarityId());
+			assertEquals("high-name", r.getSimilarityName());
+			assertEquals(95f, r.getSimilarityScore(), 0.001f);
+
+			EmassDoc.MLResult higher = new EmassDoc.MLResult();
+			higher.setSimilarityExist(true);
+			higher.setSimilarityId("highest-id");
+			higher.setSimilarityName("highest-name");
+			higher.setSimilarityScore(100f);
+			r.merge(higher);
+
+			assertEquals("highest-id", r.getSimilarityId());
+			assertEquals("highest-name", r.getSimilarityName());
+			assertEquals(100f, r.getSimilarityScore(), 0.001f);
+		}
+
+		@Test
 		@DisplayName("message: non-blank 값으로 갱신")
 		void message_takesNonBlank() {
 			EmassDoc.MLResult r = base();

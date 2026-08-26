@@ -23,8 +23,6 @@ public class AnomalyScoreCalculator {
 
     private static final String PATTERN_CODE_EXIST = "SC";       // 소스코드 포함
     private static final String PATTERN_FILE_UPLOAD = "FU";      // 파일업로드
-    private static final String PATTERN_SIMILARITY = "CF";       // 기밀문서(대외비) 유사도
-
     private static final String PATTERN_PERSONAL_ACCOUNT = "PA";
     private static final String PATTERN_WORK = "WRK";
     private static final String RULE_TARGET_ACCOUNT = "ACCOUNT";
@@ -220,7 +218,7 @@ public class AnomalyScoreCalculator {
     }
 
     /**
-     * ML 패턴 점수: ml_result 조건에 따라 PATTERN_CD(SC, CF, WRK) 점수 부여.
+     * ML 분석 점수: ml_result 조건에 따라 코드, 문서 유사도, 비업무 점수를 부여.
      * 각 본문/첨부의 ml_result 별로 독립 계산.
      */
     private void calcMlPattern(EmassDoc.AnomalyScore.ScoreEntry codeExistEntry,
@@ -234,9 +232,9 @@ public class AnomalyScoreCalculator {
             codeExistEntry.add(anomalyScoreLoader.getScore(AnomalyScoreLoader.TABLE_PATTERN, PATTERN_CODE_EXIST));
         }
 
-        // CF: 기밀문서 유사도 탐지
-        if (mlResult.isSimilarityExist()) {
-            similarityEntry.add(anomalyScoreLoader.getScore(AnomalyScoreLoader.TABLE_PATTERN, PATTERN_SIMILARITY));
+        // 유사 문서 ID를 UI_ANOMALY_SCORE의 UI_DOCUMENT_SIMILARITY 대상과 매칭
+        if (mlResult.isSimilarityExist() && Common.isNotEmpty(mlResult.getSimilarityId())) {
+            similarityEntry.add(anomalyScoreLoader.getDocumentSimilarityScore(mlResult.getSimilarityId()));
         }
 
         if (mlResult.getCategory() == ML_CATEGORY_NOT_WORK) {

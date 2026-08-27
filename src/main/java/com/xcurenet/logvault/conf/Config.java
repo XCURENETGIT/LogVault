@@ -265,6 +265,9 @@ public class Config {
 	@Value("${training.docs.api.analyze.content:/similarity/analyze/content}")
 	private String trainingDocsApiAnalyzeContent;
 
+	@Value("${training.docs.file.exts:pdf,doc,docx,ppt,pptx,txt,hwp,hwpx}")
+	private Set<String> trainingDocsFileExts;
+
     @Value("${image.similarity.enable:true}") // ML Image similarity API ENABLE
     private boolean imageSimilarityEnable;
 

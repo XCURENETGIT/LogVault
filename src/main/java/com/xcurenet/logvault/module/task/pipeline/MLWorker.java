@@ -297,13 +297,15 @@ public class MLWorker implements PipelineWorker {
 		List<String> requestAttachmentSummary = new ArrayList<>();
 		if (doc.getAttach() != null) {
 			for (EmassDoc.Attach attach : doc.getAttach()) {
-				if (attach == null || !attach.isExist() || Common.isEmpty(attach.getPath())) continue;
+				if (attach == null || !attach.isExist() || Common.isEmpty(attach.getPath())
+						|| !isTrainingDocsTarget(attach)) continue;
 				try (InputStream in = fileProcessor.open(attach.getPath())) {
 					byte[] bytes = in.readAllBytes();
+					String uploadFileName = trainingDocsFileName(attach);
 					ByteArrayResource resource = new ByteArrayResource(bytes) {
 						@Override
 						public String getFilename() {
-							return fileName(attach.getName(), attach.getPath());
+							return uploadFileName;
 						}
 					};
 					payload.add("attachments", resource);
@@ -314,6 +316,10 @@ public class MLWorker implements PipelineWorker {
 					log.warn("SIM_SKIP | {} | {}", attach.getName(), e.getMessage());
 				}
 			}
+		}
+		if (bodyText.isBlank() && sentAttachments.isEmpty()) {
+			log.info("SIM_SKIP | NO_CONTENT | BODY_LEN:{} | ATTACH_COUNT:{}", bodyText.length(), sentAttachments.size());
+			return new SimilarityResponse(null, List.of());
 		}
 
 		HttpHeaders h = new HttpHeaders();
@@ -341,7 +347,7 @@ public class MLWorker implements PipelineWorker {
 				EmassDoc.Attach attach = sentAttachments.get(index);
 				attachmentResults.add(new SimilarityAttachResult(attach, result));
 				responseAttachmentSummary.add(String.format("%d:%s[%s]", index,
-						fileName(attach.getName(), attach.getPath()), similaritySummary(result)));
+						trainingDocsFileName(attach), similaritySummary(result)));
 			} else {
 				responseAttachmentSummary.add(String.format("%d:UNKNOWN[%s]", index, similaritySummary(result)));
 			}
@@ -393,6 +399,33 @@ public class MLWorker implements PipelineWorker {
 		if (host.endsWith("/") && path.startsWith("/")) return host + path.substring(1);
 		if (!host.endsWith("/") && !path.startsWith("/")) return host + "/" + path;
 		return host + path;
+	}
+
+	private boolean isTrainingDocsTarget(EmassDoc.Attach attach) {
+		return isTrainingDocsTargetExt(attach.getExtension())
+				|| isTrainingDocsTargetExt(attach.getExpectedExtension());
+	}
+
+	private boolean isTrainingDocsTargetExt(String value) {
+		Set<String> targetExts = conf.getTrainingDocsFileExts();
+		if (targetExts == null || targetExts.isEmpty()) return false;
+
+		String ext = normalizeExt(value);
+		if (Common.isEmpty(ext)) return false;
+
+		for (String targetExt : targetExts) {
+			if (ext.equals(normalizeExt(targetExt))) return true;
+		}
+		return false;
+	}
+
+	private String trainingDocsFileName(EmassDoc.Attach attach) {
+		String name = fileName(attach.getName(), attach.getPath());
+		if (isTrainingDocsTargetExt(attach.getExtension())) return name;
+
+		String expectedExt = normalizeExt(attach.getExpectedExtension());
+		if (isTrainingDocsTargetExt(expectedExt)) return name + "." + expectedExt;
+		return name;
 	}
 
 	private ImageSimilarityResponse callImageSimilarity(InputStream in, String name) throws IOException {

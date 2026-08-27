@@ -21,6 +21,7 @@ import java.util.Map;
 public class FileUploadController {
 
 	private static final Path BASE_DIR = Paths.get("/users/las").toAbsolutePath().normalize();
+	private static final Path BLOCK_DIR = Paths.get("/run/ngpii").toAbsolutePath().normalize();
 
 	@PostMapping(value = "/upload", consumes = "multipart/form-data")
 	public ResponseEntity<?> uploadFile(HttpServletRequest request, @RequestParam("file") MultipartFile file, @RequestParam String path) throws Exception {
@@ -64,11 +65,15 @@ public class FileUploadController {
 			resolved = BASE_DIR.resolve(path).normalize();
 		}
 
-		if (!resolved.startsWith(BASE_DIR)) {
+		if (!isAllowedRoot(resolved)) {
 			log.warn("[UPLOAD_FAIL] IP:{} | PATH:{} | BASE_DIR escape detected", Common.getClientIp(request), path);
 			throw new IllegalArgumentException("Path traversal detected");
 		}
 		return resolved;
+	}
+
+	private boolean isAllowedRoot(Path resolved) {
+		return resolved.startsWith(BASE_DIR) || resolved.startsWith(BLOCK_DIR);
 	}
 
 	@GetMapping("/health")

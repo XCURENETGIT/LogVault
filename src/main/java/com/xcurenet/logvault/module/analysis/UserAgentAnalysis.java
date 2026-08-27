@@ -50,6 +50,10 @@ public class UserAgentAnalysis {
 				log.warn("{} | PATH:{} ERR:{}", ErrorCode.UA_HEADER_PARSE_FAIL.toString(), headerPath, e.toString());
 				return;
 			}
+			if (httpHeader == null) {
+				log.warn("{} | PATH:{} ERR:parsed header is null", ErrorCode.UA_HEADER_PARSE_FAIL.toString(), headerPath);
+				return;
+			}
 			if (scanData.getEmassDoc() == null || scanData.getEmassDoc().getHttp() == null) {
 				log.warn("{}", ErrorCode.UA_EMASSDOC_HTTP_NULL.toString());
 				return;
@@ -57,9 +61,13 @@ public class UserAgentAnalysis {
 
 			HttpHeaderUtil.HttpHeader.HttpRequestHeader request = httpHeader.getRequestHeader();
 			HttpHeaderUtil.HttpHeader.HttpResponseHeader response = httpHeader.getResponseHeader();
+			if (request == null) {
+				log.warn("{} | PATH:{} ERR:request header is missing", ErrorCode.UA_HEADER_PARSE_FAIL.toString(), headerPath);
+				return;
+			}
 
 			EmassDoc.Header.RequestHeader requestHeader = EmassDoc.Header.RequestHeader.builder().method(request.getMethod()).protocol(request.getProtocol()).origin(getOrigin(request)).build();
-			EmassDoc.Header.ResponseHeader responseHeader = EmassDoc.Header.ResponseHeader.builder().date(getHeaderDate(response)).contentType(getContentType(response)).build();
+			EmassDoc.Header.ResponseHeader responseHeader = response == null ? null : EmassDoc.Header.ResponseHeader.builder().date(getHeaderDate(response)).contentType(getContentType(response)).build();
 			scanData.getEmassDoc().getHttp().setHeader(EmassDoc.Header.builder().request(requestHeader).response(responseHeader).build());
 			try {
 				Client client = httpHeader.getClient();
@@ -89,17 +97,17 @@ public class UserAgentAnalysis {
 
 
 	private String getOrigin(final HttpHeaderUtil.HttpHeader.HttpRequestHeader request) {
-		if (request.getHeaders() == null) return null;
+		if (request == null || request.getHeaders() == null) return null;
 		return request.getHeaders().get("origin");
 	}
 
 	private String getHeaderDate(final HttpHeaderUtil.HttpHeader.HttpResponseHeader response) {
-		if (response.getHeaders() == null) return null;
+		if (response == null || response.getHeaders() == null) return null;
 		return response.getHeaders().get("date");
 	}
 
 	private String getContentType(final HttpHeaderUtil.HttpHeader.HttpResponseHeader response) {
-		if (response.getHeaders() == null) return null;
+		if (response == null || response.getHeaders() == null) return null;
 		return response.getHeaders().get("content-type");
 	}
 

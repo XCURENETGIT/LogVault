@@ -92,6 +92,14 @@ public class EmassDoc {
 	@Field("privacy_info")
 	private List<PrivacyInfo> privacyInfo;
 
+	@Field("sensitive_total") //탐지 민감정보 총 건수
+	@JsonProperty("sensitive_total")
+	private Integer sensitiveTotal;
+
+	@Field("sensitive_info")
+	@JsonProperty("sensitive_info")
+	private List<PrivacyInfo> sensitiveInfo;
+
 	@Field("keyword_total") //탐지 키워드 총 건수
 	private int keywordTotal;
 
@@ -482,6 +490,8 @@ public class EmassDoc {
 		private ScoreEntry keyword = new ScoreEntry();
 		@Field("pattern")
 		private ScoreEntry pattern = new ScoreEntry();
+		@Field("sensitive")
+		private ScoreEntry sensitive = new ScoreEntry();
 		@Field("code_exist")
 		private ScoreEntry codeExist = new ScoreEntry();
 		@Field("similarity")
@@ -498,16 +508,17 @@ public class EmassDoc {
 		private ScoreEntry total = new ScoreEntry();
 
 		public void calculateTotal() {
-			this.total.setScore(guardrail.getScore() + keyword.getScore() + pattern.getScore()
+			this.total.setScore(guardrail.getScore() + keyword.getScore() + pattern.getScore() + sensitive.getScore()
 					+ codeExist.getScore() + similarity.getScore() + imageSimilarity.getScore() + attach.getScore()
 					+ account.getScore() + work.getScore());
-			this.total.setCount(guardrail.getCount() + keyword.getCount() + pattern.getCount()
+			this.total.setCount(guardrail.getCount() + keyword.getCount() + pattern.getCount() + sensitive.getCount()
 					+ codeExist.getCount() + similarity.getCount() + imageSimilarity.getCount() + attach.getCount()
 					+ account.getCount() + work.getCount());
 			// score/count 가 모두 0인 항목은 null 처리하여 인덱싱에서 제외
 			guardrail = nullIfEmpty(guardrail);
 			keyword = nullIfEmpty(keyword);
 			pattern = nullIfEmpty(pattern);
+			sensitive = nullIfEmpty(sensitive);
 			codeExist = nullIfEmpty(codeExist);
 			similarity = nullIfEmpty(similarity);
 			imageSimilarity = nullIfEmpty(imageSimilarity);

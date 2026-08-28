@@ -57,6 +57,14 @@ public class AegisRoomDoc {
 	@Field("privacy_info")
 	private List<EmassDoc.PrivacyInfo> privacyInfo;
 
+	@Field("sensitive_total") //탐지 민감정보 총 건수
+	@JsonProperty("sensitive_total")
+	private Integer sensitiveTotal;
+
+	@Field("sensitive_info")
+	@JsonProperty("sensitive_info")
+	private List<EmassDoc.PrivacyInfo> sensitiveInfo;
+
 	@Field("keyword_total") //탐지 키워드 총 건수
 	private int keywordTotal;
 

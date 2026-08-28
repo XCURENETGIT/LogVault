@@ -224,6 +224,8 @@ public class IndexService {
         room.setRecentMessage(message);
         room.setPrivacyTotal(newDoc.getPrivacyTotal());
         room.setPrivacyInfo(newDoc.getPrivacyInfo());
+        room.setSensitiveTotal(newDoc.getSensitiveTotal());
+        room.setSensitiveInfo(newDoc.getSensitiveInfo());
         room.setKeywordTotal(newDoc.getKeywordTotal());
         room.setKeywordInfo(newDoc.getKeywordInfo());
         room.setAnomalyScore(newDoc.getAnomalyScore());
@@ -245,6 +247,8 @@ public class IndexService {
         room.setRecentMessage(roomDoc.getRecentMessage());
         room.setPrivacyTotal(roomDoc.getPrivacyTotal());
         room.setPrivacyInfo(roomDoc.getPrivacyInfo());
+        room.setSensitiveTotal(roomDoc.getSensitiveTotal());
+        room.setSensitiveInfo(roomDoc.getSensitiveInfo());
         room.setKeywordTotal(roomDoc.getKeywordTotal());
         room.setKeywordInfo(roomDoc.getKeywordInfo());
         room.setAnomalyScore(roomDoc.getAnomalyScore());
@@ -299,12 +303,18 @@ public class IndexService {
     }
 
 
-    public void updatePrivacyAndKeyword(final String index, final String id, EmassDoc.ProcessStatus status, List<EmassDoc.PrivacyInfo> privacyInfos, EmassDoc.KeywordInfo keywordInfo, int privacyTotal, int keywordTotal) {
+    public void updatePrivacyAndKeyword(final String index, final String id, EmassDoc.ProcessStatus status,
+                                        List<EmassDoc.PrivacyInfo> privacyInfos,
+                                        List<EmassDoc.PrivacyInfo> sensitiveInfos,
+                                        EmassDoc.KeywordInfo keywordInfo,
+                                        int privacyTotal, int sensitiveTotal, int keywordTotal) {
         Map<String, Object> partial = new HashMap<>();
         partial.put("process_status", status);
         partial.put("privacy_info", privacyInfos);
+        partial.put("sensitive_info", sensitiveInfos);
         partial.put("keyword_info", keywordInfo);
         partial.put("privacy_total", privacyTotal);
+        partial.put("sensitive_total", sensitiveTotal);
         partial.put("keyword_total", keywordTotal);
 
         UpdateQuery uq = UpdateQuery.builder(id).withDocument(Document.from(partial)).withDocAsUpsert(false).build();

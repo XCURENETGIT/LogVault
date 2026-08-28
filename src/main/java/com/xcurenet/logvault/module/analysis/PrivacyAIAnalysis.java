@@ -54,7 +54,13 @@ public class PrivacyAIAnalysis {
 	 * ML API가 반환하는 키(탐지 타입)
 	 * processText()에서 이 순서대로 JSON 배열을 읽는다.
 	 */
-	private static final String[] PI_TYPE = {"AN", "BN", "BRN", "CN", "DN", "EML", "FN", "MN", "PN", "SN", "SSN", "IP", "VN_CCCD", "VN_MN", "VN_PN", "VN_TIN", "VN_SI"};
+	private static final String[] PI_TYPE = {
+			"AN", "BN", "BRN", "CN", "DN", "EML", "FN", "MN", "PN", "SN", "SSN", "IP",
+			"VN_CCCD", "VN_MN", "VN_PN", "VN_TIN", "VN_SI",
+			"CPN", "CRN", "IMEI", "MCN", "OTP", "API_KEY", "AUTH_TOKEN", "PASSWORD",
+			"INTERNAL_ACCESS", "PRIVATE_KEY", "CLOUD_CREDENTIAL", "CONNECTION_STRING", "SIGNED_URL",
+			"MFA_SECRET", "RECOVERY_CODE", "SESSION_COOKIE"
+	};
 
 	@PostConstruct
 	public void initGrpcClient() {
@@ -102,23 +108,28 @@ public class PrivacyAIAnalysis {
 			return;
 		}
 
-		int total = 0;
 		if (doc.getBody() != null) {
-			total += processText(doc, doc.getBody().getText(), "B", "-");
+			processText(doc, doc.getBody().getText(), "B", "-");
 		}
 
 		if (doc.getAttach() != null) {
 			for (EmassDoc.Attach attach : doc.getAttach()) {
 				if (attach == null) continue;
-				total += processText(doc, attach.getText(), "A", attach.getName());
+				processText(doc, attach.getText(), "A", attach.getName());
 			}
 		}
 
-		total = sumPrivacyTotal(doc.getPrivacyInfo());
-		if (total == 0) {
+		int privacyTotal = sumPrivacyTotal(doc.getPrivacyInfo());
+		if (privacyTotal == 0) {
 			doc.setPrivacyInfo(null);
 		}
-		doc.setPrivacyTotal(total);
+		doc.setPrivacyTotal(privacyTotal);
+
+		int sensitiveTotal = sumPrivacyTotal(doc.getSensitiveInfo());
+		if (sensitiveTotal == 0) {
+			doc.setSensitiveInfo(null);
+		}
+		doc.setSensitiveTotal(sensitiveTotal);
 	}
 
 	private static List<EmassDoc.PrivacyInfo> ensurePrivacyInfoList(EmassDoc doc) {
@@ -128,6 +139,13 @@ public class PrivacyAIAnalysis {
 		return doc.getPrivacyInfo();
 	}
 
+	private static List<EmassDoc.PrivacyInfo> ensureSensitiveInfoList(EmassDoc doc) {
+		if (doc.getSensitiveInfo() == null) {
+			doc.setSensitiveInfo(new ArrayList<>());
+		}
+		return doc.getSensitiveInfo();
+	}
+
 	private int processText(EmassDoc doc, String text, String type, String attachName) {
 		if (Common.isEmpty(text)) {
 			return 0;
@@ -135,7 +153,6 @@ public class PrivacyAIAnalysis {
 
 		StopWatch sw = DateUtils.start();
 		StringBuilder sb = new StringBuilder();
-		List<EmassDoc.PrivacyInfo> bucket = ensurePrivacyInfoList(doc);
 		int added = 0;
 
 		Map<String, List<Pii.MatchItem>> matchesByType = detectPIIMatches(text, 5000);
@@ -147,7 +164,15 @@ public class PrivacyAIAnalysis {
 		for (String key : PI_TYPE) {
 			List<Pii.MatchItem> matches = matchesByType.get(key);
 			if (matches == null || matches.isEmpty()) continue;
-			if (containsBlockReasonPrivacy(doc, key)) continue;
+
+			List<EmassDoc.PrivacyInfo> bucket;
+			if (PatternLoader.isPrivacyCode(key)) bucket = ensurePrivacyInfoList(doc);
+			else if (PatternLoader.isSensitiveCode(key)) bucket = ensureSensitiveInfoList(doc);
+			else {
+				log.info("REG_INFO | {} | KEY:{}", ErrorCode.PRIVACY_DETECT_CODE_INVALID.toString(), key);
+				continue;
+			}
+			if (containsBlockReason(bucket, key)) continue;
 
 			EmassDoc.PrivacyInfo info = toPrivacyInfo(key, type, attachName, matches);
 			log.debug("type:{}, info:{}", type, info);
@@ -164,7 +189,6 @@ public class PrivacyAIAnalysis {
 			log.info("REG_DONE | {} | PII_NONE | TEXT.LENGTH:{} | {}", type, text.length(), DateUtils.stop(sw));
 		}
 
-		doc.setPrivacyInfo(bucket);
 		return added;
 	}
 
@@ -199,11 +223,10 @@ public class PrivacyAIAnalysis {
 		return info;
 	}
 
-	private boolean containsBlockReasonPrivacy(EmassDoc doc, String key) {
-		List<EmassDoc.PrivacyInfo> privacyInfos = doc.getPrivacyInfo();
-		if (privacyInfos == null || privacyInfos.isEmpty()) return false;
+	private boolean containsBlockReason(List<EmassDoc.PrivacyInfo> infos, String key) {
+		if (infos == null || infos.isEmpty()) return false;
 
-		for (EmassDoc.PrivacyInfo info : privacyInfos) {
+		for (EmassDoc.PrivacyInfo info : infos) {
 			if (info == null || !info.isBlocked() || !Common.isEquals(info.getId(), key)) continue;
 			if (info.getCount() > 0 || (info.getPrivacyData() != null && !info.getPrivacyData().isEmpty())) return true;
 		}
@@ -335,6 +358,22 @@ public class PrivacyAIAnalysis {
 		result.put("AN", data.getAnList());
 		result.put("BRN", data.getBrnList());
 		result.put("FN", data.getFnList());
+		result.put("CPN", data.getCpnList());
+		result.put("CRN", data.getCrnList());
+		result.put("IMEI", data.getImeiList());
+		result.put("MCN", data.getMcnList());
+		result.put("OTP", data.getOtpList());
+		result.put("API_KEY", data.getApiKeyList());
+		result.put("AUTH_TOKEN", data.getAuthTokenList());
+		result.put("PASSWORD", data.getPasswordList());
+		result.put("INTERNAL_ACCESS", data.getInternalAccessList());
+		result.put("PRIVATE_KEY", data.getPrivateKeyList());
+		result.put("CLOUD_CREDENTIAL", data.getCloudCredentialList());
+		result.put("CONNECTION_STRING", data.getConnectionStringList());
+		result.put("SIGNED_URL", data.getSignedUrlList());
+		result.put("MFA_SECRET", data.getMfaSecretList());
+		result.put("RECOVERY_CODE", data.getRecoveryCodeList());
+		result.put("SESSION_COOKIE", data.getSessionCookieList());
 		if (conf.isVietnamPrivacyEnabled()) {
 			result.put("VN_CCCD", data.getVnCccdList());
 			result.put("VN_MN", data.getVnMnList());

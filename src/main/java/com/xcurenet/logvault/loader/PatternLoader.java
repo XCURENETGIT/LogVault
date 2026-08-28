@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @RequiredArgsConstructor
 public class PatternLoader {
 
-	private static final AtomicReference<Map<String, String>> DETECT_CODE_MAP_REF = new AtomicReference<>();
+	private static final AtomicReference<Map<String, String>> DETECT_CODE_MAP_REF = new AtomicReference<>(Map.of());
 
 	private final InfoLoaderService infoLoaderService;
 
@@ -42,6 +42,18 @@ public class PatternLoader {
 
 	public static boolean isDetectCode(String code) {
 		return DETECT_CODE_MAP_REF.get().containsKey(code);
+	}
+
+	public static String getPatternType(String code) {
+		return code == null ? null : DETECT_CODE_MAP_REF.get().get(code);
+	}
+
+	public static boolean isPrivacyCode(String code) {
+		return Common.isEquals("N", Common.nvl(getPatternType(code)).trim().toUpperCase());
+	}
+
+	public static boolean isSensitiveCode(String code) {
+		return Common.isEquals("S", Common.nvl(getPatternType(code)).trim().toUpperCase());
 	}
 
 }

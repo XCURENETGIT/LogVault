@@ -49,14 +49,15 @@ public class AnomalyScoreCalculator {
 
         calcGuardrail(doc, score.getGuardrail());
         calcKeyword(doc, score.getKeyword());
-        calcPattern(doc, score.getPattern(), score.getAttach(), score.getCodeExist(), score.getSimilarity(), score.getAccount(), score.getWork());
+        calcPattern(doc, score.getPattern(), score.getSensitive(), score.getAttach(), score.getCodeExist(), score.getSimilarity(), score.getAccount(), score.getWork());
         calcImageSimilarity(doc, score.getImageSimilarity());
 
-        log.debug("ANOMALY_SCORE | msgid={} | guardrail={}({}) keyword={}({}) pattern={}({}) code_exist={}({}) similarity={}({}) image_similarity={}({}) account={}({}) work={}({})",
+        log.debug("ANOMALY_SCORE | msgid={} | guardrail={}({}) keyword={}({}) pattern={}({}) sensitive={}({}) code_exist={}({}) similarity={}({}) image_similarity={}({}) account={}({}) work={}({})",
                 doc.getMsgid(),
                 score.getGuardrail().getScore(), score.getGuardrail().getCount(),
                 score.getKeyword().getScore(), score.getKeyword().getCount(),
                 score.getPattern().getScore(), score.getPattern().getCount(),
+                score.getSensitive().getScore(), score.getSensitive().getCount(),
                 score.getCodeExist().getScore(), score.getCodeExist().getCount(),
                 score.getSimilarity().getScore(), score.getSimilarity().getCount(),
                 score.getImageSimilarity().getScore(), score.getImageSimilarity().getCount(),
@@ -123,17 +124,18 @@ public class AnomalyScoreCalculator {
 
 
     // ──────────────────────────────────────────────
-    //  Pattern 점수: 개인정보 패턴 + ML 패턴 (본문·첨부 각각)
+    //  Pattern/Sensitive 점수 + ML 패턴 (본문·첨부 각각)
     // ──────────────────────────────────────────────
 
     private void calcPattern(EmassDoc doc, EmassDoc.AnomalyScore.ScoreEntry patternEntry,
+                             EmassDoc.AnomalyScore.ScoreEntry sensitiveEntry,
                              EmassDoc.AnomalyScore.ScoreEntry attachEntry,
                              EmassDoc.AnomalyScore.ScoreEntry codeExistEntry,
                              EmassDoc.AnomalyScore.ScoreEntry similarityEntry,
                              EmassDoc.AnomalyScore.ScoreEntry accountEntry,
                              EmassDoc.AnomalyScore.ScoreEntry workEntry) {
-        // 1. 개인정보 패턴 (privacy_info): 각 탐지 항목별 점수
-        calcPrivacyPattern(doc, patternEntry);
+        // 1. 개인정보/민감정보: 각 탐지 항목별 점수를 별도 항목에 합산
+        calcPrivacyPattern(doc, patternEntry, sensitiveEntry);
 
         calcFileUploadPattern(doc, attachEntry);
 
@@ -153,15 +155,23 @@ public class AnomalyScoreCalculator {
     }
 
     /**
-     * 개인정보 패턴 점수: privacy_info 각 항목의 id(=PATTERN_CD)로 점수 합산.
+     * 개인정보/민감정보 점수: 각 항목의 id(=PATTERN_CD)로 점수 합산.
      * 같은 패턴이 본문·첨부에 각각 탐지되면 각각 별도 점수.
      */
-    private void calcPrivacyPattern(EmassDoc doc, EmassDoc.AnomalyScore.ScoreEntry entry) {
-        List<EmassDoc.PrivacyInfo> privacyInfos = doc.getPrivacyInfo();
-        if (privacyInfos == null || privacyInfos.isEmpty()) return;
-
+    private void calcPrivacyPattern(EmassDoc doc,
+                                    EmassDoc.AnomalyScore.ScoreEntry patternEntry,
+                                    EmassDoc.AnomalyScore.ScoreEntry sensitiveEntry) {
         boolean blockedOnly = isBlocked(doc);
-        for (EmassDoc.PrivacyInfo info : privacyInfos) {
+        addPrivacyPatternScores(patternEntry, doc.getPrivacyInfo(), blockedOnly);
+        addPrivacyPatternScores(sensitiveEntry, doc.getSensitiveInfo(), blockedOnly);
+    }
+
+    private void addPrivacyPatternScores(EmassDoc.AnomalyScore.ScoreEntry entry,
+                                         List<EmassDoc.PrivacyInfo> infos,
+                                         boolean blockedOnly) {
+        if (infos == null || infos.isEmpty()) return;
+
+        for (EmassDoc.PrivacyInfo info : infos) {
             if (info == null || Common.isEmpty(info.getId()) || (blockedOnly && !info.isBlocked())) continue;
             for (int i = 0; i < info.getCount(); i++) {
                 entry.add(anomalyScoreLoader.getScore(AnomalyScoreLoader.TABLE_PATTERN, info.getId()));

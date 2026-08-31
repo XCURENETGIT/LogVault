@@ -148,8 +148,15 @@ public class AlertService {
 
             return result;
         } catch (Exception e) {
-            throw ExFactory.ex(AlertException::new, ErrorCode.ALERT_CALC_FAIL, java.util.Map.of("msgid", doc.getMsgid()));
+            throw ExFactory.ex(AlertException::new, ErrorCode.ALERT_CALC_FAIL,
+                    java.util.Map.of("msgid", doc.getMsgid()), e);
         }
+    }
+
+    private int keywordTotal(EmassDoc.KeywordInfo keywordInfo) {
+        return keywordInfo == null || keywordInfo.getKeywords() == null
+                ? 0
+                : keywordInfo.getKeywords().size();
     }
 
     /**

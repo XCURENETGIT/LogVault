@@ -172,8 +172,7 @@ public class EmassDoc {
 				return;
 			}
 			this.codeExist |= other.isCodeExist();
-			this.category = Math.max(this.category, other.getCategory());
-			this.probs = Math.max(this.probs, other.getProbs());
+			mergeCategory(other.getCategory(), other.getProbs());
 			if (other.getKeywords() != null && !other.getKeywords().isEmpty()) {
 				if (this.keywords == null) this.keywords = new ArrayList<>();
 				this.keywords.addAll(other.getKeywords());
@@ -188,6 +187,20 @@ public class EmassDoc {
 			if (other.getResult() > 0 && (this.result <= 0 || other.getResult() > this.result))
 				this.result = other.getResult();
 			if (other.getMessage() != null && !other.getMessage().isBlank()) this.message = other.getMessage();
+		}
+
+		private void mergeCategory(int otherCategory, float otherProbs) {
+			if (otherCategory <= 0) return;
+
+			if (this.category <= 0 || (otherCategory == 1 && this.category != 1)) {
+				this.category = otherCategory;
+				this.probs = otherProbs;
+				return;
+			}
+
+			if (this.category == otherCategory) {
+				this.probs = Math.max(this.probs, otherProbs);
+			}
 		}
 	}
 

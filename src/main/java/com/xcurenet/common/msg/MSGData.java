@@ -113,6 +113,9 @@ public class MSGData {
 
 	@FieldKey("IS_ATTACH") //정책 차단 상세내용
 	private String isAttach;
+
+	@FieldKey("DOC_SIMILARITY_INFO") //문서 유사도 차단 상세내용: doc_id,score
+	private String docSimilarityInfo;
     
 	@FieldKey("ATTACH_EXT") //정책 차단 파일 확장자
 	private String attachExt;

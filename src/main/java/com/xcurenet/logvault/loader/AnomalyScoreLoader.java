@@ -2,6 +2,7 @@ package com.xcurenet.logvault.loader;
 
 import com.xcurenet.logvault.loader.service.InfoLoaderService;
 import com.xcurenet.logvault.loader.type.AnomalyScoreVO;
+import com.xcurenet.logvault.loader.type.DocumentSimilarityVO;
 import com.xcurenet.logvault.loader.type.GuardRailVO;
 import com.xcurenet.logvault.loader.type.PatternInfo;
 import lombok.extern.log4j.Log4j2;
@@ -35,6 +36,7 @@ public class AnomalyScoreLoader {
 
     private final AtomicReference<Map<String, String>> SCORE_LEVEL_REF = new AtomicReference<>(Collections.emptyMap());
     private final AtomicReference<Set<String>> ENABLED_TARGET_REF = new AtomicReference<>(Collections.emptySet());
+    private final AtomicReference<Map<String, String>> DOCUMENT_NAME_REF = new AtomicReference<>(Collections.emptyMap());
 
     /**
      * ANOMALY_LEVEL_CD → score (PropertySourceLoader 에서 로드한 값)
@@ -71,6 +73,7 @@ public class AnomalyScoreLoader {
         }
         SCORE_LEVEL_REF.set(levelMap);
         ENABLED_TARGET_REF.set(enabledTargets);
+        loadDocumentNames();
 
         log.info("INFO_LOAD | Rule Version : AnomalyScore:{} Pattern:{} GuardRail:{} | AnomalyScore Entries:{} | EnabledTargets:{} | LevelScore:{}",
                 anomalyScoreVersion, patternVersion, guardRailVersion, levelMap.size(), enabledTargets.size(), levelScoreMap);
@@ -104,6 +107,28 @@ public class AnomalyScoreLoader {
     public int getDocumentSimilarityScore(String documentId) {
         if (documentId == null) return 0;
         return getScore(TABLE_DOCUMENT_SIMILARITY, documentId);
+    }
+
+    public String getDocumentSimilarityName(String documentId) {
+        if (documentId == null) return null;
+        return DOCUMENT_NAME_REF.get().get(documentId.trim());
+    }
+
+    private void loadDocumentNames() {
+        Map<String, String> documentNames = new ConcurrentHashMap<>();
+        List<DocumentSimilarityVO> documents = infoLoaderService.getDocumentSimilarities();
+        if (documents != null) {
+            for (DocumentSimilarityVO document : documents) {
+                if (document == null || document.getDocumentId() == null || document.getDocumentName() == null) continue;
+
+                String documentId = document.getDocumentId().trim();
+                String documentName = document.getDocumentName().trim();
+                if (documentId.isEmpty() || documentName.isEmpty()) continue;
+                documentNames.put(documentId, documentName);
+            }
+        }
+        DOCUMENT_NAME_REF.set(documentNames);
+        log.info("INFO_LOAD | DocumentSimilarity Names:{}", documentNames.size());
     }
 
     private boolean hasScore(String mapperTable, String targetId) {

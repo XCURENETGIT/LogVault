@@ -83,6 +83,14 @@ public interface InfoLoaderMapper {
 	List<ImageCategoryVO> getImageCategories();
 
 	@Select("""
+			SELECT	DOCUMENT_ID AS documentId,
+					DOCUMENT_NM AS documentName
+			FROM	UI_DOCUMENT_SIMILARITY
+			""")
+	@ResultType(DocumentSimilarityVO.class)
+	List<DocumentSimilarityVO> getDocumentSimilarities();
+
+	@Select("""
 			SELECT DISTINCT
 					N.DEVICE_TYPE AS deviceType,
 					N.DEVICE_NM AS deviceName,

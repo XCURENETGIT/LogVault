@@ -90,6 +90,10 @@ public class InfoLoaderService {
 		return mapper.getImageCategories();
 	}
 
+	public List<DocumentSimilarityVO> getDocumentSimilarities() {
+		return mapper.getDocumentSimilarities();
+	}
+
 	public List<AnomalyScoreVO> getAnomalyScore(long version) {
 		JsonTypeContext.set(new TypeReference<List<AnomalyScoreVO>>() {});
 

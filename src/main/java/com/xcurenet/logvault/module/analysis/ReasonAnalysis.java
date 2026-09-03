@@ -43,10 +43,11 @@ public class ReasonAnalysis {
      * ACTION : BLOCK
      * REASON :  보안 정책 안내\n\n⚠️ 내부 보안 정책에 의해 제한된 내용이 포함되어 답변이 중단되었습니다.\n 해당 내용을 제외한 후 다시 질문해 주세요.
      * DETECTIONS : 3;3;MDEqKioqKioqNjc=
+     * DOC_SIMILARITY_INFO : doc_b2bf2829f3702690f579b405,100
      */
     /* =========================
      * 차단인 경우 사유가 들어온다.
-     * id : 1~9 개인정보, 20~ 이상은 키워드
+     * id : 1~ 개인정보, 200000~ 이상은 키워드
      * 개인정보 id 는 getId 메소드 참고
      * 1;2;abced==,3;2;abced==,5;2;abced==,5;2;abced==,5;2;abced==,5;2;abced==,5;2;abced==,2;2;abced==,8;3;abced==,6;2;abced==,9;3;abced==
      * id, confidence, detectStr(base64)
@@ -55,6 +56,8 @@ public class ReasonAnalysis {
         MSGData msg = data.getMsgData();
         EmassDoc doc = data.getEmassDoc();
         appendImageSimilarityReason(doc, msg);
+        boolean isAttach = Common.isEquals(Common.nvl(msg.getIsAttach()), "1");
+        appendDocumentSimilarityReason(doc, msg, isAttach);
 
         if (msg.getDetections() == null) return;
 
@@ -68,7 +71,6 @@ public class ReasonAnalysis {
             int id = Common.nvz(reason.get(0));
             int confidence = Common.nvz(reason.get(1));
             String detectStr = Common.nvl(reason.get(2));
-            boolean isAttach = Common.isEquals(Common.nvl(msg.getIsAttach()), "1");
             appendPrivacy(doc, id, confidence, detectStr, isAttach);
             appendKeyword(doc, id, confidence, detectStr, isAttach);
         }
@@ -82,6 +84,67 @@ public class ReasonAnalysis {
             int sum = doc.getKeywordInfo().getKeywords().stream().mapToInt(EmassDoc.KeywordInfo.Keyword::getCount).sum();
             doc.setKeywordTotal(sum);
         }
+    }
+
+    private void appendDocumentSimilarityReason(EmassDoc doc, MSGData msg, boolean isAttach) {
+        if (doc == null || msg == null || !Common.isEquals(msg.getAction(), "BLOCK")) return;
+
+        String similarityInfo = Common.nvl(msg.getDocSimilarityInfo()).trim();
+        if (Common.isEmpty(similarityInfo) || Common.isEquals(similarityInfo, "-")) return;
+
+        String[] values = similarityInfo.split(",", 2);
+        if (values.length != 2) {
+            log.warn("DOC_SIM_REASON | INVALID_FORMAT:{}", similarityInfo);
+            return;
+        }
+
+        String documentId = values[0].trim();
+        if (Common.isEmpty(documentId)) {
+            log.warn("DOC_SIM_REASON | EMPTY_DOCUMENT_ID:{}", similarityInfo);
+            return;
+        }
+
+        final float score;
+        try {
+            score = Float.parseFloat(values[1].trim());
+        } catch (NumberFormatException e) {
+            log.warn("DOC_SIM_REASON | INVALID_SCORE:{}", similarityInfo);
+            return;
+        }
+
+        String documentName = anomalyScoreLoader.getDocumentSimilarityName(documentId);
+        if (isAttach) {
+            EmassDoc.Attach attach = firstAttach(doc);
+            if (attach == null) {
+                log.warn("DOC_SIM_REASON | ATTACH_NOT_FOUND | ID:{} | SCORE:{}", documentId, score);
+                return;
+            }
+            attach.setMlResult(mergeDocumentSimilarity(attach.getMlResult(), documentId, documentName, score));
+        } else {
+            if (doc.getBody() == null) {
+                log.warn("DOC_SIM_REASON | BODY_NOT_FOUND | ID:{} | SCORE:{}", documentId, score);
+                return;
+            }
+            doc.getBody().setMlResult(mergeDocumentSimilarity(doc.getBody().getMlResult(), documentId, documentName, score));
+        }
+
+        doc.setMlResult(mergeDocumentSimilarity(doc.getMlResult(), documentId, documentName, score));
+        log.info("DOC_SIM_REASON | {} | ID:{} | NAME:{} | SCORE:{}",
+                isAttach ? "ATTACH" : "BODY", documentId, documentName, score);
+    }
+
+    private EmassDoc.MLResult mergeDocumentSimilarity(EmassDoc.MLResult result,
+                                                       String documentId,
+                                                       String documentName,
+                                                       float score) {
+        if (result == null) result = new EmassDoc.MLResult();
+        if (!result.isSimilarityExist() || score > result.getSimilarityScore()) {
+            result.setSimilarityExist(true);
+            result.setSimilarityId(documentId);
+            result.setSimilarityName(documentName);
+            result.setSimilarityScore(score);
+        }
+        return result;
     }
 
     private void appendImageSimilarityReason(EmassDoc doc, MSGData msg) {

@@ -85,7 +85,9 @@ public class AlertService {
             result.setRuleSeq(rule.getRuleSeq());
             result.setRuleType(toRuleType(rule.getRuleType()));
             result.setRuleName(rule.getRuleName());
-            result.setRuleTarget(Common.isEquals(rule.getBlockNonCorpAccountYn(), "Y") ? "ACCOUNT" : "CONTENT");
+            result.setRuleTarget(Common.isNotEmpty(doc.getRuleTarget())
+                    ? doc.getRuleTarget()
+                    : (Common.isEquals(rule.getBlockNonCorpAccountYn(), "Y") ? "ACCOUNT" : "CONTENT"));
 
             Set<String> ruleKeywords = ruleKeywordSet(rule);
             Set<String> rulePatterns = rulePatternSet(rule);

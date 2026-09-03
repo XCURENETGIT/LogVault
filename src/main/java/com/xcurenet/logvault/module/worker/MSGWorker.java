@@ -37,6 +37,7 @@ public class MSGWorker extends AbstractWorker {
 
     private static final String PATTERN_FILE_UPLOAD = "FU";
     private static final String RULE_TARGET_ACCOUNT = "ACCOUNT";
+    private static final String RULE_TARGET_ALL = "ALL";
     private static final String RULE_TARGET_CONTENT = "CONTENT";
 
     public MSGWorker(final ApplicationContext context, PriorityBlockingQueue<ScanData> queue, final AtomicBoolean run) {
@@ -61,6 +62,9 @@ public class MSGWorker extends AbstractWorker {
                 doc.setRuleTarget(RULE_TARGET_CONTENT);
                 findRule(msg.getRuleSeq()).ifPresent(rule -> {
                     doc.setRuleName(rule.getRuleName());
+                    if (isAllBlockRule(rule)) {
+                        doc.setRuleTarget(RULE_TARGET_ALL);
+                    }
                     if (isFileUploadRule(rule)) {
                         doc.setBlockExtension(msg.getAttachExt());
                     }
@@ -129,10 +133,25 @@ public class MSGWorker extends AbstractWorker {
 
         String ruleTarget = RULE_TARGET_CONTENT;
         Optional<BlockRuleJsonDto.RuleEntry> rule = findRule(doc.getRuleSeq());
-        if (rule.filter(this::isBlockNonCorpAccountRule).isPresent() && isNonCorpAccount(doc.getUser())) {
+        if (rule.filter(this::isAllBlockRule).isPresent()) {
+            ruleTarget = RULE_TARGET_ALL;
+        } else if (rule.filter(this::isBlockNonCorpAccountRule).isPresent() && isNonCorpAccount(doc.getUser())) {
             ruleTarget = RULE_TARGET_ACCOUNT;
         }
         doc.setRuleTarget(ruleTarget);
+    }
+
+    private boolean isAllBlockRule(BlockRuleJsonDto.RuleEntry rule) {
+        if (rule == null || !Common.isEquals(rule.getRuleType(), "B") || isBlockNonCorpAccountRule(rule)) {
+            return false;
+        }
+
+        BlockRuleJsonDto.Conditions conditions = rule.getConditions();
+        if (conditions == null) return true;
+
+        boolean hasKeywordCondition = conditions.getKeywordList() != null && !conditions.getKeywordList().isEmpty();
+        boolean hasPatternCondition = conditions.getPatternList() != null && !conditions.getPatternList().isEmpty();
+        return !hasKeywordCondition && !hasPatternCondition;
     }
 
     private boolean isBlockNonCorpAccountRule(BlockRuleJsonDto.RuleEntry rule) {

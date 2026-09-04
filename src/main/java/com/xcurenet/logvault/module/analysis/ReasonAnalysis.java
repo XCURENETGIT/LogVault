@@ -5,6 +5,7 @@ import com.xcurenet.common.utils.Common;
 import com.xcurenet.logvault.conf.Config;
 import com.xcurenet.logvault.loader.AnomalyScoreLoader;
 import com.xcurenet.logvault.loader.ImageCategoryLoader;
+import com.xcurenet.logvault.loader.PatternLoader;
 import com.xcurenet.logvault.module.ScanData;
 import com.xcurenet.logvault.opensearch.EmassDoc;
 import lombok.RequiredArgsConstructor;
@@ -78,6 +79,10 @@ public class ReasonAnalysis {
         if (doc.getPrivacyInfo() != null && !doc.getPrivacyInfo().isEmpty()) {
             int total = doc.getPrivacyInfo().stream().mapToInt(EmassDoc.PrivacyInfo::getCount).sum();
             doc.setPrivacyTotal(total);
+        }
+        if (doc.getSensitiveInfo() != null && !doc.getSensitiveInfo().isEmpty()) {
+            int total = doc.getSensitiveInfo().stream().mapToInt(EmassDoc.PrivacyInfo::getCount).sum();
+            doc.setSensitiveTotal(total);
         }
         if (doc.getKeywordInfo() != null && doc.getKeywordInfo().getKeywords() != null && !doc.getKeywordInfo().getKeywords().isEmpty()) {
             doc.setKeywordTotal(doc.getKeywordInfo().getKeywords().size());
@@ -256,8 +261,11 @@ public class ReasonAnalysis {
 
         String encrypted = Common.encString(Common.decodeBase64ToString(detectStr).getBytes(StandardCharsets.UTF_8), conf.getEncryptKey(), conf.getEncyptCipher());
         String piId = getId(id);
-        List<EmassDoc.PrivacyInfo> privacyInfos = doc.getPrivacyInfo();
-        if (doc.getPrivacyInfo() == null) privacyInfos = new ArrayList<>();
+        boolean sensitive = PatternLoader.isSensitiveCode(piId);
+        if (!sensitive && !PatternLoader.isPrivacyCode(piId)) return;
+
+        List<EmassDoc.PrivacyInfo> privacyInfos = sensitive ? doc.getSensitiveInfo() : doc.getPrivacyInfo();
+        if (privacyInfos == null) privacyInfos = new ArrayList<>();
 
         EmassDoc.PrivacyInfo info = getPrivacyInfo(privacyInfos, piId, true);
         if (info == null) {
@@ -273,7 +281,8 @@ public class ReasonAnalysis {
             info.getPrivacyData().add(encrypted);
             info.setCount(info.getPrivacyData().size());
         }
-        doc.setPrivacyInfo(privacyInfos);
+        if (sensitive) doc.setSensitiveInfo(privacyInfos);
+        else doc.setPrivacyInfo(privacyInfos);
     }
 
     private EmassDoc.PrivacyInfo getPrivacyInfo(List<EmassDoc.PrivacyInfo> privacyInfos, String piId, boolean blocked) {
@@ -303,6 +312,22 @@ public class ReasonAnalysis {
             case 14 -> "VN_PN";
             case 15 -> "VN_TIN";
             case 16 -> "VN_SI";
+            case 17 -> "CPN";
+            case 18 -> "CRN";
+            case 19 -> "IMEI";
+            case 20 -> "MCN";
+            case 21 -> "OTP";
+            case 22 -> "API_KEY";
+            case 23 -> "AUTH_TOKEN";
+            case 24 -> "PASSWORD";
+            case 25 -> "INTERNAL_ACCESS";
+            case 26 -> "PRIVATE_KEY";
+            case 27 -> "CLOUD_CREDENTIAL";
+            case 28 -> "CONNECTION_STRING";
+            case 29 -> "SIGNED_URL";
+            case 30 -> "MFA_SECRET";
+            case 31 -> "RECOVERY_CODE";
+            case 32 -> "SESSION_COOKIE";
             default -> "-";
         };
     }

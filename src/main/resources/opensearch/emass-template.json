@@ -528,6 +528,34 @@
 						}
 					}
 				},
+				"sensitive_total": {
+					"type": "integer"
+				},
+				"sensitive_info": {
+					"type": "nested",
+					"properties": {
+						"id": {
+							"type": "keyword"
+						},
+						"type": {
+							"type": "keyword"
+						},
+						"attach_name": {
+							"type": "keyword"
+						},
+						"privacy_data": {
+							"type": "keyword",
+							"doc_values": false,
+							"index": false
+						},
+						"count": {
+							"type": "integer"
+						},
+						"blocked": {
+							"type": "boolean"
+						}
+					}
+				},
 				"keyword_total": {
 					"type": "integer"
 				},
@@ -546,6 +574,12 @@
 							}
 						},
 						"pattern": {
+							"properties": {
+								"score": { "type": "integer" },
+								"count": { "type": "integer" }
+							}
+						},
+						"sensitive": {
 							"properties": {
 								"score": { "type": "integer" },
 								"count": { "type": "integer" }

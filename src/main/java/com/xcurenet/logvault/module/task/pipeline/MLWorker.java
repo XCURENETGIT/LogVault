@@ -220,22 +220,7 @@ public class MLWorker implements PipelineWorker {
 	}
 
 	private void merge(EmassDoc.MLResult t, EmassDoc.MLResult s) {
-		t.setCodeExist(t.isCodeExist() || s.isCodeExist());
-		t.setCategory(Math.max(t.getCategory(), s.getCategory()));
-		t.setProbs(Math.max(t.getProbs(), s.getProbs()));
-		if (s.getKeywords() != null && !s.getKeywords().isEmpty()) {
-			if (t.getKeywords() == null) t.setKeywords(new ArrayList<>());
-			t.getKeywords().addAll(s.getKeywords());
-		}
-		if (s.isSimilarityExist()
-				&& (!t.isSimilarityExist() || s.getSimilarityScore() > t.getSimilarityScore())) {
-			t.setSimilarityExist(true);
-			t.setSimilarityId(s.getSimilarityId());
-			t.setSimilarityName(s.getSimilarityName());
-			t.setSimilarityScore(s.getSimilarityScore());
-		}
-		if (s.getResult() > 0 && (t.getResult() <= 0 || s.getResult() > t.getResult())) t.setResult(s.getResult());
-		if (s.getMessage() != null && !s.getMessage().isBlank()) t.setMessage(s.getMessage());
+		t.merge(s);
 	}
 
 	private void buildSummary(EmassDoc doc) {

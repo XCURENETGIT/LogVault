@@ -59,11 +59,12 @@ public class AlertService {
             message.setData(JSONObject.toJSONString(alertInfo, JSONWriter.Feature.FieldBased));
             try {
                 repository.insertAlertRule(message);
-                log.info("ALT_SEND | RULE_SEQ:{} | RULE_NAME:{} | KEYWORD_ALARM:{} | KEYWORD_SYSLOG:{} | PRIVACY_ALARM:{} | PRIVACY_SYSLOG:{} | DOCUMENT_SIMILARITY_ALARM:{} | DOCUMENT_SIMILARITY_SYSLOG:{} | IMAGE_SIMILARITY_ALARM:{} | IMAGE_SIMILARITY_SYSLOG:{} | {}",
+                log.info("ALT_SEND | RULE_SEQ:{} | RULE_NAME:{} | KEYWORD_ALARM:{} | KEYWORD_SYSLOG:{} | PRIVACY_ALARM:{} | PRIVACY_SYSLOG:{} | SENSITIVE_ALARM:{} | SENSITIVE_SYSLOG:{} | IMAGE_SIMILARITY_ALARM:{} | IMAGE_SIMILARITY_SYSLOG:{} | DOCUMENT_SIMILARITY_ALARM:{} | DOCUMENT_SIMILARITY_SYSLOG:{} |{}",
                         matchedAllowRule.getRuleSeq(), matchedAllowRule.getRuleName(), alertInfo.getKeywordAlarmTotal(), alertInfo.getKeywordSyslogTotal(),
                         alertInfo.getPrivacyAlarmTotal(), alertInfo.getPrivacySyslogTotal(),
-                        alertInfo.getDocumentSimilarityAlarmTotal(), alertInfo.getDocumentSimilaritySyslogTotal(),
-                        alertInfo.getImageSimilarityAlarmTotal(), alertInfo.getImageSimilaritySyslogTotal(), DateUtils.stop(sw));
+                        alertInfo.getSensitiveAlarmTotal(), alertInfo.getSensitiveSyslogTotal(),
+                        alertInfo.getImageSimilarityAlarmTotal(), alertInfo.getImageSimilaritySyslogTotal(),
+						alertInfo.getDocumentSimilarityAlarmTotal(), alertInfo.getDocumentSimilaritySyslogTotal(), DateUtils.stop(sw));
             } catch (Exception e) {
                 log.error("{} | {}", ErrorCode.ALERT_REPOSITORY_FAIL.toString(), e.toString(), e);
             }
@@ -108,13 +109,12 @@ public class AlertService {
                     result.setPrivacySyslog(filterPrivacy(doc.getPrivacyInfo(), rulePatterns));
             }
 
-            List<EmassDoc.MLResult> documentSimilarities = collectDocumentSimilarities(doc);
-            if (!documentSimilarities.isEmpty()) {
+            if (doc.getSensitiveTotal() != null && doc.getSensitiveTotal() > 0) {
                 if (Common.isEquals(rule.getAlarmYn(), "Y"))
-                    result.setDocumentSimilarityAlarm(documentSimilarities);
+                    result.setSensitiveAlarm(filterPrivacy(doc.getSensitiveInfo(), rulePatterns));
 
                 if (Common.isEquals(rule.getSyslogYn(), "Y"))
-                    result.setDocumentSimilaritySyslog(documentSimilarities);
+                    result.setSensitiveSyslog(filterPrivacy(doc.getSensitiveInfo(), rulePatterns));
             }
 
             List<EmassDoc.ImageSimilarity> imageSimilarities = collectImageSimilarities(doc);
@@ -126,19 +126,37 @@ public class AlertService {
                     result.setImageSimilaritySyslog(imageSimilarities);
             }
 
+            List<EmassDoc.MLResult> documentSimilarities = collectDocumentSimilarities(doc);
+            if (!documentSimilarities.isEmpty()) {
+                if (Common.isEquals(rule.getAlarmYn(), "Y"))
+                    result.setDocumentSimilarityAlarm(documentSimilarities);
+
+                if (Common.isEquals(rule.getSyslogYn(), "Y"))
+                    result.setDocumentSimilaritySyslog(documentSimilarities);
+			}
+
             result.setKeywordAlarmTotal(result.getKeywordAlarm().getKeywords() == null ? 0 : result.getKeywordAlarm().getKeywords().size());
             result.setKeywordSyslogTotal(result.getKeywordSyslog().getKeywords() == null ? 0 : result.getKeywordSyslog().getKeywords().size());
             result.setPrivacyAlarmTotal(result.getPrivacyAlarm() == null ? 0 : result.getPrivacyAlarm().size());
             result.setPrivacySyslogTotal(result.getPrivacySyslog() == null ? 0 : result.getPrivacySyslog().size());
-            result.setDocumentSimilarityAlarmTotal(result.getDocumentSimilarityAlarm() == null ? 0 : result.getDocumentSimilarityAlarm().size());
-            result.setDocumentSimilaritySyslogTotal(result.getDocumentSimilaritySyslog() == null ? 0 : result.getDocumentSimilaritySyslog().size());
+            result.setSensitiveAlarmTotal(result.getSensitiveAlarm() == null ? 0 : result.getSensitiveAlarm().size());
+            result.setSensitiveSyslogTotal(result.getSensitiveSyslog() == null ? 0 : result.getSensitiveSyslog().size());
             result.setImageSimilarityAlarmTotal(result.getImageSimilarityAlarm() == null ? 0 : result.getImageSimilarityAlarm().size());
             result.setImageSimilaritySyslogTotal(result.getImageSimilaritySyslog() == null ? 0 : result.getImageSimilaritySyslog().size());
+            result.setDocumentSimilarityAlarmTotal(result.getDocumentSimilarityAlarm() == null ? 0 : result.getDocumentSimilarityAlarm().size());
+            result.setDocumentSimilaritySyslogTotal(result.getDocumentSimilaritySyslog() == null ? 0 : result.getDocumentSimilaritySyslog().size());
 
             return result;
         } catch (Exception e) {
-            throw ExFactory.ex(AlertException::new, ErrorCode.ALERT_CALC_FAIL, java.util.Map.of("msgid", doc.getMsgid()));
+            throw ExFactory.ex(AlertException::new, ErrorCode.ALERT_CALC_FAIL,
+                    java.util.Map.of("msgid", doc.getMsgid()), e);
         }
+    }
+
+    private int keywordTotal(EmassDoc.KeywordInfo keywordInfo) {
+        return keywordInfo == null || keywordInfo.getKeywords() == null
+                ? 0
+                : keywordInfo.getKeywords().size();
     }
 
     /**
@@ -334,12 +352,17 @@ public class AlertService {
      */
     private Map<String, Integer> collectPatternCounts(EmassDoc doc) {
         Map<String, Integer> counts = new HashMap<>();
-        if (doc.getPrivacyInfo() == null) return counts;
-        for (EmassDoc.PrivacyInfo p : doc.getPrivacyInfo()) {
+        addPatternCounts(counts, doc.getPrivacyInfo());
+        addPatternCounts(counts, doc.getSensitiveInfo());
+        return counts;
+    }
+
+    private void addPatternCounts(Map<String, Integer> counts, List<EmassDoc.PrivacyInfo> infos) {
+        if (infos == null) return;
+        for (EmassDoc.PrivacyInfo p : infos) {
             if (p == null || p.getId() == null) continue;
             counts.merge(p.getId(), p.getCount(), Integer::sum);
         }
-        return counts;
     }
 
     private String getClientIp(EmassDoc doc) {
@@ -474,19 +497,23 @@ public class AlertService {
         private int keywordSyslogTotal;
         private int privacyAlarmTotal;
         private int privacySyslogTotal;
-        private int documentSimilarityAlarmTotal;
-        private int documentSimilaritySyslogTotal;
+        private int sensitiveAlarmTotal;
+        private int sensitiveSyslogTotal;
         private int imageSimilarityAlarmTotal;
         private int imageSimilaritySyslogTotal;
+        private int documentSimilarityAlarmTotal;
+        private int documentSimilaritySyslogTotal;
 
         private EmassDoc.KeywordInfo keywordAlarm = new EmassDoc.KeywordInfo();
         private EmassDoc.KeywordInfo keywordSyslog = new EmassDoc.KeywordInfo();
         private List<EmassDoc.PrivacyInfo> privacyAlarm = new ArrayList<>();
         private List<EmassDoc.PrivacyInfo> privacySyslog = new ArrayList<>();
-        private List<EmassDoc.MLResult> documentSimilarityAlarm = new ArrayList<>();
-        private List<EmassDoc.MLResult> documentSimilaritySyslog = new ArrayList<>();
+        private List<EmassDoc.PrivacyInfo> sensitiveAlarm = new ArrayList<>();
+        private List<EmassDoc.PrivacyInfo> sensitiveSyslog = new ArrayList<>();
         private List<EmassDoc.ImageSimilarity> imageSimilarityAlarm = new ArrayList<>();
         private List<EmassDoc.ImageSimilarity> imageSimilaritySyslog = new ArrayList<>();
+		private List<EmassDoc.MLResult> documentSimilarityAlarm = new ArrayList<>();
+        private List<EmassDoc.MLResult> documentSimilaritySyslog = new ArrayList<>();
     }
 
 }

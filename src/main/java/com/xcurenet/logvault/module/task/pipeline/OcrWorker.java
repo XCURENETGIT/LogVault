@@ -105,6 +105,8 @@ public class OcrWorker implements PipelineWorker {
 			doc.setKeywordInfo(null);
 			doc.setPrivacyInfo(null);
 			doc.setPrivacyTotal(0);
+			doc.setSensitiveInfo(null);
+			doc.setSensitiveTotal(0);
 			keywordAnalysis.detect(doc);
 			privacyAnalysis.detect(doc);
 		}

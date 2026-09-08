@@ -32,7 +32,7 @@ public class FileUtil {
 					decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
 					return decoder.decode(ByteBuffer.wrap(fileBytes)).toString();
 				} catch (CharacterCodingException e) {
-					return new String(fileBytes, "MS949");
+					return new String(fileBytes, StandardCharsets.UTF_8);
 				}
 			}
 		} catch (IOException e) {

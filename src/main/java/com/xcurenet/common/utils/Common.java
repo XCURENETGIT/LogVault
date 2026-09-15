@@ -1174,38 +1174,6 @@ public final class Common {
 		return getSummaryText(text, 10);
 	}
 
-	/**
-	 * 연속 "비공백" 토큰의 최대 길이를 제한하고, 초과 시 공백을 삽입한다.
-	 */
-	public static String limitTokenLengthWithSpace(String input, int maxTokenLen) {
-		if (input == null || input.isEmpty() || maxTokenLen <= 0) return input;
-		try {
-			StringBuilder sb = new StringBuilder(input.length() + input.length() / maxTokenLen);
-			int tokenLen = 0;
-			for (int i = 0; i < input.length(); ) {
-				int cp = input.codePointAt(i);
-				int charCount = Character.charCount(cp);
-
-				if (Character.isWhitespace(cp)) {
-					sb.appendCodePoint(cp);
-					tokenLen = 0;
-				} else {
-					if (tokenLen >= maxTokenLen) {
-						if (sb.isEmpty() || sb.charAt(sb.length() - 1) != ' ') sb.append(' ');
-						tokenLen = 0;
-					}
-					sb.appendCodePoint(cp);
-					tokenLen++;
-				}
-				i += charCount;
-			}
-			return sb.toString();
-		} catch (Exception e) {
-			log.warn("TXT_LIMIT | {}", e.getMessage());
-		}
-		return input;
-	}
-
 	public static String limitLength(String input, int maxLength) {
 		if (input == null) return null;
 		if (input.length() <= maxLength) {

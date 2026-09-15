@@ -144,9 +144,6 @@ public class Config {
 	@Value("${text.limit.length:10000000}") //텍스트 색인 시 최대 길이
 	private int textLimitLength;
 
-	@Value("${text.limit.token:100}") //텍스트 색인 시 한단어의 최대 길이
-	private int textLimitToken;
-
 	@Value("${extract.text.timeout.sec:60}") //첨부파일 텍스트 추출 TimeOut (초)
 	private int extractTextTimeoutSec;
 

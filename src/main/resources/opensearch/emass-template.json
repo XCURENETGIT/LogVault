@@ -14,6 +14,12 @@
 				"highlight": { "max_analyzed_offset": 2000000 },
 				"opendistro.index_state_management.policy_id": "emass_policy",
 				"analysis": {
+					"tokenizer": {
+						"limited_whitespace_tokenizer": {
+							"type": "whitespace",
+							"max_token_length": 100
+						}
+					},
 					"filter": {
 						"prefix_edge_ngram_filter": {
 							"type": "edge_ngram",
@@ -23,14 +29,14 @@
 					},
 					"analyzer": {
 						"index_analyzer": {
-							"tokenizer": "whitespace",
+							"tokenizer": "limited_whitespace_tokenizer",
 							"filter": [
 								"lowercase",
 								"prefix_edge_ngram_filter"
 							]
 						},
 						"search_analyzer": {
-							"tokenizer": "whitespace",
+							"tokenizer": "limited_whitespace_tokenizer",
 							"filter": [
 								"lowercase"
 							]

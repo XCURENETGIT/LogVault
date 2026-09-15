@@ -85,6 +85,13 @@ public class InfoLoader {
 		}
 	}
 
+	public void documentSimilarityLoad() {
+		log.debug("INFO_LOAD | DocumentSimilarity START");
+		synchronized (this) {
+			anomalyScoreLoader.loadDocumentSimilarities();
+		}
+	}
+
 	public void ruleLoad() {
 		log.debug("INFO_LOAD | Rule START");
 		synchronized (this) {

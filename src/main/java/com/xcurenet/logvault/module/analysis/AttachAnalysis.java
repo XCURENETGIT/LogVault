@@ -112,11 +112,10 @@ public class AttachAnalysis {
 			StopWatch sw = DateUtils.start();
 			TextInfoVO data = getText(doc.getMsgid(), attach.getSrcPath(), attach.getName());
 
-			if (data != null) {
-				String limitText = Common.limitLength(data.getText(), conf.getTextLimitLength());
-				limitText = Common.limitTokenLengthWithSpace(limitText, conf.getTextLimitToken());
+            if (data != null) {
+                String limitText = Common.limitLength(data.getText(), conf.getTextLimitLength());
 
-				attach.setText(limitText);
+                attach.setText(limitText);
 				attach.setExpectedExtension(data.getExtension());
 				attach.setExpectedUnknown(data.isUnknownType());
 				attach.setChangeExtension(data.isChangeExtension());

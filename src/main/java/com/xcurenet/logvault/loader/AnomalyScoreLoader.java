@@ -79,6 +79,27 @@ public class AnomalyScoreLoader {
                 anomalyScoreVersion, patternVersion, guardRailVersion, levelMap.size(), enabledTargets.size(), levelScoreMap);
     }
 
+    public void loadDocumentSimilarities() {
+        long anomalyScoreVersion = infoLoaderService.getAnomalyScoreVersion();
+        List<AnomalyScoreVO> scoreList = infoLoaderService.getAnomalyScore(anomalyScoreVersion);
+        Map<String, String> levelMap = new ConcurrentHashMap<>(SCORE_LEVEL_REF.get());
+
+        String documentKeyPrefix = TABLE_DOCUMENT_SIMILARITY + KEY_SEPARATOR;
+        levelMap.keySet().removeIf(key -> key.startsWith(documentKeyPrefix));
+
+        for (AnomalyScoreVO vo : scoreList) {
+            if (vo == null || !TABLE_DOCUMENT_SIMILARITY.equals(vo.getMapperTable())) continue;
+
+            String key = compositeKey(vo.getMapperTable(), vo.getTargetId());
+            levelMap.put(key, vo.getAnomalyLevelCd());
+            log.info("INFO_LOAD | DocumentSimilarity AnomalyScore: {} → {}", key, vo.getAnomalyLevelCd());
+        }
+
+        SCORE_LEVEL_REF.set(levelMap);
+        loadDocumentNames();
+        log.info("INFO_LOAD | DocumentSimilarity Reload | AnomalyScore Version:{}", anomalyScoreVersion);
+    }
+
     /**
      * (MAPR_TABLE, TARGET_ID) 조합으로 점수를 반환한다.
      *

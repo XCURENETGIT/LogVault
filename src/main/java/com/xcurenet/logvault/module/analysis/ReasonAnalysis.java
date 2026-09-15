@@ -23,6 +23,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ReasonAnalysis {
     private static final String RULE_TARGET_ATTACH = "ATTACH";
+    private static final String RULE_TARGET_CONTENT = "CONTENT";
 
     private final Config conf;
     private final AnomalyScoreLoader anomalyScoreLoader;
@@ -56,9 +57,9 @@ public class ReasonAnalysis {
     public void setReason(final ScanData data) {
         MSGData msg = data.getMsgData();
         EmassDoc doc = data.getEmassDoc();
-        appendImageSimilarityReason(doc, msg);
         boolean isAttach = Common.isEquals(Common.nvl(msg.getIsAttach()), "1");
         appendDocumentSimilarityReason(doc, msg, isAttach);
+        appendImageSimilarityReason(doc, msg);
 
         if (msg.getDetections() == null) return;
 
@@ -117,6 +118,7 @@ public class ReasonAnalysis {
             return;
         }
 
+        doc.setRuleTarget(isAttach ? RULE_TARGET_ATTACH : RULE_TARGET_CONTENT);
         String documentName = anomalyScoreLoader.getDocumentSimilarityName(documentId);
         if (isAttach) {
             EmassDoc.Attach attach = firstAttach(doc);

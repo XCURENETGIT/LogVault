@@ -38,6 +38,7 @@ public class MSGWorker extends AbstractWorker {
     private static final String PATTERN_FILE_UPLOAD = "FU";
     private static final String RULE_TARGET_ACCOUNT = "ACCOUNT";
     private static final String RULE_TARGET_ALL = "ALL";
+    private static final String RULE_TARGET_ATTACH = "ATTACH";
     private static final String RULE_TARGET_CONTENT = "CONTENT";
 
     public MSGWorker(final ApplicationContext context, PriorityBlockingQueue<ScanData> queue, final AtomicBoolean run) {
@@ -59,10 +60,10 @@ public class MSGWorker extends AbstractWorker {
             doc.setRuleSeq(msg.getRuleSeq());
 
             if (Common.isNotEmpty(msg.getRuleSeq())) {
-                doc.setRuleTarget(RULE_TARGET_CONTENT);
+                doc.setRuleTarget(getSimilarityRuleTarget(msg));
                 findRule(msg.getRuleSeq()).ifPresent(rule -> {
                     doc.setRuleName(rule.getRuleName());
-                    if (isAllBlockRule(rule)) {
+                    if (isAllBlockRule(rule) && !hasDocumentSimilarity(msg) && !hasImageSimilarity(msg)) {
                         doc.setRuleTarget(RULE_TARGET_ALL);
                     }
                     if (isFileUploadRule(rule)) {
@@ -128,17 +129,46 @@ public class MSGWorker extends AbstractWorker {
                 .anyMatch(pattern -> PATTERN_FILE_UPLOAD.equalsIgnoreCase(pattern));
     }
 
-    private void setRuleTarget(EmassDoc doc) {
+    private void setRuleTarget(EmassDoc doc, MSGData msg) {
         if (doc == null || doc.getRuleSeq() == null) return;
 
         String ruleTarget = RULE_TARGET_CONTENT;
         Optional<BlockRuleJsonDto.RuleEntry> rule = findRule(doc.getRuleSeq());
-        if (rule.filter(this::isAllBlockRule).isPresent()) {
+        if (hasDocumentSimilarity(msg) || hasImageSimilarity(msg)) {
+            ruleTarget = getSimilarityRuleTarget(msg);
+        } else if (rule.filter(this::isAllBlockRule).isPresent()) {
             ruleTarget = RULE_TARGET_ALL;
         } else if (rule.filter(this::isBlockNonCorpAccountRule).isPresent() && isNonCorpAccount(doc.getUser())) {
             ruleTarget = RULE_TARGET_ACCOUNT;
         }
         doc.setRuleTarget(ruleTarget);
+    }
+
+    private String getSimilarityRuleTarget(MSGData msg) {
+        if (hasImageSimilarity(msg) || (hasDocumentSimilarity(msg) && isAttach(msg))) {
+            return RULE_TARGET_ATTACH;
+        }
+        return RULE_TARGET_CONTENT;
+    }
+
+    private boolean isAttach(MSGData msg) {
+        return msg != null && Common.isEquals(Common.nvl(msg.getIsAttach()), "1");
+    }
+
+    private boolean hasDocumentSimilarity(MSGData msg) {
+        if (msg == null) return false;
+
+        String similarityInfo = Common.nvl(msg.getDocSimilarityInfo()).trim();
+        return Common.isNotEmpty(similarityInfo) && !Common.isEquals(similarityInfo, "-");
+    }
+
+    private boolean hasImageSimilarity(MSGData msg) {
+        if (msg == null || msg.getImageSimilarityCategoryIds() == null) return false;
+
+        return msg.getImageSimilarityCategoryIds().stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .anyMatch(categoryId -> Common.isNotEmpty(categoryId) && !Common.isEquals(categoryId, "-"));
     }
 
     private boolean isAllBlockRule(BlockRuleJsonDto.RuleEntry rule) {
@@ -201,7 +231,7 @@ public class MSGWorker extends AbstractWorker {
             log.warn("{} | SRCIP={} err={}", ErrorCode.INSA_MAPPING_FAIL.toString(), data.getMsgData().getSourceIp(), e.toString(), e);
         }
         data.getEmassDoc().setUser(user);
-        setRuleTarget(data.getEmassDoc());
+        setRuleTarget(data.getEmassDoc(), data.getMsgData());
     }
 
     @Override
@@ -269,7 +299,6 @@ public class MSGWorker extends AbstractWorker {
 
         try {
             String text = Common.limitLength(FileUtil.getText(filePath.toString()), conf.getTextLimitLength());
-            text = Common.limitTokenLengthWithSpace(text, conf.getTextLimitToken());
             text = Common.unescapeJava(text);
             log.debug("BDY_TEXT | {}", Common.getSummaryText(text));
 

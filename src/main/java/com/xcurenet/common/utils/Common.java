@@ -825,6 +825,14 @@ public final class Common {
 	}
 
 	/**
+	 * 생성형 AI 서비스의 발신 방향 여부를 반환한다.
+	 * svc3의 S와 Q는 모두 발신으로 처리한다.
+	 */
+	public static boolean isOutboundService(final String svc3) {
+		return isEquals(svc3, "S") || isEquals(svc3, "Q");
+	}
+
+	/**
 	 * Java String isEmpty This Java String isEmpty shows how to check whether the
 	 * given string is empty or not using isEmpty method of Java String class.
 	 */

@@ -166,18 +166,18 @@ public class IndexService {
         boolean update = false;
         if (Common.isEmpty(oldSvc3)) {
             update = true;
-        } else if (Common.isEquals(oldSvc3, "S") && Common.isEquals(svc3, "S")) {
-            // 1. 둘다 발신(S)일 때 최신 것이면 update
+        } else if (Common.isOutboundService(oldSvc3) && Common.isOutboundService(svc3)) {
+            // 1. 둘다 발신(S, Q)일 때 최신 것이면 update
             if (newData) {
                 update = true;
             }
-        } else if (Common.isNotEquals(oldSvc3, "S") && Common.isNotEquals(svc3, "S")) {
+        } else if (!Common.isOutboundService(oldSvc3) && !Common.isOutboundService(svc3)) {
             // 2. 둘다 발신이 아닐 때(R)일 때 최신 것이면 update
             if (newData) {
                 update = true;
             }
-        } else if (Common.isEquals(oldSvc3, "R") && Common.isEquals(svc3, "S")) {
-            // 3. S 가 들어오고 과거가 R 이면 update
+        } else if (Common.isEquals(oldSvc3, "R") && Common.isOutboundService(svc3)) {
+            // 3. 발신(S, Q)이 들어오고 과거가 R이면 update
             update = true;
         }
 

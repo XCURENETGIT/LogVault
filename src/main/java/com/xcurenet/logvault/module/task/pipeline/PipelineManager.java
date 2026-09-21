@@ -117,7 +117,7 @@ public class PipelineManager {
 
 	public boolean send(final ScanData data) {
 		EmassDoc doc = data.getEmassDoc();
-		if (Common.isNotEquals(doc.getService().getSvc3(), "S")) return false;
+		if (!Common.isOutboundService(doc.getService().getSvc3())) return false;
 		if (doc.getAction() != ActionType.ALLOW) return false;
 
 		String firstType = first();

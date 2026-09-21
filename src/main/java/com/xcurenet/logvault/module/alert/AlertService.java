@@ -46,7 +46,7 @@ public class AlertService {
 
         StopWatch sw = DateUtils.start();
         try {
-            if (!"S".equals(doc.getService().getSvc3())) return;
+            if (!Common.isOutboundService(doc.getService().getSvc3())) return;
 
             BlockRuleJsonDto.RuleEntry matchedAllowRule = findMatchedAllowRule(doc);
 

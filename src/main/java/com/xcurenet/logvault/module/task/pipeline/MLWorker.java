@@ -76,7 +76,7 @@ public class MLWorker implements PipelineWorker {
 
 	@Override
 	public boolean isTarget(EmassDoc doc) {
-		return Common.isEquals(doc.getService().getSvc3(), "S");
+		return Common.isOutboundService(doc.getService().getSvc3());
 	}
 
 	@Override

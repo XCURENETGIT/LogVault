@@ -44,7 +44,7 @@ public class GuardRailAnalysis {
 	}
 
 	public void detect(final EmassDoc doc) {
-		if (Common.isNotEquals(doc.getService().getSvc3(), "S")) return; //발신 서비스만
+		if (!Common.isOutboundService(doc.getService().getSvc3())) return; //발신 서비스(S, Q)만
 
 		if (doc.getBody() != null) {
 			String body = detectGuardrail(doc.getBody().getText(), "BODY");

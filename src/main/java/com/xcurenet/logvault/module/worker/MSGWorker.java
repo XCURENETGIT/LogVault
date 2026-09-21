@@ -298,8 +298,8 @@ public class MSGWorker extends AbstractWorker {
         if (!Files.exists(filePath)) return;
 
         try {
+            // 실제 줄바꿈과 리터럴 "\\n"을 구분할 수 있도록 원문을 그대로 유지한다.
             String text = Common.limitLength(FileUtil.getText(filePath.toString()), conf.getTextLimitLength());
-            text = Common.unescapeJava(text);
             log.debug("BDY_TEXT | {}", Common.getSummaryText(text));
 
             EmassDoc.Body body = new EmassDoc.Body();
